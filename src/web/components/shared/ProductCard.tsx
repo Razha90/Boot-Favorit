@@ -1,11 +1,10 @@
 import type { PublicProduct } from "@shared/api-types";
 import { gridVisualMode } from "@shared/visual";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { cn } from "../../lib/cn";
 import { copy } from "../../lib/copy";
 import { useMediaUrl } from "../../lib/media-url";
 import { Badge } from "../ui/Card";
-import { PhotoFrame } from "./PhotoFrame";
 import { Present } from "./Present";
 import { PriceTag } from "./PriceTag";
 import { SafeImage } from "./SafeImage";
@@ -27,7 +26,11 @@ export function ProductCard({
   actions?: ReactNode;
 }) {
   const resolve = useMediaUrl();
-  const photo = visualMode === "photo";
+  const src = resolve(p.thumbKey);
+  const [failed, setFailed] = useState(false);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: foto baru = coba lagi
+  useEffect(() => setFailed(false), [src]);
+  const photo = visualMode === "photo" && !!src && !failed;
   return (
     <article
       className={cn(
@@ -38,10 +41,11 @@ export function ProductCard({
       {photo && (
         <div className="relative" data-product-visual="" style={{ aspectRatio: "1/1" }}>
           <SafeImage
-            src={resolve(p.thumbKey)}
+            src={src}
             aspect="1/1"
             className="w-full rounded-card"
-            fallback={<PhotoFrame id={p.id} name={p.name} size="md" shape="square" />}
+            onFail={() => setFailed(true)}
+            fallback={null}
           />
           <PriceTag
             priceIdr={p.priceIdr}

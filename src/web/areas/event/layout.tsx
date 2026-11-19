@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { Outlet } from "react-router";
 import { EventBoundary } from "../../features/EventBoundary";
 import { useEventData, useSnapshotQuery } from "../../features/event-data";
+import { ClickFx } from "../../features/fx/ClickFx";
+import { SoundProvider, SoundToggle } from "../../features/fx/SoundProvider";
 import { useAreaTheme } from "../../lib/use-area-theme";
 import { WishlistProvider } from "../../lib/wishlist";
 import { ComingSoonScreen, SiteFooter } from "./components/chrome";
@@ -28,10 +30,14 @@ function Page() {
     document.title = event.name;
   }, [event.name]);
   return (
-    <div className="event-canvas min-h-dvh">
-      <Outlet />
-      <SiteFooter event={event} />
-      <WishlistFab booths={snapshot.data?.booths ?? []} />
-    </div>
+    <SoundProvider>
+      <ClickFx />
+      <div className="event-canvas min-h-dvh">
+        <Outlet />
+        <SiteFooter event={event} />
+        <SoundToggle />
+        <WishlistFab booths={snapshot.data?.booths ?? []} />
+      </div>
+    </SoundProvider>
   );
 }

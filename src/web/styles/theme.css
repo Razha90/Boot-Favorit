@@ -131,8 +131,7 @@
   --font-hand: "Caveat Variable", cursive;
 }
 
-/* 5b) ANIMASI. Pewaktu slideshow = animasi CSS pada segmen progres: bila animasi dijeda, pergantian foto
-      ikut berhenti tanpa setInterval terpisah yang bisa tidak sinkron (B20). */
+/* 5b) ANIMASI & INTERAKSI (B19, B23, A12). Memakai transform & opacity (kompositor) dan token warna di atas. */
 @keyframes slide-fill {
   from {
     transform: scaleX(0);
@@ -142,7 +141,6 @@
   }
 }
 
-/* Animasi pemenang: masuk dengan sedikit membesar (tanpa confetti, A8). Dimatikan bila gerak dikurangi. */
 @keyframes reveal-pop {
   from {
     opacity: 0;
@@ -154,11 +152,601 @@
   }
 }
 .reveal-pop {
-  animation: reveal-pop 420ms var(--ease-pop, cubic-bezier(0.34, 1.4, 0.64, 1)) both;
+  @media (prefers-reduced-motion: no-preference) {
+    animation: reveal-pop 420ms var(--ease-pop, cubic-bezier(0.34, 1.4, 0.64, 1)) both;
+  }
 }
-@media (prefers-reduced-motion: reduce) {
-  .reveal-pop {
-    animation: none;
+
+/* ---- Animasi Motion Graphic Pemenang (A8, B20, B23) ---- */
+@keyframes reveal-rays-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes reveal-count-punch {
+  0% {
+    opacity: 0;
+    transform: scale(2.1) rotate(-8deg);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(0.94) rotate(2deg);
+  }
+  80% {
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes reveal-pulse-ring {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.45);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.2);
+  }
+}
+@keyframes reveal-ribbon-unfurl {
+  0% {
+    opacity: 0;
+    transform: translateY(-18px) scaleX(0.35);
+  }
+  65% {
+    opacity: 1;
+    transform: translateY(2px) scaleX(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scaleX(1);
+  }
+}
+@keyframes reveal-card-in {
+  0% {
+    opacity: 0;
+    transform: translateY(36px) scale(0.86) rotate(-3deg);
+  }
+  68% {
+    opacity: 1;
+    transform: translateY(-6px) scale(1.02) rotate(1deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+}
+@keyframes reveal-bunting-sway {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(3px);
+  }
+}
+@keyframes reveal-confetti-fall {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -12vh, 0) rotate(0deg) scale(0.7);
+  }
+  12% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--cx, 24px), 106vh, 0) rotate(var(--cr, 540deg)) scale(1);
+  }
+}
+@keyframes reveal-twinkle {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.8) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2) rotate(22deg);
+  }
+}
+@keyframes reveal-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-3deg);
+  }
+  50% {
+    transform: translateY(-7px) rotate(3deg);
+  }
+}
+
+/* Panggung gelap untuk dialog pemenang: menimpa token agar seluruh ResultsList dan kartu tetap AA. */
+.reveal-stage {
+  background:
+    radial-gradient(
+      circle at 50% 35%,
+      color-mix(in oklab, var(--primary) 26%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      circle at 80% 18%,
+      color-mix(in oklab, var(--accent) 20%, transparent),
+      transparent 48%
+    ),
+    var(--surface);
+}
+.reveal-rays {
+  background: repeating-conic-gradient(
+    from 0deg,
+    color-mix(in oklab, var(--primary) 12%, transparent) 0deg 14deg,
+    transparent 14deg 28deg,
+    color-mix(in oklab, var(--accent) 10%, transparent) 28deg 40deg,
+    transparent 40deg 56deg
+  );
+  mask-image: radial-gradient(circle at center, black 12%, transparent 68%);
+  @media (prefers-reduced-motion: no-preference) {
+    animation: reveal-rays-spin 22s linear infinite;
+  }
+}
+.reveal-halo {
+  background: radial-gradient(
+    circle,
+    color-mix(in oklab, var(--accent) 34%, transparent) 0%,
+    color-mix(in oklab, var(--primary) 24%, transparent) 44%,
+    transparent 72%
+  );
+}
+.reveal-count-num {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: reveal-count-punch 680ms var(--ease-pop) both;
+  }
+}
+.reveal-count-ring {
+  border-color: color-mix(in oklab, var(--accent) 65%, transparent);
+  @media (prefers-reduced-motion: no-preference) {
+    animation: reveal-pulse-ring 950ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+.reveal-ribbon {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: reveal-ribbon-unfurl 520ms var(--ease-pop) both;
+  }
+}
+.reveal-card-in {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: reveal-card-in 620ms var(--ease-pop) both;
+  }
+}
+.reveal-bunting {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: reveal-bunting-sway 3.6s ease-in-out infinite;
+  }
+}
+.reveal-twinkle {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: reveal-twinkle 2.2s ease-in-out infinite;
+  }
+}
+.reveal-trophy {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: reveal-float 2.6s ease-in-out infinite;
+  }
+}
+.reveal-confetti {
+  will-change: transform, opacity;
+  @media (prefers-reduced-motion: no-preference) {
+    animation: reveal-confetti-fall var(--cdur, 3200ms) cubic-bezier(0.2, 0.6, 0.4, 1)
+      var(--cdel, 0ms) infinite both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    display: none;
+  }
+}
+.confetti-c1 {
+  background-color: var(--c1);
+  color: var(--c1);
+}
+.confetti-c2 {
+  background-color: var(--c2);
+  color: var(--c2);
+}
+.confetti-c3 {
+  background-color: var(--c3);
+  color: var(--c3);
+}
+.confetti-c4 {
+  background-color: var(--c4);
+  color: var(--c4);
+}
+.confetti-c5 {
+  background-color: var(--c5);
+  color: var(--c5);
+}
+
+/* ---- Efek interaksi B23: cincin klik, getar tombol nonaktif, percik bintang, marquee, feed ---- */
+@keyframes fx-ring {
+  from {
+    opacity: 0.95;
+    transform: scale(0.35);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.8);
+  }
+}
+@keyframes fx-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+@keyframes fx-burst {
+  from {
+    opacity: 1;
+    transform: translate(0, 0) scale(0.4);
+  }
+  to {
+    opacity: 0;
+    transform: translate(var(--dx, 24px), var(--dy, -24px)) scale(1.15) rotate(var(--r, 45deg));
+  }
+}
+@keyframes fx-star-pop {
+  0% {
+    transform: scale(0.45);
+  }
+  60% {
+    transform: scale(1.28);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes fx-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes fx-feed-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fx-rank-flash {
+  from {
+    background-color: color-mix(in oklab, var(--primary) 24%, transparent);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+.fx-ring {
+  position: fixed;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border: 3px solid var(--c2);
+  border-radius: 9999px;
+  pointer-events: none;
+  z-index: 90;
+  @media (prefers-reduced-motion: no-preference) {
+    animation: fx-ring 500ms ease-out forwards;
+  }
+}
+.fx-ring[data-tone="1"] {
+  border-color: var(--c1);
+}
+.fx-ring[data-tone="2"] {
+  border-color: var(--text);
+}
+.fx-shake {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: fx-shake 340ms ease-in-out;
+  }
+}
+.fx-star-burst {
+  position: fixed;
+  margin: -8px 0 0 -8px;
+  pointer-events: none;
+  z-index: 92;
+  font-size: 16px;
+  line-height: 1;
+  @media (prefers-reduced-motion: no-preference) {
+    animation: fx-burst 650ms ease-out forwards;
+  }
+}
+.fx-star-pop {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: fx-star-pop 360ms var(--ease-pop) both;
+  }
+}
+.fx-marquee-track {
+  display: flex;
+  width: max-content;
+  @media (prefers-reduced-motion: no-preference) {
+    animation: fx-marquee 32s linear infinite;
+  }
+}
+.fx-marquee-paused .fx-marquee-track,
+.fx-marquee:hover .fx-marquee-track {
+  animation-play-state: paused;
+}
+.animate-feed-in {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: fx-feed-in var(--motion-base) var(--ease-glide) both;
+  }
+}
+.animate-rank-flash {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: fx-rank-flash 1.4s ease-out;
+  }
+}
+
+/* ---- Sistem Alert / Notifikasi Kanan Atas (animasi ala plugin + loader) ---- */
+@keyframes alert-in {
+  0% {
+    opacity: 0;
+    transform: translateX(calc(100% + 1.5rem)) scale(0.94);
+  }
+  70% {
+    opacity: 1;
+    transform: translateX(-4px) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes alert-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateX(calc(100% + 1.5rem)) scale(0.95);
+  }
+}
+@keyframes alert-progress {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+@keyframes alert-loader {
+  0% {
+    transform: translateX(-100%) scaleX(0.35);
+  }
+  50% {
+    transform: translateX(40%) scaleX(0.65);
+  }
+  100% {
+    transform: translateX(220%) scaleX(0.35);
+  }
+}
+
+.alert-enter {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: alert-in 380ms var(--ease-pop) both;
+  }
+}
+.alert-exit {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: alert-out 220ms var(--ease-glide) both;
+  }
+}
+.alert-progress-bar {
+  transform-origin: left;
+  animation: alert-progress var(--alert-ms, 5000ms) linear forwards;
+}
+.alert-card:hover .alert-progress-bar {
+  animation-play-state: paused;
+}
+.alert-loader-bar {
+  transform-origin: left;
+  @media (prefers-reduced-motion: no-preference) {
+    animation: alert-loader 1.4s ease-in-out infinite;
+  }
+}
+
+/* ---- Animasi mikro Ikon SVG (hover, active/klik, group parent) ---- */
+@keyframes icon-wiggle-anim {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-12deg) scale(1.08);
+  }
+  75% {
+    transform: rotate(10deg) scale(1.08);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .icon-anim {
+    transition: transform var(--motion-fast) var(--ease-pop);
+  }
+  button:hover .icon-nudge-r,
+  a:hover .icon-nudge-r {
+    transform: translateX(3px);
+  }
+  button:active .icon-nudge-r,
+  a:active .icon-nudge-r {
+    transform: translateX(5px) scale(0.95);
+  }
+  button:hover .icon-nudge-l,
+  a:hover .icon-nudge-l {
+    transform: translateX(-3px);
+  }
+  button:active .icon-nudge-l,
+  a:active .icon-nudge-l {
+    transform: translateX(-5px) scale(0.95);
+  }
+  button:hover .icon-nudge-u,
+  a:hover .icon-nudge-u {
+    transform: translateY(-3px);
+  }
+  button:hover .icon-nudge-d,
+  a:hover .icon-nudge-d {
+    transform: translateY(3px);
+  }
+  button:hover .icon-pop,
+  a:hover .icon-pop {
+    transform: scale(1.18);
+  }
+  button:active .icon-pop,
+  a:active .icon-pop {
+    transform: scale(0.88);
+  }
+  button:hover .icon-spin-hover {
+    transform: rotate(135deg) scale(1.08);
+  }
+  button:active .icon-spin-hover {
+    transform: rotate(225deg) scale(0.92);
+  }
+  button:hover .icon-wiggle {
+    animation: icon-wiggle-anim 420ms ease-in-out both;
+  }
+  .group:hover .icon-nudge-r {
+    transform: translateX(3px);
+  }
+  .group:active .icon-nudge-r {
+    transform: translateX(5px) scale(0.95);
+  }
+  .group:hover .icon-nudge-l {
+    transform: translateX(-3px);
+  }
+  .group:active .icon-nudge-l {
+    transform: translateX(-5px) scale(0.95);
+  }
+  .group:hover .icon-nudge-u {
+    transform: translateY(-3px);
+  }
+  .group:hover .icon-nudge-d {
+    transform: translateY(3px);
+  }
+  .group:hover .icon-pop {
+    transform: scale(1.18);
+  }
+  .group:active .icon-pop {
+    transform: scale(0.88);
+  }
+  .group:hover .icon-spin-hover {
+    transform: rotate(135deg) scale(1.08);
+  }
+  .group:active .icon-spin-hover {
+    transform: rotate(225deg) scale(0.92);
+  }
+  .group:hover .icon-wiggle {
+    animation: icon-wiggle-anim 420ms ease-in-out both;
+  }
+}
+
+/* Hover / mouse-tilt kartu polaroid di area Seru (tinggi batas luar diam tetap adil; gerak saat pointer bergerak). */
+.seru-tilt {
+  transition:
+    transform var(--motion-fast) var(--ease-pop),
+    box-shadow var(--motion-fast) ease-out;
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      transform: perspective(700px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg))
+        translateY(-6px) scale(1.018);
+      box-shadow: 8px 10px 0 var(--line);
+      z-index: 2;
+    }
+  }
+}
+[data-vibe="pro"] .seru-tilt:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card);
+}
+
+/* ---- Token Kursor Kustom B23 (SVG inline 32x32, hanya desktop mouse di gaya Seru) ---- */
+:root {
+  --cursor-default:
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2732%27%20height%3D%2732%27%20viewBox%3D%270%200%2032%2032%27%3E%3Cpath%20transform%3D%27translate%282%202%29%27%20d%3D%27M5%203%20L5%2024%20L10.5%2019%20L14.2%2027.5%20L18%2025.8%20L14.4%2017.6%20L21.5%2017.6%20Z%27%20fill%3D%27%2319232B%27%2F%3E%3Cpath%20d%3D%27M5%203%20L5%2024%20L10.5%2019%20L14.2%2027.5%20L18%2025.8%20L14.4%2017.6%20L21.5%2017.6%20Z%27%20fill%3D%27%23fff%27%20stroke%3D%27%2319232B%27%20stroke-width%3D%272%27%20stroke-linejoin%3D%27round%27%20stroke-linecap%3D%27round%27%2F%3E%3C%2Fsvg%3E")
+    5 3,
+    default;
+  --cursor-pointer:
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2732%27%20height%3D%2732%27%20viewBox%3D%270%200%2032%2032%27%3E%3Cpath%20transform%3D%27translate%282%202%29%27%20d%3D%27M10%2014%20V6%20a2%202%200%200%201%204%200%20V12%20a2%202%200%200%201%204%200%20V13%20a2%202%200%200%201%204%200%20V14%20a2%202%200%200%201%204%200%20V21%20c0%204.4%20-3.6%208%20-8%208%20h-1%20c-2.8%200%20-4.7%20-1%20-6.2%20-2.8%20L5%2019%20a2%202%200%200%201%203%20-2.6%20L10%2018%20Z%27%20fill%3D%27%2319232B%27%2F%3E%3Cpath%20d%3D%27M10%2014%20V6%20a2%202%200%200%201%204%200%20V12%20a2%202%200%200%201%204%200%20V13%20a2%202%200%200%201%204%200%20V14%20a2%202%200%200%201%204%200%20V21%20c0%204.4%20-3.6%208%20-8%208%20h-1%20c-2.8%200%20-4.7%20-1%20-6.2%20-2.8%20L5%2019%20a2%202%200%200%201%203%20-2.6%20L10%2018%20Z%27%20fill%3D%27%23FDA31B%27%20stroke%3D%27%2319232B%27%20stroke-width%3D%272%27%20stroke-linejoin%3D%27round%27%20stroke-linecap%3D%27round%27%2F%3E%3C%2Fsvg%3E")
+    12 4,
+    pointer;
+  --cursor-text:
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2732%27%20height%3D%2732%27%20viewBox%3D%270%200%2032%2032%27%3E%3Cpath%20d%3D%27M11%205%20H21%20M11%2027%20H21%20M16%205%20V27%27%20stroke%3D%27%23fff%27%20stroke-width%3D%276%27%20stroke-linecap%3D%27round%27%20fill%3D%27none%27%2F%3E%3Cpath%20d%3D%27M11%205%20H21%20M11%2027%20H21%20M16%205%20V27%27%20stroke%3D%27%2319232B%27%20stroke-width%3D%272.6%27%20stroke-linecap%3D%27round%27%20fill%3D%27none%27%2F%3E%3Ccircle%20cx%3D%2722.5%27%20cy%3D%2724.5%27%20r%3D%272.4%27%20fill%3D%27%23FDA31B%27%20stroke%3D%27%2319232B%27%20stroke-width%3D%271.4%27%2F%3E%3C%2Fsvg%3E")
+    16 16,
+    text;
+  --cursor-wait:
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2732%27%20height%3D%2732%27%20viewBox%3D%270%200%2032%2032%27%3E%3Ccircle%20cx%3D%2717%27%20cy%3D%2717%27%20r%3D%2710%27%20fill%3D%27%2319232B%27%2F%3E%3Ccircle%20cx%3D%2715%27%20cy%3D%2715%27%20r%3D%2710%27%20fill%3D%27%23fff%27%20stroke%3D%27%2319232B%27%20stroke-width%3D%272.6%27%2F%3E%3Cpath%20d%3D%27M15%2015%20V8.5%20M15%2015%20L20%2018%27%20stroke%3D%27%2319232B%27%20stroke-width%3D%272.6%27%20stroke-linecap%3D%27round%27%20fill%3D%27none%27%2F%3E%3C%2Fsvg%3E")
+    15 15,
+    wait;
+  --cursor-no:
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2732%27%20height%3D%2732%27%20viewBox%3D%270%200%2032%2032%27%3E%3Ccircle%20cx%3D%2717%27%20cy%3D%2717%27%20r%3D%2710%27%20fill%3D%27%2319232B%27%2F%3E%3Ccircle%20cx%3D%2715%27%20cy%3D%2715%27%20r%3D%2710%27%20fill%3D%27%23fff%27%20stroke%3D%27%2319232B%27%20stroke-width%3D%272.6%27%2F%3E%3Cpath%20d%3D%27M8.5%208.5%20L21.5%2021.5%27%20stroke%3D%27%23E5484D%27%20stroke-width%3D%274%27%20stroke-linecap%3D%27round%27%2F%3E%3C%2Fsvg%3E")
+    15 15,
+    not-allowed;
+  --cursor-grab:
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2732%27%20height%3D%2732%27%20viewBox%3D%270%200%2032%2032%27%3E%3Cpath%20transform%3D%27translate%282%202%29%27%20d%3D%27M9%2014%20V9%20a1.8%201.8%200%200%201%203.6%200%20V6.5%20a1.8%201.8%200%200%201%203.6%200%20V7.5%20a1.8%201.8%200%200%201%203.6%200%20V10%20a1.8%201.8%200%200%201%203.6%200%20V19%20c0%205%20-3.5%209%20-8.5%209%20c-3%200%20-5%20-1.2%20-6.8%20-3.5%20L5.5%2019.5%20a1.8%201.8%200%200%201%202.8%20-2.2%20L9%2018%20Z%27%20fill%3D%27%2319232B%27%2F%3E%3Cpath%20d%3D%27M9%2014%20V9%20a1.8%201.8%200%200%201%203.6%200%20V6.5%20a1.8%201.8%200%200%201%203.6%200%20V7.5%20a1.8%201.8%200%200%201%203.6%200%20V10%20a1.8%201.8%200%200%201%203.6%200%20V19%20c0%205%20-3.5%209%20-8.5%209%20c-3%200%20-5%20-1.2%20-6.8%20-3.5%20L5.5%2019.5%20a1.8%201.8%200%200%201%202.8%20-2.2%20L9%2018%20Z%27%20fill%3D%27%23FFE2A0%27%20stroke%3D%27%2319232B%27%20stroke-width%3D%272%27%20stroke-linejoin%3D%27round%27%20stroke-linecap%3D%27round%27%2F%3E%3C%2Fsvg%3E")
+    16 16,
+    grab;
+  --cursor-grabbing:
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2732%27%20height%3D%2732%27%20viewBox%3D%270%200%2032%2032%27%3E%3Cpath%20transform%3D%27translate%282%202%29%27%20d%3D%27M8%2015%20a2%202%200%200%201%202%20-2%20h13%20a2%202%200%200%201%202%202%20V21%20c0%204%20-3%207%20-7%207%20h-3%20c-4%200%20-7%20-3%20-7%20-7%20Z%27%20fill%3D%27%2319232B%27%2F%3E%3Cpath%20d%3D%27M8%2015%20a2%202%200%200%201%202%20-2%20h13%20a2%202%200%200%201%202%202%20V21%20c0%204%20-3%207%20-7%207%20h-3%20c-4%200%20-7%20-3%20-7%20-7%20Z%27%20fill%3D%27%23FFE2A0%27%20stroke%3D%27%2319232B%27%20stroke-width%3D%272%27%20stroke-linejoin%3D%27round%27%20stroke-linecap%3D%27round%27%2F%3E%3Cpath%20d%3D%27M13.5%2013%20V18%20M18%2013%20V18%27%20stroke%3D%27%2319232B%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%2F%3E%3C%2Fsvg%3E")
+    16 16,
+    grabbing;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-vibe="seru"] body {
+    cursor: var(--cursor-default);
+  }
+  [data-vibe="seru"]
+    :is(
+      a,
+      button,
+      [role="button"],
+      [role="radio"],
+      label[for],
+      select,
+      summary,
+      input[type="checkbox"]
+    ) {
+    cursor: var(--cursor-pointer);
+  }
+  [data-vibe="seru"] :is(input:not([type]), input[type="text"], input[type="email"], textarea) {
+    cursor: var(--cursor-text);
+  }
+  [data-vibe="seru"] :is(button:disabled, [aria-disabled="true"]) {
+    cursor: var(--cursor-no);
+  }
+  [data-vibe="seru"] :is([aria-busy="true"], [aria-busy="true"] *) {
+    cursor: var(--cursor-wait);
+  }
+  [data-vibe="seru"] [data-grab="ready"] {
+    cursor: var(--cursor-grab);
+  }
+  [data-vibe="seru"] [data-grab="ready"]:active {
+    cursor: var(--cursor-grabbing);
   }
 }
 
@@ -188,13 +776,16 @@
   }
   /* Hormati preferensi gerak minimal (A10, B19). */
   @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto !important;
+    }
+    [class*="animate-"] {
+      animation: none !important;
+    }
     *,
     *::before,
     *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
-      scroll-behavior: auto !important;
     }
   }
 }

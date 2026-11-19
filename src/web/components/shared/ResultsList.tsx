@@ -1,10 +1,10 @@
 import type { ResultEntry } from "@shared/results";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { cn } from "../../lib/cn";
 import { copy } from "../../lib/copy";
 import { formatAverage, formatScore } from "../../lib/format";
 import { useMediaUrl } from "../../lib/media-url";
-import { PhotoFrame } from "./PhotoFrame";
 import { RatingStars } from "./RatingStars";
 import { SafeImage } from "./SafeImage";
 
@@ -51,16 +51,13 @@ function Tags({ r }: { r: ResultEntry }) {
   );
 }
 
-function Photo({ r, size }: { r: ResultEntry; size: "winner" | "lg" | "sm" }) {
+function useOptionalPhoto(key: string | null) {
   const resolve = useMediaUrl();
-  return (
-    <SafeImage
-      src={resolve(r.coverThumbKey)}
-      aspect="4/3"
-      className="w-full rounded-card"
-      fallback={<PhotoFrame id={r.boothId} name={r.name} boothNo={r.boothNo} size={size} />}
-    />
-  );
+  const src = resolve(key);
+  const [failed, setFailed] = useState(false);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: foto baru = coba lagi
+  useEffect(() => setFailed(false), [src]);
+  return { src, show: !!src && !failed, onFail: () => setFailed(true) };
 }
 
 function Name({
@@ -101,18 +98,28 @@ function Podium({
   interactive: boolean;
 }) {
   const t = TIER[rank];
+  const photo = useOptionalPhoto(r.coverThumbKey);
   return (
     <li
       data-tier={rank}
       className={cn(
         "grid gap-3 rounded-card border-solid bg-surface-raised shadow-card",
         t.box,
-        rank === 1
-          ? "md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:items-center"
-          : "sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] sm:items-center",
+        photo.show &&
+          (rank === 1
+            ? "md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:items-center"
+            : "sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] sm:items-center"),
       )}
     >
-      <Photo r={r} size={t.photo} />
+      {photo.show && (
+        <SafeImage
+          src={photo.src}
+          aspect="4/3"
+          className="w-full rounded-card"
+          onFail={photo.onFail}
+          fallback={null}
+        />
+      )}
       <div className="grid content-center gap-2">
         <span className="font-hand text-3xl text-accent-strong">{copy.results.place(rank)}</span>
         <Name r={r} interactive={interactive} className={t.name} />
@@ -137,16 +144,26 @@ function PlainRow({
   interactive: boolean;
   muted?: boolean;
 }) {
+  const photo = useOptionalPhoto(r.coverThumbKey);
   return (
     <li
       data-tier="row"
       className={cn(
-        "grid grid-cols-[2.5rem_5rem_minmax(0,1fr)] items-center gap-3 rounded-card border-(length:--border-w) border-line bg-surface-raised p-2",
+        "grid items-center gap-3 rounded-card border-(length:--border-w) border-line bg-surface-raised p-2",
+        photo.show ? "grid-cols-[2.5rem_5rem_minmax(0,1fr)]" : "grid-cols-[2.5rem_minmax(0,1fr)]",
         muted && "opacity-80",
       )}
     >
       <span className="text-center font-display text-2xl font-extrabold">{r.rank ?? "–"}</span>
-      <Photo r={r} size="sm" />
+      {photo.show && (
+        <SafeImage
+          src={photo.src}
+          aspect="4/3"
+          className="w-full rounded-card"
+          onFail={photo.onFail}
+          fallback={null}
+        />
+      )}
       <div className="grid gap-0.5">
         <Name r={r} interactive={interactive} className="text-lg" />
         <Rating r={r} />

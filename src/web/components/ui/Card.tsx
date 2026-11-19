@@ -1,13 +1,19 @@
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "../../lib/cn";
+import { InfoTip } from "./InfoTip";
 
 export function Card({
   title,
+  info,
   actions,
   children,
   className,
   ...rest
-}: Omit<ComponentProps<"section">, "title"> & { title?: string; actions?: ReactNode }) {
+}: Omit<ComponentProps<"section">, "title"> & {
+  title?: string;
+  info?: string;
+  actions?: ReactNode;
+}) {
   return (
     <section
       className={cn(
@@ -18,7 +24,12 @@ export function Card({
     >
       {(title || actions) && (
         <header className="flex flex-wrap items-center justify-between gap-2">
-          {title && <h2 className="font-display text-lg font-extrabold">{title}</h2>}
+          {title && (
+            <div className="flex items-center gap-1.5">
+              <h2 className="font-display text-lg font-extrabold">{title}</h2>
+              {info && <InfoTip text={info} title={title} />}
+            </div>
+          )}
           {actions}
         </header>
       )}

@@ -7,6 +7,7 @@ import { FeaturedProduct } from "../../../components/shared/ProductCard";
 import { RatingSummary } from "../../../components/shared/RatingSummary";
 import { ReadOnlyBanner } from "../../../components/shared/WriteAction";
 import { Card } from "../../../components/ui/Card";
+import { Icon } from "../../../components/ui/Icon";
 import { EmptyState, ErrorState, Skeleton } from "../../../components/ui/states";
 import { useBoothQuery, useEventData, useProductsQuery } from "../../../features/event-data";
 import { copy } from "../../../lib/copy";
@@ -102,7 +103,7 @@ function BoothView({ booth }: { booth: PublicBoothDetail }) {
         boothName={booth.name}
         productId={p.id}
         productName={p.name}
-        label="↗"
+        label=""
       />
     </span>
   );
@@ -148,8 +149,9 @@ function BoothView({ booth }: { booth: PublicBoothDetail }) {
             {!state.frozen && (
               <a
                 href="#nilai"
-                className="hidden items-center gap-3 rounded-chip border-(length:--border-w) border-line bg-text px-5 py-2 font-bold text-surface shadow-[5px_5px_0_var(--accent)] active:translate-x-1 active:translate-y-1 active:shadow-[1px_1px_0_var(--accent)] md:inline-flex"
+                className="group hidden items-center gap-2 rounded-chip border-(length:--border-w) border-line bg-text px-5 py-2 font-bold text-surface shadow-[5px_5px_0_var(--accent)] transition-transform hover:-translate-y-0.5 active:translate-x-1 active:translate-y-1 active:shadow-[1px_1px_0_var(--accent)] md:inline-flex"
               >
+                <Icon name="star" className="size-4 text-accent" />
                 {copy.event.booth.rateCta}
               </a>
             )}
@@ -244,16 +246,18 @@ function BoothView({ booth }: { booth: PublicBoothDetail }) {
                 .querySelector("[data-visual-mode]")
                 ?.scrollIntoView?.({ behavior: "smooth", block: "start" })
             }
-            className="flex-1 rounded-chip border-(length:--border-w) border-line px-4 py-2 text-center text-sm font-bold"
+            className="group inline-flex flex-1 items-center justify-center gap-1.5 rounded-chip border-(length:--border-w) border-line px-4 py-2 text-center text-sm font-bold transition-transform active:scale-95"
           >
+            <Icon name="sparkles" className="size-4" />
             {copy.event.booth.products}
           </button>
         )}
         {!state.frozen && (
           <a
             href="#nilai"
-            className="flex-[2] rounded-chip border-(length:--border-w) border-line bg-text px-4 py-2 text-center text-sm font-bold text-surface"
+            className="group inline-flex flex-[2] items-center justify-center gap-1.5 rounded-chip border-(length:--border-w) border-line bg-text px-4 py-2 text-center text-sm font-bold text-surface transition-transform active:scale-95"
           >
+            <Icon name="star" className="size-4 text-accent" />
             {copy.event.booth.rateCta}
           </a>
         )}

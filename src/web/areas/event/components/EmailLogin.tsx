@@ -77,7 +77,7 @@ export function EmailLogin({
           />
         )}
       </Field>
-      <Field label={copy.event.login.name} hint={copy.event.login.nameHint}>
+      <Field label={copy.event.login.name} info={copy.event.login.nameInfo}>
         {(id) => (
           <Input id={id} maxLength={30} value={name} onChange={(e) => setName(e.target.value)} />
         )}

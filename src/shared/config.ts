@@ -123,9 +123,31 @@ export const CONFIG = {
     boothNoMaxLength: 12,
     teamNameMaxLength: 60,
   },
+  /** Data Grid admin (B18) */
+  grid: {
+    pageSize: 50,
+    maxPageSize: 200,
+    /** Maksimum perubahan per permintaan simpan massal */
+    maxBulkChanges: 100,
+    /** Ukuran halaman saat ekspor CSV (dialirkan per halaman kursor) */
+    exportPageSize: 200,
+  },
+  /** Penampil log admin (B13) */
+  logs: {
+    maxRows: 200,
+    defaultRange: "1d",
+  },
   booths: {
     csvMaxRows: 500,
     csvChunkSize: 50,
+  },
+  /** Efek interaksi: klik, suara sintesis, dan percikan (explore.md B23) */
+  fx: {
+    volume: 0.32,
+    hoverSound: false, // suara hover dimatikan bawaan (keputusan 41)
+    ringMs: 520,
+    burstCount: 7,
+    particleMs: 700,
   },
 } as const;
 

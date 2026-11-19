@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { copy } from "../../lib/copy";
 import { ResultsCard } from "./components/ResultsCard";
+import { buildCsvContent } from "./csv-export";
 
 const R = copy.admin.results;
 
@@ -167,5 +168,44 @@ describe("Admin: hasil dan tampilan", () => {
     server(VIEW({ live: [] }));
     mount(event());
     expect(await screen.findByText(R.none)).toBeTruthy();
+    expect((screen.getByRole("button", { name: R.exportCsv }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+  });
+
+  it("ekspor hasil CSV mengunduh daftar hasil dan melindungi sel berawalan rumus", async () => {
+    server(
+      VIEW({
+        live: [
+          {
+            boothId: "a",
+            rank: 1,
+            name: "=CMD()",
+            boothNo: "A1",
+            coverThumbKey: null,
+            average: 4.7,
+            reviewCount: 24,
+            score: 4.5,
+            topCategories: [{ label: "Enak", count: 3 }],
+          },
+        ],
+      }),
+    );
+    const createUrl = vi.fn(() => "blob:hasil");
+    const revokeUrl = vi.fn();
+    vi.stubGlobal("URL", { createObjectURL: createUrl, revokeObjectURL: revokeUrl });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+
+    mount(event());
+    expect(await screen.findByText("=CMD()")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: R.exportCsv }));
+    expect(createUrl).toHaveBeenCalledTimes(1);
+    expect(click).toHaveBeenCalledTimes(1);
+    expect(revokeUrl).toHaveBeenCalledWith("blob:hasil");
+    click.mockRestore();
+
+    const csv = buildCsvContent(["rank", "name"], [[1, "=CMD()"]]);
+    expect(csv.startsWith("\uFEFFrank,name")).toBe(true);
+    expect(csv).toContain("1,'=CMD()");
   });
 });

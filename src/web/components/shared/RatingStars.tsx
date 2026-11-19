@@ -1,10 +1,15 @@
-import { type KeyboardEvent, useRef } from "react";
+import { type KeyboardEvent, useRef, useState } from "react";
+import { burstStars } from "../../features/fx/ClickFx";
 import { cn } from "../../lib/cn";
 import { copy } from "../../lib/copy";
+import { triggerSfx } from "../../lib/sfx-bridge";
+import { Icon } from "../ui/Icon";
 
 /** Angka untuk pembaca layar, koma Indonesia dan tanpa ",0" (4,7 / 5 / 0). */
 const ariaNumber = (v: number) =>
   new Intl.NumberFormat("id-ID", { maximumFractionDigits: 1 }).format(Math.round(v * 10) / 10);
+
+const STAR_ICON_SIZE = { sm: "size-4", md: "size-6", lg: "size-8" } as const;
 
 const SIZES = { sm: "text-sm", md: "text-lg", lg: "text-3xl" } as const;
 
@@ -65,11 +70,19 @@ function StarInput({
   className?: string;
 }) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [popSeq, setPopSeq] = useState(0);
+
+  function choose(n: number, el: HTMLButtonElement | null) {
+    onChange(n);
+    setPopSeq((s) => s + 1);
+    triggerSfx("star", n);
+    burstStars(el);
+  }
 
   function onKey(e: KeyboardEvent<HTMLButtonElement>, i: number) {
     const move = (to: number) => {
       const next = Math.min(5, Math.max(1, to));
-      onChange(next);
+      choose(next, refs.current[next - 1] ?? null);
       refs.current[next - 1]?.focus();
       e.preventDefault();
     };
@@ -88,26 +101,28 @@ function StarInput({
       {[1, 2, 3, 4, 5].map((n, i) => (
         // biome-ignore lint/a11y/useSemanticElements: bintang bergaya kustom dengan roving tabindex; <input type="radio"> tidak bisa digayakan sebagai bintang
         <button
-          key={n}
+          key={popSeq > 0 && n <= value ? `${n}-${popSeq}` : n}
           ref={(el) => {
             refs.current[i] = el;
           }}
           type="button"
           role="radio"
+          data-sfx-custom=""
           aria-checked={value === n}
           aria-label={copy.visitor.stars(n)}
           // Satu titik fokus (roving tabindex): bintang terpilih, atau yang pertama bila belum memilih.
           tabIndex={value === n || (value === 0 && n === 1) ? 0 : -1}
           disabled={disabled}
-          onClick={() => onChange(n)}
+          onClick={(e) => choose(n, e.currentTarget)}
           onKeyDown={(e) => onKey(e, i)}
+          style={popSeq > 0 && n <= value ? { animationDelay: `${i * 35}ms` } : undefined}
           className={cn(
-            "leading-none transition-transform duration-(--motion-fast) active:scale-90 disabled:opacity-60",
-            SIZES[size],
+            "group inline-grid place-items-center p-0.5 leading-none transition-transform duration-(--motion-fast) hover:scale-115 active:scale-90 disabled:opacity-60",
             n <= value ? "text-star" : "text-star-off",
+            popSeq > 0 && n <= value && "fx-star-pop",
           )}
         >
-          ★
+          <Icon name={n <= value ? "star" : "star-outline"} className={STAR_ICON_SIZE[size]} />
         </button>
       ))}
     </div>

@@ -19,6 +19,10 @@ export function Component() {
   const results = useResultsQuery(event, published, version);
   const reveal = useReveal({ area: "event", autoReplay: true });
 
+  if (reveal.pending || reveal.overlay !== null) {
+    return <RevealLayer reveal={reveal} />;
+  }
+
   return (
     <div className="mx-auto grid max-w-5xl gap-6 px-4 pb-16 pt-6">
       <BackButton>{copy.event.booth.back}</BackButton>

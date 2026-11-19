@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { BoothGrid } from "../../../components/shared/BoothGrid";
 import { ReadOnlyBanner } from "../../../components/shared/WriteAction";
+import { Icon } from "../../../components/ui/Icon";
 import { EmptyState, ErrorState, Skeleton } from "../../../components/ui/states";
 import { useEventData, useResultsQuery, useSnapshotQuery } from "../../../features/event-data";
 import { LiveProvider, useLiveStatus } from "../../../features/live/live-context";
@@ -11,7 +12,7 @@ import { useReveal } from "../../../features/reveal/use-reveal";
 import { copy } from "../../../lib/copy";
 import { useEventState } from "../../../lib/event-state";
 import { getVisitorSeed } from "../../../lib/visitor-seed";
-import { SectionHeading } from "../components/chrome";
+import { MarqueeBanner, SectionHeading } from "../components/chrome";
 import { Hero } from "../components/Hero";
 import { ResultsBanner } from "../components/ResultsBanner";
 import { SpotlightSection } from "../components/SpotlightSection";
@@ -65,6 +66,11 @@ function HomeContent() {
   const { count, sentinel } = useProgressive(ordered.length);
   const ratingsHidden = snapshot.data?.ratingsHidden ?? false;
 
+  // Saat animasi pemenang diputar otomatis di awal kunjungan, langsung tampilkan panggung animasi tanpa kilasan beranda dulu.
+  if (reveal.pending || reveal.overlay !== null) {
+    return <RevealLayer reveal={reveal} />;
+  }
+
   return (
     <>
       <Hero
@@ -74,27 +80,37 @@ function HomeContent() {
         serverNow={serverNow}
         registrationVisible={state.registrationButtonVisible}
       />
-      <div className="mx-auto grid max-w-6xl gap-4 px-4">
-        <ReadOnlyBanner />
-        {snapshot.data && !snapshot.data.ratingsHidden && snapshot.data.stats.reviewCount > 0 && (
-          <p className="flex flex-wrap items-center gap-2 text-sm font-bold">
-            {live.connected && (
-              <span className="rounded-chip border-(length:--border-w) border-line bg-sticker-4 px-2 text-xs text-primary-fg">
-                {copy.screen.live}
-              </span>
-            )}
-            {copy.event.hero.stats(
-              snapshot.data.stats.reviewCount,
-              snapshot.data.stats.boothCount,
-              snapshot.data.stats.average,
-            )}
-          </p>
-        )}
-      </div>
+      {snapshot.data && booths.length > 0 && (
+        <MarqueeBanner
+          reviewCount={snapshot.data.stats.reviewCount}
+          boothCount={snapshot.data.stats.boothCount}
+          frozen={state.frozen}
+        />
+      )}
+      <ReadOnlyBanner />
       <ResultsBanner reveal={reveal} />
       <RevealLayer reveal={reveal} />
 
-      <main id="booth" className="mx-auto grid max-w-6xl gap-12 px-4 py-6">
+      <main id="booth" className="mx-auto grid max-w-6xl gap-10 px-4 py-8">
+        {snapshot.data && !snapshot.data.ratingsHidden && snapshot.data.stats.reviewCount > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            {live.connected && (
+              <span className="inline-flex items-center rounded-chip border-(length:--border-w) border-line bg-sticker-4 px-3 py-1 text-xs font-extrabold text-primary-fg shadow-card">
+                {copy.screen.live}
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1.5 rounded-chip border-(length:--border-w) border-line bg-surface-raised px-3.5 py-1 text-sm font-bold shadow-card">
+              <Icon name="star" className="size-4 text-star" />
+              <span>
+                {copy.event.hero.stats(
+                  snapshot.data.stats.reviewCount,
+                  snapshot.data.stats.boothCount,
+                  snapshot.data.stats.average,
+                )}
+              </span>
+            </span>
+          </div>
+        )}
         {snapshot.isLoading && (
           <div className="grid gap-4" aria-busy="true">
             <Skeleton className="h-72 w-full" />

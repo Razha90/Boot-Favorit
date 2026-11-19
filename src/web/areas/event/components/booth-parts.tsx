@@ -3,6 +3,7 @@ import { hasText } from "@shared/visual";
 import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { Present } from "../../../components/shared/Present";
 import { Card } from "../../../components/ui/Card";
+import { Icon } from "../../../components/ui/Icon";
 import { useEventData } from "../../../features/event-data";
 import { cn } from "../../../lib/cn";
 import { copy } from "../../../lib/copy";
@@ -55,8 +56,9 @@ export function AboutText({ text }: { text: string | null }) {
           aria-expanded={expanded}
           aria-controls={id}
           onClick={() => setExpanded((e) => !e)}
-          className="w-fit text-sm font-bold underline underline-offset-4"
+          className="group inline-flex w-fit items-center gap-1.5 text-sm font-bold underline underline-offset-4"
         >
+          <Icon name={expanded ? "arrow-up" : "arrow-down"} className="size-3.5" />
           {expanded ? copy.event.booth.readLess : copy.event.booth.readMore}
         </button>
       )}
@@ -79,7 +81,7 @@ export function RatingBreakdown({
         return (
           <div key={star} className="flex items-center gap-2 text-xs">
             <span className="w-3 text-right font-bold">{star}</span>
-            <span aria-hidden="true">★</span>
+            <Icon name="star" anim="none" className="size-3.5 text-star" />
             <span className="h-2 flex-1 overflow-hidden rounded-full bg-star-off">
               <span className="block h-full bg-star" style={{ width: `${(n / total) * 100}%` }} />
             </span>
@@ -109,8 +111,8 @@ export function RatePanel({ id, children }: { id?: string; children?: ReactNode 
     body = children ?? <p>{copy.event.rate.liveSoon}</p>;
   }
   return (
-    <Card id={id} title={copy.event.rate.title}>
-      {body}
+    <Card id={id} title={copy.event.rate.title} className="shadow-card">
+      <div className="border-t border-line/35 pt-3">{body}</div>
     </Card>
   );
 }

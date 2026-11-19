@@ -1,11 +1,13 @@
 import { Hono } from "hono";
 import type { AppEnv } from "./app-env";
 import type { JwksFetcher } from "./lib/access-jwt";
+import type { LogFetcher } from "./lib/analytics-logs";
 import type { EmailSender } from "./lib/email";
 import type { GoogleKeyFetcher } from "./lib/google";
 import type { TurnstileVerifier } from "./lib/turnstile";
 import { baseContext, handleError, notFoundJson } from "./middleware/base";
 import { eventWriteGate, loadActiveEvent } from "./middleware/event-gate";
+import { csrfOriginGuard, securityHeaders } from "./middleware/security";
 import { createAdminRoutes } from "./routes/admin";
 import { createBoothAuthRoutes } from "./routes/booth/auth";
 import { boothPortalRoutes } from "./routes/booth/portal";
@@ -27,19 +29,21 @@ export interface AppDeps {
   turnstile?: TurnstileVerifier;
   email?: EmailSender;
   googleKeys?: GoogleKeyFetcher;
+  /** Pemanggil SQL API Analytics Engine untuk halaman Log. Diganti di tes. */
+  logFetcher?: LogFetcher;
 }
 
 export function createApp(deps: AppDeps = {}) {
   const app = new Hono<AppEnv>();
-  app.use("*", baseContext(deps.now ?? Date.now));
+  app.use("*", baseContext(deps.now ?? Date.now), securityHeaders);
   app.onError(handleError);
   app.notFound(notFoundJson);
 
   // Tidak butuh database: terdaftar SEBELUM middleware event agar tetap menjawab bila D1 bermasalah.
   app.get("/api/health", (c) => c.json({ ok: true, env: c.env.APP_ENV }));
 
-  // Semua rute API lain: muat event aktif, lalu pintu pembekuan (B17). /api/admin/* dikecualikan di gate.
-  app.use("/api/*", loadActiveEvent, eventWriteGate);
+  // Semua rute API lain: pemeriksa CSRF Origin, muat event aktif, lalu pintu pembekuan (B17). /api/admin/* dikecualikan di gate.
+  app.use("/api/*", csrfOriginGuard, loadActiveEvent, eventWriteGate);
   app.use("/ws", loadActiveEvent); // WebSocket bukan /api/*, tetapi tetap butuh event aktif
 
   app.route("/", mediaRoutes);
@@ -60,7 +64,10 @@ export function createApp(deps: AppDeps = {}) {
   // Urutan penting: rute auth booth (tanpa sesi) SEBELUM portal, yang memasang requireBooth untuk semua /api/booth/*.
   app.route("/", createBoothAuthRoutes({ turnstile: deps.turnstile, email: deps.email }));
   app.route("/", boothPortalRoutes);
-  app.route("/", createAdminRoutes({ getJwks: deps.getJwks, email: deps.email }));
+  app.route(
+    "/",
+    createAdminRoutes({ getJwks: deps.getJwks, email: deps.email, logFetcher: deps.logFetcher }),
+  );
 
   // Rute /api/* lain belum ada; jangan jatuh ke SPA fallback.
   app.all("/api/*", notFoundJson);

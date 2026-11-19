@@ -23,7 +23,7 @@ export function ReasonedActions({ actions }: { actions: readonly ReasonedAction[
   const ok = reason.trim().length >= MIN_REASON;
   return (
     <div className="grid gap-2">
-      <Field label={copy.admin.moderation.reason} hint={copy.admin.moderation.reasonHint}>
+      <Field label={copy.admin.moderation.reason} info={copy.admin.moderation.reasonInfo}>
         {(id) => (
           <Input
             id={id}

@@ -10,11 +10,12 @@ import { useToast } from "../../../components/ui/Toast";
 import { useLiveStatus } from "../../../features/live/live-context";
 import { copy } from "../../../lib/copy";
 import { formatScore } from "../../../lib/format";
+import { triggerSfx } from "../../../lib/sfx-bridge";
 import { SectionHeading } from "./chrome";
 
 function FeedItem({ r }: { r: LatestReview }) {
   return (
-    <li className="grid gap-1 rounded-card border-(length:--border-w) border-line bg-surface-raised p-3">
+    <li className="animate-feed-in grid gap-1 rounded-card border-(length:--border-w) border-line bg-surface-raised p-3">
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <Link
           to={`/b/${r.boothId}`}
@@ -33,6 +34,14 @@ function FeedItem({ r }: { r: LatestReview }) {
 /** Ulasan terbaru (5 item). `aria-live="polite"`: pembaruan datang per tick (2,5 detik), tidak per review. */
 export function LatestReviews({ feed }: { feed: readonly LatestReview[] }) {
   const live = useLiveStatus();
+  const prevTop = useRef<string | null>(feed[0]?.id ?? null);
+  useEffect(() => {
+    const top = feed[0]?.id ?? null;
+    if (top && prevTop.current && top !== prevTop.current) {
+      triggerSfx("ding");
+    }
+    if (top) prevTop.current = top;
+  }, [feed]);
   if (feed.length === 0) return null;
   return (
     <div className="grid gap-3">
@@ -107,7 +116,10 @@ export function StandingsSection({
     if (!leader || leader.nonce === shownNonce.current || snapshot.ranking === null) return;
     const name = snapshot.booths.find((b) => b.id === leader.boothId)?.name;
     shownNonce.current = leader.nonce;
-    if (name) toast.push(copy.standings.leaderUp(name), "success");
+    if (name) {
+      triggerSfx("rank");
+      toast.push(copy.standings.leaderUp(name), "success");
+    }
   }, [leader, snapshot.ranking, snapshot.booths, toast]);
 
   const finished = frozen && snapshot.resultsPublished && results !== null;

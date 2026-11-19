@@ -44,13 +44,14 @@ export function ReviewFlow({ booth }: { booth: PublicBoothDetail }) {
         />
       ) : (
         <>
-          <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-card bg-surface-tint px-3 py-2 text-sm">
             <span className="font-bold">
               {copy.event.login.as(me.visitor.displayName ?? copy.event.login.anonymousName)}
             </span>
             <ActionButton
               size="sm"
               variant="ghost"
+              icon="refresh"
               action={async () => {
                 await visitorApi.logout();
                 setResult(null);

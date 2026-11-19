@@ -67,11 +67,12 @@ export function ScheduleFields({
     value &&
     getEventState({ ...value, resultsPublishedAt: null, allowLateRegistration: allowLate }, now);
   const warnings = value ? scheduleWarnings(value, now) : [];
+  const anyFilled = Boolean(values.open || values.close || values.start || values.end);
 
   return (
     <div className="grid gap-3">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Field label={copy.admin.schedule.open} hint={copy.admin.schedule.openHint}>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] gap-3">
+        <Field label={copy.admin.schedule.open} info={copy.admin.schedule.openInfo}>
           {(id) => (
             <Input id={id} type="datetime-local" value={values.open} onChange={set("open")} />
           )}
@@ -81,22 +82,23 @@ export function ScheduleFields({
             <Input id={id} type="datetime-local" value={values.close} onChange={set("close")} />
           )}
         </Field>
-        <Field label={copy.admin.schedule.start}>
+        <Field label={copy.admin.schedule.start} info={copy.admin.schedule.startInfo}>
           {(id) => (
             <Input id={id} type="datetime-local" value={values.start} onChange={set("start")} />
           )}
         </Field>
-        <Field label={copy.admin.schedule.end}>
+        <Field label={copy.admin.schedule.end} info={copy.admin.schedule.endInfo}>
           {(id) => <Input id={id} type="datetime-local" value={values.end} onChange={set("end")} />}
         </Field>
       </div>
       <p className="text-xs text-muted">{copy.admin.schedule.zone(timeZone)}</p>
 
-      {errors.map((e) => (
-        <p key={e} role="alert" className="text-sm text-danger">
-          {e}
-        </p>
-      ))}
+      {anyFilled &&
+        errors.map((e) => (
+          <p key={e} role="alert" className="text-sm text-danger">
+            {e}
+          </p>
+        ))}
 
       {value && state && (
         <p

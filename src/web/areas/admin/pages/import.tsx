@@ -5,6 +5,7 @@ import { Link, useParams } from "react-router";
 import { ActionButton } from "../../../components/ui/ActionButton";
 import { Badge, Card } from "../../../components/ui/Card";
 import { Field, Select, Textarea } from "../../../components/ui/Form";
+import { Icon } from "../../../components/ui/Icon";
 import { copy } from "../../../lib/copy";
 import type { ClassifiedRow } from "../../../lib/csv";
 import { adminApi, adminKeys } from "../api";
@@ -95,8 +96,12 @@ export function Component() {
   return (
     <>
       <div className="grid gap-1">
-        <Link to={`/admin/e/${eventId}/booths`} className="text-sm text-muted underline">
-          ← {copy.admin.booths.title}
+        <Link
+          to={`/admin/e/${eventId}/booths`}
+          className="group inline-flex w-fit items-center gap-1.5 text-sm text-muted underline"
+        >
+          <Icon name="arrow-left" className="size-3.5" />
+          {copy.admin.booths.title}
         </Link>
         <h1 className="font-display text-3xl font-extrabold">{copy.admin.import.title}</h1>
         <p className="text-sm text-muted">{copy.admin.import.hint}</p>

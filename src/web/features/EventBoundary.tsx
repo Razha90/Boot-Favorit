@@ -5,6 +5,7 @@ import { ErrorState, Skeleton } from "../components/ui/states";
 import { ToastProvider } from "../components/ui/Toast";
 import { EventStateProvider } from "../lib/event-state";
 import { EventDataProvider, useEventQuery } from "./event-data";
+import { RevealSessionProvider } from "./reveal/use-reveal";
 
 function Gate({
   children,
@@ -28,7 +29,11 @@ function Gate({
   if (q.error || !q.data) return <ErrorState onRetry={() => void q.refetch()} />;
   const event = q.data.event;
   if (!event) return <>{comingSoon}</>; // A0: belum ada event aktif / disembunyikan
-  const inner = <ToastProvider>{wrap ? wrap(event, children) : children}</ToastProvider>;
+  const inner = (
+    <ToastProvider>
+      <RevealSessionProvider>{wrap ? wrap(event, children) : children}</RevealSessionProvider>
+    </ToastProvider>
+  );
   return (
     <EventDataProvider data={{ event, serverNow: q.data.serverNow }} fetchedAt={q.dataUpdatedAt}>
       <EventStateProvider schedule={event.schedule} serverNow={q.data.serverNow}>

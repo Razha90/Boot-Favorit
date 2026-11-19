@@ -11,7 +11,7 @@ import {
   RatingBreakdown,
   WhatsAppOrderButton,
 } from "./components/booth-parts";
-import { ComingSoonScreen, SiteFooter } from "./components/chrome";
+import { ComingSoonScreen, MarqueeBanner, SiteFooter } from "./components/chrome";
 import { Hero } from "./components/Hero";
 import { PhotoSlideshow } from "./components/PhotoSlideshow";
 import { Showcase } from "./components/Showcase";
@@ -161,6 +161,13 @@ describe("SiteFooter dan ComingSoonScreen", () => {
     const { container } = renderEvent(<ComingSoonScreen />);
     expect(container.querySelector("h1")?.textContent).toBe("Segera hadir");
     expect(container.textContent).toContain("LPPM UNIMED");
+  });
+
+  it("MarqueeBanner menampilkan ringkasan dan punya tombol jeda WCAG", () => {
+    renderEvent(<MarqueeBanner reviewCount={12} boothCount={4} frozen={false} />);
+    expect(document.body.textContent).toContain("12 ulasan udah masuk");
+    fireEvent.click(screen.getByRole("button", { name: "Jeda pita berjalan" }));
+    expect(screen.getByRole("button", { name: "Putar pita berjalan" })).toBeTruthy();
   });
 });
 
@@ -420,13 +427,14 @@ describe("Showcase", () => {
     expect(screen.getAllByRole("heading", { level: 4 })).toHaveLength(3);
   });
 
-  it("mode untuk SELURUH etalase: tanpa satu pun foto → daftar kompak; sebagian berfoto → bingkai", () => {
+  it("mode untuk SELURUH etalase: tanpa foto tampil bersih tanpa bingkai inisial; sebagian berfoto → foto tetap tampil", () => {
     const { container, unmount } = renderEvent(<Showcase products={many(3)} />);
     expect(container.querySelector("ul")?.getAttribute("data-visual-mode")).toBe("text");
     unmount();
     const mixed = renderEvent(<Showcase products={[PRODUCTS.lengkap, PRODUCTS.tanpaFoto]} />);
     expect(mixed.container.querySelector("ul")?.getAttribute("data-visual-mode")).toBe("photo");
-    expect(mixed.container.querySelectorAll("[data-photo-frame]")).toHaveLength(1);
+    expect(mixed.container.querySelectorAll("[data-photo-frame]")).toHaveLength(0);
+    expect(mixed.container.querySelectorAll("img")).toHaveLength(1);
   });
 });
 
@@ -444,8 +452,9 @@ describe("Bagikan dan Incaran", () => {
     fireEvent.click(screen.getByRole("button", { name: "Bagikan" }));
     const input = screen.getByRole("textbox") as HTMLInputElement;
     expect(input.value).toContain("/b/b1?p=p9&src=share");
-    const wa = screen.getByRole("link", { name: "Kirim lewat WhatsApp" }) as HTMLAnchorElement;
+    const wa = screen.getByRole("link", { name: "WhatsApp" }) as HTMLAnchorElement;
     expect(decodeURIComponent(wa.href)).not.toMatch(/bintang|ulasan/i);
+    expect(screen.getByRole("link", { name: "Telegram" })).toBeTruthy();
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Salin tautan" })));
     expect(writeText).toHaveBeenCalledWith(input.value);
     expect(screen.getByText("Tautan disalin")).toBeTruthy();

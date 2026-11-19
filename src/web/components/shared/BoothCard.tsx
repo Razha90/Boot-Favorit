@@ -4,10 +4,11 @@ import type { Completeness } from "@shared/visual";
 import { hasText } from "@shared/visual";
 import { type ReactNode, useEffect, useState } from "react";
 import { Link } from "react-router";
+import { pointerTiltProps } from "../../features/fx/ClickFx";
 import { cn } from "../../lib/cn";
 import { copy } from "../../lib/copy";
 import { useMediaUrl } from "../../lib/media-url";
-import { PhotoFrame } from "./PhotoFrame";
+import { Icon } from "../ui/Icon";
 import { Present } from "./Present";
 import { PriceTag } from "./PriceTag";
 import { ProfileCompleteness } from "./ProfileCompleteness";
@@ -81,6 +82,12 @@ export function BoothCard({
 }: BoothCardProps) {
   const resolve = useMediaUrl();
   const to = href ?? `/b/${booth.id}`;
+  const thumbSrc = resolve(booth.coverThumbKey);
+  const [thumbFailed, setThumbFailed] = useState(false);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: foto baru = coba lagi
+  useEffect(() => setThumbFailed(false), [thumbSrc]);
+  const hasThumb = !!thumbSrc && !thumbFailed;
+
   const rating = (
     <RatingSummary
       average={booth.ratingAverage}
@@ -88,9 +95,6 @@ export function BoothCard({
       hidden={ratingsHidden}
       size="sm"
     />
-  );
-  const frame = (size: "xs" | "sm" | "md") => (
-    <PhotoFrame id={booth.id} name={booth.name} boothNo={booth.boothNo} size={size} />
   );
 
   // ---------- compact: satu baris ----------
@@ -104,7 +108,7 @@ export function BoothCard({
     );
   }
 
-  // ---------- row: baris peringkat/hasil; bingkai kecil SELALU ada agar kolom sejajar ----------
+  // ---------- row: baris peringkat/hasil; tanpa gambar → cukup nama dan rating secara bersih ----------
   if (variant === "row") {
     return (
       <Link
@@ -117,12 +121,15 @@ export function BoothCard({
         <Present when={rank}>
           <span className="w-8 text-center font-display text-xl font-extrabold">{rank}</span>
         </Present>
-        <SafeImage
-          src={resolve(booth.coverThumbKey)}
-          aspect="1/1"
-          className="size-10 shrink-0 rounded-card"
-          fallback={frame("xs")}
-        />
+        {hasThumb && (
+          <SafeImage
+            src={thumbSrc}
+            aspect="1/1"
+            className="size-10 shrink-0 rounded-card"
+            onFail={() => setThumbFailed(true)}
+            fallback={null}
+          />
+        )}
         <span className="grid min-w-0 gap-0.5">
           <span className="truncate font-bold">{booth.name}</span>
           {rating}
@@ -131,7 +138,7 @@ export function BoothCard({
     );
   }
 
-  // ---------- admin: bingkai kecil + kelengkapan + aksi. Satu-satunya tempat yang boleh memberi label ----------
+  // ---------- admin: foto bila ada; tanpa foto → nama + kelengkapan + label Tanpa foto ----------
   if (variant === "admin") {
     return (
       <div
@@ -140,12 +147,15 @@ export function BoothCard({
           className,
         )}
       >
-        <SafeImage
-          src={resolve(booth.coverThumbKey)}
-          aspect="1/1"
-          className="size-12 shrink-0 rounded-card"
-          fallback={frame("xs")}
-        />
+        {hasThumb && (
+          <SafeImage
+            src={thumbSrc}
+            aspect="1/1"
+            className="size-12 shrink-0 rounded-card"
+            onFail={() => setThumbFailed(true)}
+            fallback={null}
+          />
+        )}
         <div className="grid min-w-0 flex-1 gap-1">
           <span className="truncate font-bold">{booth.name}</span>
           <span className="flex flex-wrap items-center gap-2">
@@ -166,33 +176,36 @@ export function BoothCard({
     return <Spotlight booth={booth} to={to} rating={rating} className={className} />;
   }
 
-  // ---------- card: kartu grid. Ukuran SAMA untuk semua fixture (keadilan, A8) ----------
-  const photoMode = visualMode === "photo";
+  // ---------- card: kartu grid. Tanpa gambar → bersih hanya nama (tanpa kotak inisial BD) ----------
+  const photoMode = visualMode === "photo" && hasThumb;
   return (
     <Link
       to={to}
+      {...pointerTiltProps()}
       className={cn(
-        "group grid content-start gap-2 rounded-card border-(length:--border-w) border-line bg-surface-raised p-3 shadow-card transition-transform duration-(--motion-fast) hover:-translate-y-0.5",
-        !photoMode && "min-h-32",
+        "seru-tilt group relative grid content-start gap-2 rounded-card border-(length:--border-w) border-line bg-surface-raised p-3 shadow-card",
+        !photoMode && "min-h-32 content-between",
         className,
       )}
     >
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-2.5 left-1/2 z-10 h-4 w-16 -translate-x-1/2 -rotate-2 bg-sticker-3/90 in-data-[vibe=pro]:hidden"
+      />
       {photoMode && (
         <div data-card-visual="" className="relative" style={{ aspectRatio: "4/3" }}>
           <SafeImage
-            src={resolve(booth.coverThumbKey)}
+            src={thumbSrc}
             aspect="4/3"
             className="w-full rounded-card"
-            // Nomor booth sudah tampil sebagai stiker di bawah; jangan diulang di dalam bingkai.
-            fallback={<PhotoFrame id={booth.id} name={booth.name} boothNo={null} size="md" />}
+            onFail={() => setThumbFailed(true)}
+            fallback={null}
           />
           <span className="absolute right-2 top-2">
             <PriceSticker booth={booth} />
           </span>
         </div>
       )}
-      {/* Tinggi blok info TETAP (keadilan, A8): baris stiker disisakan walau kosong, judul 1–2 baris selalu
-          memakai tinggi 2 baris; booth yang datanya lengkap tidak boleh tampak lebih besar. */}
       <div className="grid gap-1">
         <span className="flex min-h-7 flex-wrap items-center gap-2">
           <NoSticker no={booth.boothNo} />
@@ -277,9 +290,10 @@ function Spotlight({
         </Present>
         <Link
           to={to}
-          className="w-fit rounded-chip border-(length:--border-w) border-line bg-text px-5 py-2 text-sm font-bold text-surface shadow-card"
+          className="group inline-flex w-fit items-center gap-2 rounded-chip border-(length:--border-w) border-line bg-text px-5 py-2 text-sm font-bold text-surface shadow-card transition-transform hover:-translate-y-0.5 active:translate-y-px"
         >
           {copy.visitor.seeAndRate}
+          <Icon name="arrow-right" className="size-4" />
         </Link>
       </div>
     </article>

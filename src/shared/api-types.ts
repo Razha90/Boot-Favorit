@@ -454,3 +454,40 @@ export interface BoothSession {
   me: BoothMe | null;
   turnstileSiteKey: string | null;
 }
+
+// ---------- Log aktivitas (B13) ----------
+
+export interface LogEntry {
+  /** epoch ms UTC */
+  at: number;
+  category: string;
+  action: string;
+  level: string;
+  actorType: string;
+  actorId: string;
+  targetType: string;
+  targetId: string;
+  msg: string;
+  meta: Record<string, unknown> | null;
+  requestId: string;
+}
+
+/** `configured: false` = token/akun Analytics Engine belum diatur di server ini (mis. dev lokal). */
+export interface LogsResponse {
+  configured: boolean;
+  entries: LogEntry[];
+}
+
+/** Ringkasan kesehatan hari-H (explore.md B12): jumlah WebSocket aktif, laju ulasan, antrean tertahan. */
+export interface EventHealth {
+  liveViewers: number;
+  liveScreens: number;
+  maxLiveViewers: number;
+  reviewsLastMinute: number;
+  reviewsLastHour: number;
+  totalReviews: number;
+  heldReviews: number;
+  openReports: number;
+  pendingBooths: number;
+  measuredAt: number;
+}

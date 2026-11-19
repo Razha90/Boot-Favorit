@@ -8,85 +8,177 @@ import {
   useRef,
   useState,
 } from "react";
-import { cn } from "../../lib/cn";
-import { copy } from "../../lib/copy";
+import { triggerSfx } from "../../lib/sfx-bridge";
+import { AlertCard, type AlertTone } from "./Alert";
 
-export type ToastTone = "info" | "success" | "danger";
+export type ToastTone = AlertTone;
+
+export interface ToastOptions {
+  loading?: boolean;
+  /** Alert hanya hilang saat ditutup manual (tanpa animasi loader/hitung-mundur) */
+  persistent?: boolean;
+  /** 0 atau `null` = bertahan sampai ditutup manual atau diperbarui */
+  durationMs?: number | null;
+}
+
 interface ToastItem {
   id: number;
   tone: ToastTone;
   message: string;
+  loading: boolean;
+  persistent: boolean;
+  durationMs: number | null;
+  exiting: boolean;
 }
 
 const TOAST_MS = 5000;
+const EXIT_MS = 220;
 const MAX_TOASTS = 3;
 
 interface ToastApi {
-  push: (message: string, tone?: ToastTone) => void;
+  push: (message: string, tone?: ToastTone, options?: ToastOptions) => number;
+  loading: (message: string) => number;
+  update: (id: number, message: string, tone?: ToastTone, options?: ToastOptions) => void;
+  dismiss: (id: number) => void;
 }
 const ToastContext = createContext<ToastApi | null>(null);
 
-const TONES: Record<ToastTone, string> = {
-  info: "bg-surface-raised text-text",
-  success: "bg-primary text-primary-fg",
-  danger: "bg-danger text-surface-raised",
-};
-
-/** Pemberitahuan singkat. Wilayah aria-live sopan (polite), maksimal 3, hilang sendiri setelah 5 detik. */
+/**
+ * Sistem alert & pemberitahuan kanan atas (`fixed right-4 top-4`). Mendukung animasi masuk/keluar,
+ * ikon nada, loader animasi (`loading` dan progress hitung-mundur), serta `aria-live="polite"`.
+ */
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<ToastItem[]>([]);
   const nextId = useRef(1);
   const timers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
+  const exitTimers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
 
-  const dismiss = useCallback((id: number) => {
+  const clearItemTimers = useCallback((id: number) => {
     const t = timers.current.get(id);
     if (t) clearTimeout(t);
     timers.current.delete(id);
-    setItems((l) => l.filter((x) => x.id !== id));
+    const et = exitTimers.current.get(id);
+    if (et) clearTimeout(et);
+    exitTimers.current.delete(id);
   }, []);
 
-  const push = useCallback(
-    (message: string, tone: ToastTone = "info") => {
-      const id = nextId.current++;
-      setItems((l) => [...l, { id, tone, message }].slice(-MAX_TOASTS));
-      timers.current.set(
+  const dismiss = useCallback(
+    (id: number) => {
+      clearItemTimers(id);
+      setItems((list) => list.map((x) => (x.id === id ? { ...x, exiting: true } : x)));
+      exitTimers.current.set(
         id,
-        setTimeout(() => dismiss(id), TOAST_MS),
+        setTimeout(() => {
+          exitTimers.current.delete(id);
+          setItems((list) => list.filter((x) => x.id !== id));
+        }, EXIT_MS),
       );
+    },
+    [clearItemTimers],
+  );
+
+  const scheduleAutoDismiss = useCallback(
+    (id: number, ms: number | null) => {
+      const prev = timers.current.get(id);
+      if (prev) clearTimeout(prev);
+      timers.current.delete(id);
+      if (ms !== null && ms > 0) {
+        timers.current.set(
+          id,
+          setTimeout(() => dismiss(id), ms),
+        );
+      }
     },
     [dismiss],
   );
 
+  const push = useCallback(
+    (message: string, tone: ToastTone = "info", options: ToastOptions = {}) => {
+      if (!options.loading) triggerSfx("pop");
+      const id = nextId.current++;
+      const isLoading = options.loading === true;
+      const persistent = options.persistent === true;
+      const durationMs = persistent
+        ? null
+        : options.durationMs === undefined
+          ? isLoading
+            ? null
+            : TOAST_MS
+          : options.durationMs;
+      setItems((l) =>
+        [
+          ...l,
+          { id, tone, message, loading: isLoading, persistent, durationMs, exiting: false },
+        ].slice(-MAX_TOASTS),
+      );
+      scheduleAutoDismiss(id, durationMs);
+      return id;
+    },
+    [scheduleAutoDismiss],
+  );
+
+  const loading = useCallback(
+    (message: string) => push(message, "info", { loading: true, durationMs: null }),
+    [push],
+  );
+
+  const update = useCallback(
+    (id: number, message: string, tone: ToastTone = "success", options: ToastOptions = {}) => {
+      const isLoading = options.loading === true;
+      const persistent = options.persistent === true;
+      const durationMs = persistent
+        ? null
+        : options.durationMs === undefined
+          ? isLoading
+            ? null
+            : TOAST_MS
+          : options.durationMs;
+      if (!isLoading) triggerSfx("pop");
+      setItems((l) =>
+        l.map((x) =>
+          x.id === id
+            ? { ...x, message, tone, loading: isLoading, persistent, durationMs, exiting: false }
+            : x,
+        ),
+      );
+      scheduleAutoDismiss(id, durationMs);
+    },
+    [scheduleAutoDismiss],
+  );
+
   useEffect(() => {
-    const all = timers.current;
+    const auto = timers.current;
+    const exits = exitTimers.current;
     return () => {
-      for (const t of all.values()) clearTimeout(t);
+      for (const t of auto.values()) clearTimeout(t);
+      for (const t of exits.values()) clearTimeout(t);
     };
   }, []);
 
-  const api = useMemo(() => ({ push }), [push]);
+  const api = useMemo(() => ({ push, loading, update, dismiss }), [push, loading, update, dismiss]);
 
   return (
     <ToastContext.Provider value={api}>
       {children}
       <div
         aria-live="polite"
-        className="pointer-events-none fixed inset-x-0 bottom-4 z-50 grid justify-items-center gap-2 px-4"
+        className="pointer-events-none fixed right-4 top-4 z-50 flex w-[min(24rem,calc(100vw-2rem))] flex-col items-stretch gap-2.5"
       >
         {items.map((t) => (
-          <div
+          <AlertCard
             key={t.id}
+            tone={t.tone}
+            message={t.message}
+            loading={t.loading}
+            persistent={
+              t.persistent ||
+              (!t.loading && !(typeof t.durationMs === "number" && t.durationMs > 0))
+            }
+            durationMs={t.durationMs ?? undefined}
+            exiting={t.exiting}
+            onClose={() => dismiss(t.id)}
             role="status"
-            className={cn(
-              "pointer-events-auto flex items-center gap-3 rounded-card border-(length:--border-w) border-line px-4 py-2 text-sm shadow-card",
-              TONES[t.tone],
-            )}
-          >
-            <span>{t.message}</span>
-            <button type="button" className="font-bold underline" onClick={() => dismiss(t.id)}>
-              {copy.states.close}
-            </button>
-          </div>
+          />
         ))}
       </div>
     </ToastContext.Provider>

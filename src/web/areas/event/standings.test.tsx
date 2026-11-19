@@ -272,7 +272,7 @@ describe("setelah event selesai", () => {
     fireEvent.click(screen.getByRole("button", { name: copy.reveal.skip }));
     await waitFor(() => expect(screen.queryByRole("dialog", { hidden: true })).toBeNull());
     expect(window.localStorage.getItem("winnerAutoplayOff:ev1:1")).toBe("1");
-    expect(screen.getByRole("button", { name: copy.results.autoplayOff })).toBeTruthy();
+    expect(screen.getByRole("button", { name: copy.results.replay })).toBeTruthy();
     a.unmount();
 
     mount(); // muat ulang: tidak diputar otomatis lagi
@@ -288,13 +288,14 @@ describe("setelah event selesai", () => {
     expect(await screen.findByRole("dialog", { hidden: true })).toBeTruthy();
   });
 
-  it("saklar banner menyalakan kembali pemutaran otomatis", async () => {
+  it("tombol terbang memutar ulang dan membuka saklar pemutaran otomatis", async () => {
     window.localStorage.setItem("winnerAutoplayOff:ev1:1", "1");
     serve(PUBLISHED());
     mount();
-    fireEvent.click(await screen.findByRole("button", { name: copy.results.autoplayOff }));
+    fireEvent.click(await screen.findByRole("button", { name: copy.results.replay }));
+    const box = await screen.findByRole("checkbox", { name: copy.reveal.dontReplay });
+    fireEvent.click(box);
     expect(window.localStorage.getItem("winnerAutoplayOff:ev1:1")).toBeNull();
-    expect(screen.getByRole("button", { name: copy.results.autoplayOn })).toBeTruthy();
   });
 });
 

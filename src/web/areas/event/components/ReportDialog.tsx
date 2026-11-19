@@ -48,7 +48,11 @@ export function ReportDialog({ reviewId, onClose }: { reviewId: string; onClose:
               </button>
             ))}
           </fieldset>
-          <Field label={copy.event.report.note} hint={copy.event.report.explain}>
+          <Field
+            label={copy.event.report.note}
+            info={copy.event.report.noteInfo}
+            hint={copy.event.report.explain}
+          >
             {(id) => (
               <Input
                 id={id}

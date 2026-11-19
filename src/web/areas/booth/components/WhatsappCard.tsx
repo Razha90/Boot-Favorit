@@ -21,8 +21,7 @@ export function WhatsappCard({
   const [number, setNumber] = useState("");
   const [consent, setConsent] = useState(false);
   return (
-    <Card title={t.title}>
-      <p className="text-xs text-muted">{t.hint}</p>
+    <Card title={t.title} info={t.titleInfo}>
       <p className="text-sm">{booth.whatsapp ? t.current(booth.whatsapp) : t.none}</p>
       <Editable locked={locked}>
         <Field label={t.number} hint={t.numberHint}>

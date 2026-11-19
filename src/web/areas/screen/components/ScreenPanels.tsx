@@ -1,5 +1,5 @@
 import type { LatestReview, PublicBooth, PublicSnapshot } from "@shared/api-types";
-import { PhotoFrame } from "../../../components/shared/PhotoFrame";
+import { useEffect, useState } from "react";
 import { RatingStars } from "../../../components/shared/RatingStars";
 import { SafeImage } from "../../../components/shared/SafeImage";
 import { copy } from "../../../lib/copy";
@@ -24,7 +24,7 @@ function Rating({ booth, hidden }: { booth: PublicBooth; hidden: boolean }) {
   );
 }
 
-/** Satu booth besar. Tanpa foto → nama sebagai tipografi besar tanpa kolom foto (A16). */
+/** Satu booth besar. Tanpa foto → nama sebagai tipografi besar tanpa kolom foto maupun bingkai inisial. */
 export function SpotlightPanel({
   booth,
   ratingsHidden,
@@ -34,16 +34,25 @@ export function SpotlightPanel({
 }) {
   const resolve = useMediaUrl();
   const src = resolve(booth.coverKey);
+  const [failed, setFailed] = useState(false);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: foto baru = coba lagi
+  useEffect(() => setFailed(false), [src]);
+  const hasPhoto = !!src && !failed;
   return (
-    <div className="grid h-full content-center gap-8 lg:grid-cols-2 lg:items-center">
-      {src && (
+    <div
+      className={
+        hasPhoto
+          ? "grid h-full content-center gap-8 lg:grid-cols-2 lg:items-center"
+          : "grid h-full content-center gap-8"
+      }
+    >
+      {hasPhoto && (
         <SafeImage
           src={src}
           aspect="4/3"
           className="w-full rounded-card"
-          fallback={
-            <PhotoFrame id={booth.id} name={booth.name} boothNo={booth.boothNo} size="winner" />
-          }
+          onFail={() => setFailed(true)}
+          fallback={null}
         />
       )}
       <div className="grid gap-5">

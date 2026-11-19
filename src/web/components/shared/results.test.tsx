@@ -69,7 +69,7 @@ describe("ResultsList", () => {
     expect(screen.getByText("Juara 1")).toBeTruthy();
   });
 
-  it("tanpa foto atau foto gagal: bingkai, tidak pernah gambar rusak (A16)", async () => {
+  it("tanpa foto atau foto gagal: tampil bersih tanpa bingkai inisial dan tanpa gambar rusak (A16)", async () => {
     const { container } = renderEvent(
       <ResultsList
         results={[
@@ -81,7 +81,8 @@ describe("ResultsList", () => {
     );
     await act(async () => void failAllImages(container));
     assertNoBrokenUI(container, "hasil");
-    expect(container.querySelectorAll("[data-photo-frame]").length).toBeGreaterThanOrEqual(2);
+    expect(container.querySelectorAll("[data-photo-frame]")).toHaveLength(0);
+    expect(container.querySelectorAll("img")).toHaveLength(0);
   });
 
   it("booth tanpa ulasan: 'Belum ada ulasan', bukan 0,0; kosong total: pesan ramah", () => {
@@ -125,7 +126,7 @@ describe("WinnerReveal", () => {
   const step = (ms: number) => act(() => void vi.advanceTimersByTime(ms));
   const text = () => document.body.textContent ?? "";
 
-  it("urutan: 3-2-1 → juara 3 → 2 → 1 → daftar hasil (±13,5 detik), tanpa confetti", () => {
+  it("urutan motion graphic: 3-2-1 → juara 3 → 2 → 1 → daftar hasil lengkap pita & confetti", () => {
     vi.useFakeTimers();
     open();
     expect(screen.getByText("3")).toBeTruthy();
@@ -136,6 +137,8 @@ describe("WinnerReveal", () => {
     step(CONFIG.reveal.countdownStepMs);
     expect(screen.getByText("Juara 3")).toBeTruthy();
     expect(text()).toContain("Booth c");
+    expect(document.querySelector(".reveal-ribbon")).not.toBeNull();
+    expect(document.querySelector("[data-reveal-confetti]")).not.toBeNull();
     step(CONFIG.reveal.placeMs);
     expect(screen.getByText("Juara 2")).toBeTruthy();
     step(CONFIG.reveal.placeMs);
@@ -145,7 +148,7 @@ describe("WinnerReveal", () => {
     // daftar hasil akhir seluruh booth
     expect(document.querySelectorAll("[data-tier]").length).toBe(RESULTS.length);
     expect(screen.getByRole("button", { name: copy.reveal.viewPage })).toBeTruthy();
-    expect(document.querySelector("canvas, [class*='confetti']")).toBeNull();
+    expect(document.querySelector("[data-reveal-confetti]")).not.toBeNull();
   });
 
   it("Lewati menutup kapan saja; Esc (cancel) menutup; di daftar tombol menjadi 'Lihat halaman'", () => {

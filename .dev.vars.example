@@ -15,3 +15,8 @@ DEV_ADMIN_EMAIL=admin@localhost.test
 # sebagai `devCode` dan notifikasi dilewati; di produksi permintaan GAGAL (tidak diam-diam "terkirim").
 # RESEND_API_KEY=
 # EMAIL_FROM=
+
+# Log aktivitas di admin (Tahap 9): baca dari Analytics Engine lewat SQL API. Tanpa keduanya halaman Log menampilkan
+# penjelasan (AE tidak tersedia di dev lokal). Token HARUS read-only (Account Analytics: Read).
+# CF_ACCOUNT_ID=
+# CF_API_TOKEN=

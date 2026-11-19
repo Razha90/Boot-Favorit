@@ -8,11 +8,9 @@ import {
   updateBoothSchema,
 } from "@shared/schemas";
 import { Hono } from "hono";
-import type { AppContext, AppEnv } from "../../app-env";
-import { type BoothMailKind, boothMail } from "../../lib/booth-mail";
+import type { AppEnv } from "../../app-env";
 import { getDb } from "../../lib/db";
 import type { EmailSender } from "../../lib/email";
-import { deliver } from "../../lib/email";
 import {
   adminActor,
   adminIdempotencyActor,
@@ -21,6 +19,7 @@ import {
   serviceDeps,
 } from "../../lib/http";
 import { logEvent } from "../../lib/logger";
+import { mailOwner } from "../../lib/owner-mail";
 import { idempotency } from "../../middleware/idempotency";
 import {
   createBoothByAdmin,
@@ -39,42 +38,6 @@ const STATUS_ACTION = {
   rejected: "booth.rejected",
   suspended: "booth.suspended",
 } as const;
-
-/** Kirim email ke pemilik booth. Gagal kirim TIDAK menggagalkan aksi admin (dicatat di log). */
-async function mailOwner(
-  c: AppContext,
-  sender: EmailSender | undefined,
-  kind: BoothMailKind,
-  o: { to: string | null; eventId: string; boothName: string; reason?: string | null },
-): Promise<boolean> {
-  if (!o.to) return false;
-  const event = c.get("event");
-  try {
-    const sent = await deliver(
-      c,
-      sender,
-      boothMail(kind, {
-        to: o.to,
-        eventName: event?.name ?? "",
-        boothName: o.boothName,
-        reason: o.reason,
-        origin: new URL(c.req.url).origin,
-      }),
-    );
-    if (sent)
-      logEvent(c, { eventId: o.eventId, category: "system", action: "email.sent", meta: { kind } });
-    return sent;
-  } catch {
-    logEvent(c, {
-      eventId: o.eventId,
-      category: "system",
-      action: "email.failed",
-      level: "warn",
-      meta: { kind },
-    });
-    return false;
-  }
-}
 
 export function createAdminBoothRoutes(deps: { email?: EmailSender } = {}) {
   return (

@@ -2,6 +2,7 @@
 
 > Urutan pengerjaan MVP. Setiap tahap punya **kriteria selesai** yang bisa diuji. Jangan lompat tahap tanpa alasan. Centang di `docs/STATUS.md`, bukan di sini.
 > Spesifikasi tiap hal ada di `explore.md` (bagian dirujuk di kurung).
+> **Aturan sinkronisasi:** BUILD-PLAN adalah ringkasan; kode WAJIB mematuhi seluruh spesifikasi di `explore.md` (termasuk **A12**, **B19**, **B23**) dan rujukan `demo-event.html`. Setiap perubahan permintaan pemilik proyek harus disunting ke `explore.md`, `docs/DECISIONS.md`, dan `BUILD-PLAN.md`.
 
 ## Tahap 0: Konteks & repo
 AGENTS.md, STATUS, DECISIONS, BUILD-PLAN; `git init`; `.gitignore`.
@@ -31,21 +32,22 @@ AGENTS.md, STATUS, DECISIONS, BUILD-PLAN; `git init`; `.gitignore`.
 - Galeri `/dev/components` dengan kolom **Data kosong** di semua tema.
 **Selesai bila:** matriks fixture data kosong lulus (tidak ada `<img>` tanpa `src`, tidak ada heading kosong); kartu berukuran sama pada semua fixture.
 
-## Tahap 5: Halaman pengunjung (A8, A12–A14, B20)
-- Halaman event: hero, 01 Sorotan, 02 Semua booth (acak per pengunjung), footer.
-- Halaman booth: hero, slideshow, produk andalan + etalase, Kenalan, ulasan (baca saja dulu).
-- Daftar incaran, bagikan, pratinjau tautan (`HTMLRewriter`).
-**Selesai bila:** booth lengkap dan booth hanya-nama tampil benar di semua halaman; mobile-first lolos; status event mengubah teks dan CTA.
+## Tahap 5: Halaman pengunjung (A8, A12–A14, B19, B20, B23)
+- Halaman event: hero + marquee, 01 Sorotan (bar progres), 02 Semua booth (kartu polaroid berselotip, hover/tilt mouse, acak per pengunjung), footer.
+- Halaman booth: hero, slideshow (`grab`/`grabbing`), produk andalan + etalase, Kenalan, ulasan (baca saja dulu).
+- Efek interaksi & animasi (**B23**, **B19**, `demo-event.html`): `ClickFx` (cincin klik, getar tombol nonaktif, percikan bintang), kursor kustom `--cursor-*`, suara Web Audio sintesis (`lib/sfx.ts`, `SoundProvider`, `SoundToggle`).
+- Daftar incaran, bagikan, pratinjau tautan.
+**Selesai bila:** booth lengkap dan booth hanya-nama tampil benar di semua halaman; mobile-first lolos; status event mengubah teks dan CTA; efek klik/mouse/kursor/suara B23 aktif pada gaya Seru dan menghormati `prefers-reduced-motion`.
 
 ## Tahap 6: Review, peringkat, moderasi dasar (A5–A7, A15, B9, B25)
 - Login reviewer (Google 1-tap + OTP, Turnstile), form review, 1 review per orang per booth, `booth_stats`.
 - Filter kata, laporan, review `held`, deteksi anomali dasar.
 **Selesai bila:** review masuk dan mengubah peringkat konsisten (batch atomik); duplikat ditolak; booth tidak bisa menyembunyikan komentar (tes B25 butir 1).
 
-## Tahap 7: Realtime, peringkat, hasil (A8, B8, B20)
-- Snapshot + cache edge, `LiveHub` (DO), bagian 03 peringkat dan ulasan terbaru, layar besar `/screen`.
-- Mode peringkat/rating, "Umumkan hasil", `WinnerReveal`, `ResultsList`.
-**Selesai bila:** beban uji sesuai perkiraan B8; peringkat opsional benar-benar tidak dikirim server saat disembunyikan; animasi pemenang jalan di layar besar dan halaman pengunjung.
+## Tahap 7: Realtime, peringkat, hasil (A8, B8, B19, B20, B23)
+- Snapshot + cache edge, `LiveHub` (DO), bagian 03 peringkat dan ulasan terbaru (animasi feed/baris & suara perubahan peringkat), layar besar `/screen`.
+- Mode peringkat/rating, "Umumkan hasil", `WinnerReveal` (motion graphic panggung gelap, hitung mundur kinetik, pita juara, hiasan bunting/kilau/confetti palet UNIMED, fanfare suara), `ResultsList`.
+**Selesai bila:** beban uji sesuai perkiraan B8; peringkat opsional benar-benar tidak dikirim server saat disembunyikan; animasi pemenang motion graphic + suara jalan di layar besar dan halaman pengunjung.
 
 ## Tahap 8: Portal booth & pendaftaran mandiri (A4, B7)
 - `/register`, OTP, `/booth` portal (profil, produk, WhatsApp, Bagikan), email notifikasi.

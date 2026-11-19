@@ -159,12 +159,13 @@ describe("Toast", () => {
     fireEvent.click(screen.getByText("push"));
     expect(screen.getByRole("status").textContent).toContain("Tersimpan");
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(5100);
+      await vi.advanceTimersByTimeAsync(5300);
     });
     expect(screen.queryByRole("status")).toBeNull();
   });
 
-  it("maksimal 3 sekaligus dan bisa ditutup manual", () => {
+  it("maksimal 3 sekaligus dan bisa ditutup manual", async () => {
+    vi.useFakeTimers();
     render(
       <ToastProvider>
         <Trigger />
@@ -172,7 +173,10 @@ describe("Toast", () => {
     );
     for (let i = 0; i < 5; i++) fireEvent.click(screen.getByText("push"));
     expect(screen.getAllByRole("status")).toHaveLength(3);
-    fireEvent.click(screen.getAllByText("Tutup")[0] as HTMLElement);
+    fireEvent.click(screen.getAllByLabelText("Tutup")[0] as HTMLElement);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(250);
+    });
     expect(screen.getAllByRole("status")).toHaveLength(2);
   });
 

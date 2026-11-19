@@ -4,20 +4,29 @@ import { useEffect, useMemo, useState } from "react";
 import { PriceTag } from "../../../components/shared/PriceTag";
 import { SafeImage } from "../../../components/shared/SafeImage";
 import { Button } from "../../../components/ui/Button";
+import { Icon } from "../../../components/ui/Icon";
 import { Modal } from "../../../components/ui/Modal";
 import { useToast } from "../../../components/ui/Toast";
 import { eventKeys, useEventData } from "../../../features/event-data";
+import { burstStars } from "../../../features/fx/ClickFx";
 import { api } from "../../../lib/api";
 import { cn } from "../../../lib/cn";
 import { copy } from "../../../lib/copy";
 import { useEventState } from "../../../lib/event-state";
 import { formatRupiah } from "../../../lib/format";
 import { useMediaUrl } from "../../../lib/media-url";
+import { triggerSfx } from "../../../lib/sfx-bridge";
 import {
   buildShareText,
   buildShareUrl,
   canNativeShare,
+  emailShareLink,
+  facebookShareLink,
+  lineShareLink,
+  telegramShareLink,
+  threadsShareLink,
   whatsappShareLink,
+  xShareLink,
 } from "../../../lib/share";
 import { compareBoothNo, useWishlist } from "../../../lib/wishlist";
 
@@ -45,23 +54,81 @@ export function ShareButton({
   const url = buildShareUrl({ origin: window.location.origin, boothId, productId });
   const text = buildShareText({ eventName: event.name, boothName, productName });
 
-  async function copyLink() {
+  async function copyValue(value: string, successText: string) {
     try {
-      await navigator.clipboard.writeText(url);
-      toast.push(copy.event.share.copied, "success");
+      await navigator.clipboard.writeText(value);
+      toast.push(successText, "success");
     } catch {
       toast.push(copy.event.share.copyFailed, "danger");
     }
   }
 
+  const S = copy.event.share;
+  const channels = [
+    {
+      key: "wa",
+      label: S.whatsapp,
+      href: whatsappShareLink(text, url),
+      tone: "bg-sticker-4 text-primary-fg",
+      icon: "send" as const,
+    },
+    {
+      key: "tg",
+      label: S.telegram,
+      href: telegramShareLink(text, url),
+      tone: "bg-sticker-3 text-primary-fg",
+      icon: "send" as const,
+    },
+    {
+      key: "th",
+      label: S.threads,
+      href: threadsShareLink(text, url),
+      tone: "bg-surface text-text",
+      icon: "share" as const,
+    },
+    {
+      key: "x",
+      label: S.x,
+      href: xShareLink(text, url),
+      tone: "bg-surface text-text",
+      icon: "external" as const,
+    },
+    {
+      key: "fb",
+      label: S.facebook,
+      href: facebookShareLink(url),
+      tone: "bg-surface text-text",
+      icon: "external" as const,
+    },
+    {
+      key: "ln",
+      label: S.line,
+      href: lineShareLink(text, url),
+      tone: "bg-sticker-5 text-primary-fg",
+      icon: "send" as const,
+    },
+    {
+      key: "em",
+      label: S.email,
+      href: emailShareLink(boothName, text, url),
+      tone: "bg-surface text-text",
+      icon: "mail" as const,
+    },
+  ];
+
   return (
     <>
-      <Button size={size} onClick={() => setOpen(true)}>
-        {label ?? copy.event.share.button}
+      <Button
+        size={size}
+        icon="share"
+        aria-label={label === "" ? S.button : undefined}
+        onClick={() => setOpen(true)}
+      >
+        {label ?? S.button}
       </Button>
-      <Modal open={open} onClose={() => setOpen(false)} title={copy.event.share.title}>
+      <Modal open={open} onClose={() => setOpen(false)} title={S.title}>
         <label className="grid gap-1 text-sm font-bold">
-          {copy.event.share.link}
+          {S.link}
           <input
             readOnly
             value={url}
@@ -70,29 +137,45 @@ export function ShareButton({
           />
         </label>
         <div className="flex flex-wrap gap-2">
-          <Button variant="primary" onClick={copyLink}>
-            {copy.event.share.copy}
+          <Button variant="primary" icon="copy" onClick={() => copyValue(url, S.copied)}>
+            {S.copy}
           </Button>
-          <a
-            href={whatsappShareLink(text, url)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center rounded-chip border-(length:--border-w) border-line bg-sticker-4 px-4 py-2 text-sm font-bold text-primary-fg"
-          >
-            {copy.event.share.whatsapp}
-          </a>
+          <Button icon="copy" onClick={() => copyValue(`${text}\n${url}`, S.copiedCaption)}>
+            {S.copyCaption}
+          </Button>
           {canNativeShare() && (
             <Button
+              icon="share"
               onClick={() => {
                 void navigator.share({ title: event.name, text, url }).catch(() => {});
               }}
             >
-              {copy.event.share.native}
+              {S.native}
             </Button>
           )}
         </div>
+        <div className="grid gap-2">
+          <p className="text-xs font-bold text-muted">{S.channelsLabel}</p>
+          <div className="flex flex-wrap gap-2">
+            {channels.map((ch) => (
+              <a
+                key={ch.key}
+                href={ch.href}
+                target={ch.key === "em" ? undefined : "_blank"}
+                rel={ch.key === "em" ? undefined : "noopener noreferrer"}
+                className={cn(
+                  "group inline-flex items-center gap-1.5 rounded-chip border-(length:--border-w) border-line px-3.5 py-1.5 text-sm font-bold shadow-card transition-transform hover:-translate-y-0.5 active:translate-y-px",
+                  ch.tone,
+                )}
+              >
+                <Icon name={ch.icon} className="size-4" />
+                <span>{ch.label}</span>
+              </a>
+            ))}
+          </div>
+        </div>
         <div className="flex justify-end">
-          <Button onClick={() => setOpen(false)}>{copy.event.share.close}</Button>
+          <Button onClick={() => setOpen(false)}>{S.close}</Button>
         </div>
       </Modal>
     </>
@@ -111,17 +194,27 @@ export function SaveButton({ boothId, productId }: { boothId: string; productId:
   return (
     <button
       type="button"
+      data-sfx-custom=""
       aria-pressed={saved}
-      onClick={() => {
-        if (saved) wl.remove(boothId, productId);
-        else if (!wl.add(boothId, productId)) toast.push(copy.event.wishlist.full, "danger");
+      onClick={(e) => {
+        if (saved) {
+          wl.remove(boothId, productId);
+          triggerSfx("toggle", false);
+        } else if (!wl.add(boothId, productId)) {
+          triggerSfx("no");
+          toast.push(copy.event.wishlist.full, "danger");
+        } else {
+          triggerSfx("toggle", true);
+          burstStars(e.currentTarget);
+        }
       }}
       className={cn(
-        "w-fit rounded-chip border-(length:--border-w) border-line px-3 py-1 text-xs font-bold",
+        "group inline-flex w-fit items-center gap-1.5 rounded-chip border-(length:--border-w) border-line px-3 py-1 text-xs font-bold transition-transform hover:-translate-y-0.5 active:scale-95",
         saved ? "bg-primary text-primary-fg" : "bg-surface-raised",
       )}
     >
-      {saved ? `✓ ${copy.event.wishlist.saved}` : copy.event.wishlist.save}
+      <Icon name={saved ? "bookmark-check" : "bookmark"} className="size-3.5" />
+      {saved ? copy.event.wishlist.saved : copy.event.wishlist.save}
     </button>
   );
 }
@@ -148,8 +241,9 @@ export function WishlistFab({ booths }: { booths: readonly PublicBooth[] }) {
         type="button"
         onClick={() => setOpen(true)}
         style={{ bottom: "calc(env(safe-area-inset-bottom) + 4.5rem)" }}
-        className="fixed right-4 z-40 rounded-chip border-(length:--border-w) border-line bg-accent px-4 py-2 text-sm font-bold text-accent-fg shadow-card active:translate-y-px active:shadow-press"
+        className="group fixed right-4 z-40 inline-flex items-center gap-2 rounded-chip border-(length:--border-w) border-line bg-accent px-4 py-2 text-sm font-bold text-accent-fg shadow-card transition-transform hover:-translate-y-0.5 active:translate-y-px active:shadow-press"
       >
+        <Icon name="bookmark-check" className="size-4" />
         {copy.event.wishlist.floating(wl.count)}
       </button>
       <WishlistPanel open={open} onClose={() => setOpen(false)} booths={booths} />

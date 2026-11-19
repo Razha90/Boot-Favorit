@@ -2,6 +2,7 @@ import type { PublicProduct } from "@shared/api-types";
 import { CONFIG } from "@shared/config";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { ProductCard, productGridMode } from "../../../components/shared/ProductCard";
+import { Icon } from "../../../components/ui/Icon";
 import { cn } from "../../../lib/cn";
 import { copy } from "../../../lib/copy";
 
@@ -78,10 +79,11 @@ export function Showcase({
                 setShown(page); // mengganti kategori mengembalikan ke 6 pertama
               }}
               className={cn(
-                "rounded-chip border-(length:--border-w) border-line px-3 py-1 text-sm font-bold",
+                "group inline-flex items-center gap-1.5 rounded-chip border-(length:--border-w) border-line px-3 py-1 text-sm font-bold transition-transform hover:-translate-y-0.5 active:scale-95",
                 category === key ? "bg-primary text-primary-fg" : "bg-surface-raised",
               )}
             >
+              <Icon name={category === key ? "check" : "sparkles"} className="size-3.5" />
               {label}
             </button>
           ))}
@@ -117,8 +119,9 @@ export function Showcase({
         <button
           type="button"
           onClick={() => setShown((s) => s + page)}
-          className="w-fit rounded-chip border-(length:--border-w) border-line bg-surface-raised px-5 py-2 text-sm font-bold shadow-card active:translate-y-px active:shadow-press"
+          className="group inline-flex w-fit items-center gap-2 rounded-chip border-(length:--border-w) border-line bg-surface-raised px-5 py-2 text-sm font-bold shadow-card transition-transform hover:-translate-y-0.5 active:translate-y-px active:shadow-press"
         >
+          <Icon name="arrow-down" className="size-4" />
           {copy.event.booth.more(Math.min(page, remaining))}
         </button>
       )}

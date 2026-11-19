@@ -34,6 +34,15 @@ export class LiveHub extends DurableObject<Env> {
     ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
   }
 
+  /** Statistik koneksi aktif untuk halaman kesehatan admin (explore.md B12). */
+  async stats(): Promise<{ viewers: number; screens: number; pending: number }> {
+    return {
+      viewers: this.ctx.getWebSockets("viewer").length,
+      screens: this.ctx.getWebSockets("screen").length,
+      pending: this.pending,
+    };
+  }
+
   /** Dipanggil Worker setelah D1 sukses. Tidak melakukan apa pun yang mahal. `endAt` = akhir event (bisa berubah). */
   async ingest(eventId: string, kind: LiveKind, endAt: number): Promise<void> {
     await this.remember(eventId, endAt);

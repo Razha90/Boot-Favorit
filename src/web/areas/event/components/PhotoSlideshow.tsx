@@ -1,6 +1,7 @@
 import { CONFIG } from "@shared/config";
 import { type KeyboardEvent, type PointerEvent, useEffect, useRef, useState } from "react";
 import { SafeImage } from "../../../components/shared/SafeImage";
+import { Icon } from "../../../components/ui/Icon";
 import { cn } from "../../../lib/cn";
 import { copy } from "../../../lib/copy";
 import { useMediaUrl } from "../../../lib/media-url";
@@ -105,6 +106,7 @@ export function PhotoSlideshow({
           className="absolute -top-2 left-1/2 z-10 h-4 w-20 -translate-x-1/2 rotate-1 bg-sticker-3/90 in-data-[vibe=pro]:hidden"
         />
         <div
+          data-grab="ready"
           className="relative overflow-hidden rounded"
           style={{ aspectRatio: "4/3" }}
           onPointerDown={onPointerDown}
@@ -134,17 +136,17 @@ export function PhotoSlideshow({
                 type="button"
                 aria-label={copy.event.booth.slideshow.prev}
                 onClick={() => go(current - 1)}
-                className="absolute left-2 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-full border-(length:--border-w) border-line bg-surface-raised font-bold"
+                className="group absolute left-2 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-full border-(length:--border-w) border-line bg-surface-raised font-bold transition-transform hover:scale-105 active:scale-95"
               >
-                ←
+                <Icon name="arrow-left" className="size-4" />
               </button>
               <button
                 type="button"
                 aria-label={copy.event.booth.slideshow.next}
                 onClick={() => go(current + 1)}
-                className="absolute right-2 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-full border-(length:--border-w) border-line bg-surface-raised font-bold"
+                className="group absolute right-2 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-full border-(length:--border-w) border-line bg-surface-raised font-bold transition-transform hover:scale-105 active:scale-95"
               >
-                →
+                <Icon name="arrow-right" className="size-4" />
               </button>
               <span className="absolute bottom-2 right-2 rounded-chip bg-text/70 px-2 py-0.5 text-xs font-bold text-surface">
                 {current + 1}/{n}
@@ -162,9 +164,9 @@ export function PhotoSlideshow({
               }
               aria-pressed={userPaused}
               onClick={() => setUserPaused((p) => !p)}
-              className="grid size-7 shrink-0 place-items-center rounded-full border-(length:--border-w) border-line text-xs font-bold"
+              className="group grid size-7 shrink-0 place-items-center rounded-full border-(length:--border-w) border-line text-xs font-bold transition-transform hover:scale-105 active:scale-95"
             >
-              {userPaused ? "▶" : "❚❚"}
+              <Icon name={userPaused ? "play" : "pause"} className="size-3.5" />
             </button>
             <ol aria-hidden="true" className="flex flex-1 gap-1">
               {list.map((p, i) => (

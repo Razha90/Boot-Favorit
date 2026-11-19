@@ -1,17 +1,22 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../../app-env";
+import type { LogFetcher } from "../../lib/analytics-logs";
 import type { EmailSender } from "../../lib/email";
 import { notifyLive } from "../../lib/live-notify";
 import { type RequireAdminOptions, requireAdmin } from "../../middleware/require-admin";
 import { createAdminBoothRoutes } from "./booths";
+import { createAdminDataRoutes } from "./data";
 import { adminEventRoutes } from "./events";
+import { createAdminLogRoutes } from "./logs";
 import { adminMediaRoutes } from "./media";
 import { adminModerationRoutes } from "./moderation";
 import { adminProductRoutes } from "./products";
 import { adminResultsRoutes } from "./results";
 
 /** Semua /api/admin/*: hanya admin (Cloudflare Access), tidak terkena pembekuan event (B17). */
-export function createAdminRoutes(opts: RequireAdminOptions & { email?: EmailSender } = {}) {
+export function createAdminRoutes(
+  opts: RequireAdminOptions & { email?: EmailSender; logFetcher?: LogFetcher } = {},
+) {
   return (
     new Hono<AppEnv>()
       .use("/api/admin/*", requireAdmin({ getJwks: opts.getJwks }))
@@ -22,6 +27,8 @@ export function createAdminRoutes(opts: RequireAdminOptions & { email?: EmailSen
       })
       .route("/", adminEventRoutes)
       .route("/", createAdminBoothRoutes({ email: opts.email }))
+      .route("/", createAdminDataRoutes({ email: opts.email }))
+      .route("/", createAdminLogRoutes({ logFetcher: opts.logFetcher }))
       .route("/", adminMediaRoutes)
       .route("/", adminModerationRoutes)
       .route("/", adminResultsRoutes)

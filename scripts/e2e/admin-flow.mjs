@@ -231,7 +231,7 @@ try {
 
   // 9. Produk (opsional) dan kelengkapan berubah
   await setValue(await byLabel("Nama produk"), "Kopi Rempah");
-  await setValue(await byLabel("Harga (Rp)"), "18000");
+  await setValue(await byLabel("Harga Rupiah"), "18000");
   await page.evaluate(() =>
     [...document.querySelectorAll('input[type="checkbox"]')]
       .find((c) => c.closest("label")?.innerText.includes("diskon"))

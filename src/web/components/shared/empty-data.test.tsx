@@ -49,8 +49,8 @@ describe("BoothCard × fixture: tidak pernah ada UI rusak", () => {
   }
 });
 
-describe("foto kosong = foto gagal = bingkai/hanya-teks yang SAMA", () => {
-  it("kartu berfoto yang gagal dimuat tampil persis seperti kartu tanpa foto (bingkai)", async () => {
+describe("foto kosong = foto gagal = bersih hanya-teks yang SAMA", () => {
+  it("kartu berfoto yang gagal dimuat tampil bersih persis seperti kartu tanpa foto", async () => {
     const failed = mount(
       <BoothCard
         booth={{ ...BOOTHS.fotoGagal404, name: "Sama", boothNo: "X1" }}
@@ -62,9 +62,8 @@ describe("foto kosong = foto gagal = bingkai/hanya-teks yang SAMA", () => {
       failAllImages(failed.container);
     });
     expect(failed.container.querySelectorAll("img")).toHaveLength(0);
-    const frameFailed = failed.container.querySelector("[data-photo-frame]");
-    expect(frameFailed?.textContent).toContain("S"); // inisial
-    expect(frameFailed?.getAttribute("aria-hidden")).toBe("true");
+    expect(failed.container.querySelectorAll("[data-photo-frame]")).toHaveLength(0);
+    const failedHtml = failed.container.innerHTML;
     failed.unmount();
 
     const none = mount(
@@ -80,8 +79,7 @@ describe("foto kosong = foto gagal = bingkai/hanya-teks yang SAMA", () => {
         visualMode="photo"
       />,
     );
-    const frameNone = none.container.querySelector("[data-photo-frame]");
-    expect(frameNone?.outerHTML).toBe(frameFailed?.outerHTML); // identik, bukan "pesan kesalahan"
+    expect(none.container.innerHTML).toBe(failedHtml); // identik, bersih tanpa bingkai inisial
   });
 
   it("sorotan tanpa foto = hanya-teks; sorotan yang fotonya gagal beralih ke hanya-teks", async () => {
@@ -158,19 +156,21 @@ describe("keadilan: ukuran kartu seragam", () => {
     BOOTHS.namaPanjang,
   ];
 
-  it("dalam grid campuran, semua kartu punya kelas dan rasio visual yang sama", async () => {
+  it("dalam grid campuran, kartu berfoto memakai rasio 4/3 seragam dan saat gagal/tanpa foto semuanya seragam tanpa kotak inisial", async () => {
     const { container } = mount(<BoothGrid booths={mixed} />);
+    const visualsBefore = [...container.querySelectorAll("[data-card-visual]")];
+    expect(visualsBefore).toHaveLength(2); // lengkap + fotoGagal404 sebelum gambar 404 gagal
+    expect(new Set(visualsBefore.map((v) => v.getAttribute("style"))).size).toBe(1);
+    expect(visualsBefore[0]?.getAttribute("style")).toMatch(/4\s*\/\s*3/);
+
     await act(async () => {
       failAllImages(container);
     });
     const cards = [...container.querySelectorAll("li > a")];
     expect(cards).toHaveLength(mixed.length);
-    // Kelas sama persis (tidak ada kartu yang lebih besar/menonjol karena datanya lengkap)
+    expect(container.querySelectorAll("[data-photo-frame]")).toHaveLength(0);
+    expect(container.querySelectorAll("img")).toHaveLength(0);
     expect(new Set(cards.map((c) => c.className)).size).toBe(1);
-    const visuals = [...container.querySelectorAll("[data-card-visual]")];
-    expect(visuals).toHaveLength(mixed.length);
-    expect(new Set(visuals.map((v) => v.getAttribute("style"))).size).toBe(1);
-    expect(visuals[0]?.getAttribute("style")).toMatch(/4\s*\/\s*3/);
   });
 
   it("tak satu pun berfoto → seluruh grid hanya-teks (tanpa bingkai raksasa yang identik)", () => {
@@ -184,10 +184,10 @@ describe("keadilan: ukuran kartu seragam", () => {
     assertNoBrokenUI(container);
   });
 
-  it("satu saja yang berfoto → mode foto; yang kosong memakai bingkai", () => {
+  it("satu saja yang berfoto → mode foto; yang kosong tetap bersih hanya-teks tanpa kotak inisial", () => {
     const { container } = mount(<BoothGrid booths={[BOOTHS.hanyaNama, BOOTHS.gratis]} />);
     expect(container.querySelector("ul")?.getAttribute("data-visual-mode")).toBe("photo");
-    expect(container.querySelectorAll("[data-photo-frame]")).toHaveLength(1);
+    expect(container.querySelectorAll("[data-photo-frame]")).toHaveLength(0);
     expect(container.querySelectorAll("img")).toHaveLength(1);
   });
 
@@ -204,8 +204,8 @@ describe("keadilan: ukuran kartu seragam", () => {
   });
 });
 
-describe("produk: bingkai, hanya-teks, atau hilang", () => {
-  it("etalase tanpa satu pun foto → daftar kompak; sebagian berfoto → bingkai untuk yang kosong", () => {
+describe("produk: bersih tanpa kotak inisial, hanya-teks, atau hilang", () => {
+  it("etalase tanpa satu pun foto → daftar kompak; sebagian berfoto → foto tampil tanpa kotak inisial", () => {
     const none = mount(
       <ProductGrid products={[PRODUCTS.tanpaFoto, PRODUCTS.gratis, PRODUCTS.namaPanjang]} />,
     );
@@ -216,7 +216,8 @@ describe("produk: bingkai, hanya-teks, atau hilang", () => {
 
     const mixed = mount(<ProductGrid products={[PRODUCTS.lengkap, PRODUCTS.tanpaFoto]} />);
     expect(mixed.container.querySelector("ul")?.getAttribute("data-visual-mode")).toBe("photo");
-    expect(mixed.container.querySelectorAll("[data-photo-frame]")).toHaveLength(1);
+    expect(mixed.container.querySelectorAll("[data-photo-frame]")).toHaveLength(0);
+    expect(mixed.container.querySelectorAll("img")).toHaveLength(1);
   });
 
   it("tanpa produk: tidak dirender sama sekali (tidak ada judul kosong)", () => {

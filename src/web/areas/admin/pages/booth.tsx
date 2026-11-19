@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { Link, useParams } from "react-router";
 import { Badge } from "../../../components/ui/Card";
+import { Icon } from "../../../components/ui/Icon";
 import { QueryState } from "../../../components/ui/states";
 import { MediaCard } from "../../../features/booth-editor/MediaCard";
 import { ProductsCard } from "../../../features/booth-editor/ProductsCard";
@@ -28,8 +29,12 @@ export function Component() {
       {q.data && (
         <>
           <div className="grid gap-1">
-            <Link to={`/admin/e/${eventId}/booths`} className="text-sm text-muted underline">
-              ← {copy.admin.booths.title}
+            <Link
+              to={`/admin/e/${eventId}/booths`}
+              className="group inline-flex w-fit items-center gap-1.5 text-sm text-muted underline"
+            >
+              <Icon name="arrow-left" className="size-3.5" />
+              {copy.admin.booths.title}
             </Link>
             <h1 className="font-display text-3xl font-extrabold">{q.data.booth.name}</h1>
             <p className="flex flex-wrap gap-2">

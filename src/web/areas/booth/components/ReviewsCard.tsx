@@ -108,7 +108,7 @@ function ReportDialog({
           </Select>
         )}
       </Field>
-      <Field label={t.reportNote} hint={t.reportNoteHint}>
+      <Field label={t.reportNote} info={t.reportNoteInfo}>
         {(id) => (
           <Input id={id} maxLength={200} value={text} onChange={(e) => setText(e.target.value)} />
         )}

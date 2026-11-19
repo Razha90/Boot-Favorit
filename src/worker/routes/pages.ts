@@ -5,6 +5,7 @@ import { boothPhotos, booths, products } from "../db/schema";
 import { type Db, getDb } from "../lib/db";
 import { findActiveEvent, isPublicEvent } from "../lib/event";
 import { buildPageMeta, injectMeta } from "../lib/page-meta";
+import { buildCsp } from "../middleware/security";
 
 /** Ambil index.html dari aset statis (SPA). Binding ASSETS diisi runtime; `/` dilayani aset tanpa memanggil Worker lagi. */
 async function indexHtml(c: { env: Env; req: { url: string } }): Promise<string | null> {
@@ -12,11 +13,12 @@ async function indexHtml(c: { env: Env; req: { url: string } }): Promise<string 
   return res.ok ? await res.text() : null;
 }
 
-const htmlResponse = (html: string) =>
+const htmlResponse = (html: string, csp: string) =>
   new Response(html, {
     headers: {
       "content-type": "text/html; charset=utf-8",
       "cache-control": "public, max-age=0, s-maxage=10",
+      "content-security-policy": csp,
     },
   });
 
@@ -68,13 +70,14 @@ async function serve(
   const html = await indexHtml(c);
   if (html === null) return new Response("Not found", { status: 404 });
 
+  const csp = buildCsp(c.env);
   const db = getDb(c.env);
   const event = await findActiveEvent(db);
-  if (!isPublicEvent(event)) return htmlResponse(html);
+  if (!isPublicEvent(event)) return htmlResponse(html, csp);
 
   const url = new URL(c.req.url);
   const bm = boothId ? await boothMeta(db, event.id, boothId, c.req.query("p") ?? null) : null;
-  if (boothId && !bm) return htmlResponse(html);
+  if (boothId && !bm) return htmlResponse(html, csp);
 
   const meta = buildPageMeta({
     eventName: event.name,
@@ -85,7 +88,7 @@ async function serve(
     booth: bm?.booth ?? null,
     product: bm?.product ?? null,
   });
-  return htmlResponse(injectMeta(html, meta));
+  return htmlResponse(injectMeta(html, meta), csp);
 }
 
 function firstHero(json: string | null): string | null {

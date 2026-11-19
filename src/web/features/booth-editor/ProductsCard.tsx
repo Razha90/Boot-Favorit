@@ -61,7 +61,7 @@ export function ProductsCard({ scope, refresh }: Pick<EditorProps, "scope" | "re
             />
           )}
         </Field>
-        <Field label={copy.admin.products.price} hint={copy.admin.products.priceHint}>
+        <Field label={copy.admin.products.price} info={copy.admin.products.priceInfo}>
           {(id) => (
             <Input
               id={id}
@@ -71,7 +71,7 @@ export function ProductsCard({ scope, refresh }: Pick<EditorProps, "scope" | "re
             />
           )}
         </Field>
-        <Field label={copy.admin.products.compare} hint={copy.admin.products.compareHint}>
+        <Field label={copy.admin.products.compare} info={copy.admin.products.compareInfo}>
           {(id) => (
             <Input
               id={id}

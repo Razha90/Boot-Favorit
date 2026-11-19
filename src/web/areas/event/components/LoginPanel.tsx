@@ -60,16 +60,20 @@ function SimpleLogin({
   const ticket = mode === "ticket_code";
   return (
     <div className="grid gap-3">
-      {ticket ? (
+      {ticket && (
         <Field label={copy.event.login.ticket} hint={copy.event.login.ticketHint}>
           {(id) => <Input id={id} value={code} onChange={(e) => setCode(e.target.value)} />}
         </Field>
-      ) : (
-        <p className="text-sm text-muted">{copy.event.login.anonymousHint}</p>
       )}
-      <Field label={copy.event.login.name} hint={copy.event.login.nameHint}>
+      <Field label={copy.event.login.name} info={copy.event.login.nameInfo}>
         {(id) => (
-          <Input id={id} maxLength={30} value={name} onChange={(e) => setName(e.target.value)} />
+          <Input
+            id={id}
+            maxLength={30}
+            placeholder={copy.event.login.anonymousName}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
         )}
       </Field>
       <ActionButton
@@ -101,9 +105,12 @@ export function LoginPanel({
 }) {
   return (
     <div className="grid gap-4">
-      <div className="grid gap-1">
-        <h3 className="font-display text-xl font-extrabold">{copy.event.login.title}</h3>
-        <p className="text-sm text-muted">{copy.event.login.why}</p>
+      <div className="grid gap-1 rounded-card bg-surface-tint px-3.5 py-2.5">
+        <h3 className="font-display text-base font-extrabold">{copy.event.login.title}</h3>
+        <p className="text-xs leading-relaxed text-muted">
+          {copy.event.login.why}
+          {me.authMode === "open_turnstile" ? ` ${copy.event.login.anonymousHint}` : ""}
+        </p>
       </div>
       {me.authMode === "google_or_email" ? (
         <>

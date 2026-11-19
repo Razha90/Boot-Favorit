@@ -140,6 +140,8 @@ Begitu **event selesai**, **tidak ada aksi yang mengubah data** oleh siapa pun s
 
 ## A3. Flow Admin
 
+*Struktur navigasi panel panitia:* halaman `/admin` memisahkan daftar event (kiri) dengan panduan alur cepat & formulir buat event (kanan). Di dalam event (`/admin/e/:id*`), seluruh sub-halaman memakai **kerangka sidebar/navigasi persisten** (`Ringkasan & Hasil`, `Booth`, `Moderasi`, `Poster QR`, `Data Grid`, `Log aktivitas`) beserta pintasan langsung ke Halaman Publik dan Layar Besar. Halaman `/admin/e/:id` diringkas ke **4 angka KPI** + **tab tugas** (`Ringkasan & Hasil` sebagai tab awal, `Identitas & Gambar`, `Jadwal & Aturan`, `Kategori Ulasan`).
+
 1. **Buat event**: nama resmi acara (tampil sebagai judul utama; tanpa slug di URL karena hanya ada satu event aktif), **jadwal** (pendaftaran dibuka/ditutup, event mulai/selesai; zona waktu default WIB), banner/logo, **tema warna** (primary/accent), **kategori ulasan** (pilihan yang bisa dipilih reviewer, diatur admin; lihat A5), mode verifikasi reviewer (lihat A6).
 2. **Atur & pantau jadwal kapan saja**: form jadwal menampilkan pratinjau langsung ("Pendaftaran dibuka · ditutup 3 hari lagi · event mulai 12 hari lagi"), tombol cepat **"Tutup pendaftaran sekarang"** dan **"Perpanjang +1 hari / +1 minggu"**, serta peringatan bila ada booth `pending` saat pendaftaran akan ditutup (booth itu tetap bisa diverifikasi). Setiap perubahan jadwal tercatat di log. Bagikan link pendaftaran booth.
 3. **Antrean verifikasi booth**: daftar booth berstatus `pending` → admin lihat detail → **Setujui / Tolak (wajib isi alasan) / Minta revisi**. Booth yang punya email mendapat notifikasi; booth tanpa email (A16) tidak, dan keputusannya sepenuhnya di admin.
@@ -321,14 +323,14 @@ skor = (v / (v + m)) × R  +  (m / (v + m)) × C
 - Urutan **tidak diacak ulang** saat data berubah: di HP itu membuat jari salah tap.
 
 **Bagian 03 · Peringkat & ulasan terbaru**
-- **Peringkat**: nomor besar, nama, rating, skor. Baris pertama diberi latar. Saat urutan berubah, baris berpindah mulus dan berkedip; bila peringkat 1 berganti muncul toast "X naik ke peringkat 1" (tanpa mahkota atau confetti).
+- **Peringkat**: nomor besar, nama, rating, skor. Baris pertama diberi latar. Saat urutan berubah, baris berpindah mulus dan berkedip; bila peringkat 1 berganti muncul toast "X naik ke peringkat 1" (tanpa mahkota atau confetti agar tetap adil selama voting).
 - **Peringkat adalah komponen opsional**: admin dapat menyembunyikannya kapan saja (A3). Saat disembunyikan, bagian 03 hanya berisi "Ulasan terbaru", dan **server tidak mengirim data peringkat** sehingga tidak bisa diintip lewat jaringan (B20). Bagian ini selalu ditempatkan paling bawah, tidak pernah di atas, supaya pengunjung tidak terpaku pada peringkat 1.
 - **Ulasan terbaru**: feed 5 item, masuk dari atas; saat ramai diringkas "+N ulasan baru".
 
 **Lainnya**
 - **Mode Layar Besar** (`/screen`) untuk proyektor: huruf besar, tanpa interaksi, auto-rotate antar panel dengan urutan **Sorotan → Semua booth → Ulasan terbaru → Peringkat**. Panel peringkat **boleh tampil tetapi selalu yang terakhir** (tidak pernah di awal), dan mengikuti mode peringkat yang diatur admin.
-- **Animasi pemenang** diputar oleh admin: hitung mundur 3-2-1 → juara 3 → 2 → 1 → **daftar hasil akhir seluruh booth**, layar penuh dan tanpa confetti. Tampil di Layar Besar dan, bila dipilih admin, sebagai lapisan layar penuh yang bisa ditutup di halaman event pengunjung.
-- **Setelah event selesai dan hasil diumumkan**: **setiap kali pengunjung membuka atau menyegarkan halaman event, animasi pemenang diputar otomatis.** Pengunjung bisa **Lewati/Tutup** kapan saja (tombol, Esc, atau sentuh) untuk masuk ke tampilan **hanya-baca**, yang menampilkan banner "Event telah berakhir", hasil akhir di bagian bawah, dan tautan "Putar ulang animasi pemenang". Belum diumumkan: tidak ada animasi, tampil "Hasil segera diumumkan". Halaman booth tidak memutar animasi. Tersedia pilihan **"Jangan putar otomatis lagi di perangkat ini"** (kotak centang di bawah lapisan animasi, disimpan di browser); pengunjung tetap bisa memutar manual lewat tautan, dan bisa menyalakannya kembali lewat tombol "Putar otomatis saat dibuka: Nyala/Mati" di banner.
+- **Animasi pemenang** diputar oleh admin *(diperbarui atas permintaan pemilik proyek)*: layar penuh panggung gelap (`panggung`) bergaya **motion graphic** meriah — hitung mundur kinetik 3-2-1 dengan cincin & sinar sorotan → juara 3 → 2 → 1 → **daftar hasil akhir seluruh booth**, lengkap dengan **pita bertuliskan juara** (folded banner ribbon), **hiasan kilau bintang, pita bendera (bunting), confetti palet UNIMED, dan piala vektor SVG pada Juara 1**, plus suara hitung mundur & fanfare (`lib/sfx.ts`, B23), tetap menghormati `prefers-reduced-motion`. Tampil di Layar Besar dan, bila dipilih admin, sebagai lapisan layar penuh yang bisa ditutup di halaman event pengunjung.
+- **Setelah event selesai dan hasil diumumkan**: **setiap kali pengunjung membuka atau menyegarkan halaman event, animasi pemenang diputar otomatis.** Pengunjung bisa **Lewati/Tutup** kapan saja (tombol, Esc, atau sentuh) untuk masuk ke tampilan **hanya-baca**, yang menampilkan **alert kanan atas** `"Event telah berakhir. Tampilan ini hanya-baca."` (beserta seluruh notifikasi/toast sistem alert kanan atas beranimasi & ber-loader), hasil akhir di bagian bawah, dan tautan "Putar ulang animasi pemenang". Belum diumumkan: tidak ada animasi, tampil "Hasil segera diumumkan". Halaman booth tidak memutar animasi. Tersedia pilihan **"Jangan putar otomatis lagi di perangkat ini"** (kotak centang di bawah lapisan animasi, disimpan di browser); pengunjung tetap bisa memutar manual lewat tautan, dan bisa menyalakannya kembali lewat tombol "Putar otomatis saat dibuka: Nyala/Mati" di banner.
 - **Daftar hasil akhir (layar akhir animasi dan bagian hasil di halaman hanya-baca)**: **seluruh booth** dicantumkan berurutan dari peringkat 1. **Juara 1, 2, dan 3 masing-masing punya bingkai yang berbeda** (juara 1 paling besar dengan garis hijau tebal dan foto besar; juara 2 dan 3 bingkai sedang dengan garis berbeda nada), sedangkan **peringkat 4 dan seterusnya memakai baris yang sama**. Bingkai khusus ini **hanya untuk hasil akhir**, tidak dipakai pada peringkat saat event berlangsung, supaya tidak ada sorotan sebelum diumumkan. Setiap baris menampilkan **peringkat, foto, nama, rata-rata bintang dengan jumlah ulasan, skor, dan tag ulasan teratas (maksimal 3, beserta jumlahnya)**, misalnya "Seru 12 · Ramah 8 · Bermanfaat 2". **Tag ulasan dibuat oleh admin** (kategori ulasan, A5) dan dipilih pengunjung saat menilai; label pada hasil yang diumumkan dibekukan bersama hasil. Komponennya `ResultsList` (B14).
 - **Rating bisa disembunyikan (moderasi admin)**: lihat A3. Saat disembunyikan, tempat rating menampilkan "Rating disembunyikan", dan peringkat ikut tidak tampil.
 - Lencana otomatis ("Lagi Panas", "Naik Daun") **tidak dipakai di kartu booth** karena menggiring; bila dipakai, hanya di bagian 03 (v2).
@@ -351,9 +353,9 @@ skor = (v / (v + m)) × R  +  (m / (v + m)) × C
 /admin/e/:id/booths/import          Impor CSV booth: unggah/tempel, pratinjau per baris, impor (MVP; hanya `nama` yang wajib, email opsional)
 /admin/e/:id/booths/:bid            Kelola satu booth atas nama pemilik: profil, foto, produk, WhatsApp, pemilik (undang/lepas); dipakai juga untuk booth tanpa pemilik
 /admin/e/:id/moderation             Antrean review ditandai
-/admin/e/:id/data/:tab              Data ala Excel: tab booths | products | reviews | visitors | ranking (lihat, filter, sunting sel, aksi massal, ekspor; juga setelah event selesai)
+/admin/e/:id/data                   Data ala Excel: tab booths | products | reviews | visitors | ranking (lihat, filter, sunting sel, aksi massal, ekspor; juga setelah event selesai)
 /admin/e/:id/logs                   Log aktivitas (siapa melakukan apa, kejadian spam, error)
-/admin/e/:id/qr                     Cetak poster QR
+/admin/e/:id/posters                Cetak poster QR (A4/A5, murni di klien dari booth approved)
 /admin/e/:id/results                Hasil + export
 ```
 
@@ -1602,7 +1604,7 @@ GET/POST/PATCH/DELETE/PUT /api/admin/e/:id/booths/:bid/products[...]   kelola pr
 PUT  /api/admin/e/:id/booths/:bid/whatsapp   { number, consentConfirmedByAdmin: true }; disimpan dengan whatsapp_consent_by = admin
 GET  /api/admin/e/:id/visitors          pengunjung (hash) + blokir/buka blokir
 POST /api/admin/events/:id/archive      arsipkan event
-GET  /api/admin/e/:id/qr                data/poster QR
+# (Poster QR di /admin/e/:id/posters dibuat murni di klien; rute GET /api/admin/e/:id/qr tidak dibuat)
 GET  /api/admin/e/:id/results           hasil + export CSV
 PUT  /api/admin/e/:id/review-categories   kelola kategori ulasan (tambah/ganti nama/urut/nonaktifkan)
 PUT  /api/admin/e/:id/media             unggah banner/logo event (WebP, aturan sama dengan B15)
@@ -1730,8 +1732,8 @@ LIMIT 100
 
 Aturan:
 - **Query dibangun hanya dari nilai yang sudah divalidasi whitelist** (UUID `eventId`, kategori/level dari `log-events.ts`, rentang waktu dari pilihan tetap). Jangan pernah menyambung input mentah ke string SQL.
-- Hasil di-cache singkat (±10 detik, Cache API) agar admin yang menyegarkan berkali-kali tidak menghabiskan kuota baca.
-- UI `LogViewer` (B14): filter rentang waktu/kategori/level/aktor, tabel, badge level, auto-refresh **polling 10–30 detik** (tidak perlu WebSocket), tombol ekspor CSV untuk tampilan saat ini, dan tautan "Buka di Workers Logs (Cloudflare)" untuk log teknis yang lebih dalam.
+- Hasil di-cache singkat (`Cache-Control: private, max-age=10` pada respons Worker) agar admin yang menyegarkan berkali-kali tidak menghabiskan kuota baca; bila secret AE belum diatur, server menjawab `{ configured: false, entries: [] }`.
+- UI halaman Log (`/admin/e/:id/logs`, B14): filter rentang waktu/kategori/level/aksi/aktor/target, tabel, badge level, auto-refresh **polling 15 detik** (tidak perlu WebSocket), dan tombol ekspor CSV untuk tampilan saat ini.
 - Siapa yang bisa melihat: hanya admin (di balik Cloudflare Access).
 
 ### Keterbatasan yang perlu diketahui
@@ -2070,14 +2072,14 @@ Tampilan dan perilakunya sudah dijelaskan di A3 (langkah 8). Di sini rancangan t
 
 ### Frontend (hanya di chunk `areas/admin`)
 
-- **TanStack Table** (headless: sortir, filter, visibilitas kolom, seleksi baris) + **TanStack Virtual** (hanya baris yang terlihat yang dirender, sehingga ribuan review tetap ringan). Tidak memakai paket grid komersial; tampilan sepenuhnya memakai token tema (B4).
-- Satu komponen **`DataGrid`** generik; yang berbeda per tab hanyalah **definisi kolom** (`areas/admin/features/data/columns/{booths,products,reviews,visitors,ranking}.ts`): label, tipe (`text | number | stars | select | datetime | hash`), `editable`, validator Zod, dan komponen editor sel. Menambah kolom/tab = menambah satu definisi, bukan komponen baru.
+- **Tanpa paket grid/tabel tambahan** (diubah saat pengerjaan dari rancangan awal TanStack Table/Virtual): sortir, filter, dan paginasi kursor berjalan di server sehingga baris yang dimuat tetap ringan; tampilan memakai token tema (B4).
+- Satu komponen **`DataGrid`** generik; definisi kolom & validator per tab bersumber dari **satu tempat** di `src/shared/data-grid.ts` (`GRID_COLUMNS`, `EDIT_SCHEMAS`). Menambah kolom/tab = menambah definisi di sana dan peta SQL di Worker.
 - **Editor sel** adalah komponen kecil yang dipakai ulang: `TextCell`, `NumberCell`, `SelectCell`, `StarsCell` (memakai `RatingStars` mode input), `BoolCell`.
 - **Keyboard**: panah/Tab/Enter/Esc, `Ctrl+C` menyalin nilai sel; tempel (`Ctrl+V`) ke sel tunggal. Tempel banyak sel ditunda ke v2.
 - **Hook `useGridEdits`** menyimpan perubahan tertunda sebagai peta `{ entity, id, field, oldValue, newValue, version }`. Sel yang diubah dikirim ke server hanya saat **Simpan**; sebelum itu semuanya hanya di memori.
 - **Dialog "Simpan perubahan"** (`ChangeReviewDialog`): daftar sebelum → sesudah, **satu alasan wajib**, dan **pratinjau dampak peringkat** yang dihitung di browser memakai `shared/scoring.ts` (fungsi yang sama dengan server).
 - Pilihan kolom, lebar, dan kerapatan diingat di `localStorage` (hanya kenyamanan; tidak penting bila hilang).
-- **XLSX** dibuat lewat pustaka penulis XLSX yang **di-`import()` saat tombol ekspor ditekan** (tidak masuk bundle awal); CSV memakai stream dari server.
+- **CSV saja di MVP** (XLSX dan tampilan tersimpan tetap v1): CSV Data Grid dialirkan dari server (`GET …/data/:entity/export`), ekspor hasil akhir (`ResultsCard`) dibuat di klien dan PDF lewat cetak browser; **poster QR** (`/admin/e/:id/posters`) dibuat murni di klien tanpa rute `/qr` di server.
 
 ### Backend
 
@@ -2085,7 +2087,7 @@ Tampilan dan perilakunya sudah dijelaskan di A3 (langkah 8). Di sini rancangan t
 GET   /api/admin/e/:id/data/:entity?cursor=&limit=&sort=&filters=&q=
 PATCH /api/admin/e/:id/data/bulk        { reason, changes: [{ entity, id, field, value, version }] }
 GET   /api/admin/e/:id/data/:entity/export?format=csv|xlsx
-GET   /api/admin/e/:id/history/:entity/:id
+# (Riwayat per baris memakai tautan ke halaman Log terfilter ?target=<id>; rute GET .../history/:entity/:id tidak dibuat di MVP)
 ```
 
 - **Query aman**: `entity`, kolom sortir, kolom filter, dan operator (`eq`, `contains`, `gte`, `lte`, `in`) **hanya dari whitelist per entity**, dibangun dengan Drizzle (parameter terikat), tidak pernah dari string mentah. Semua parameter divalidasi Zod. Selalu menyertakan `event_id`.
@@ -2102,7 +2104,7 @@ GET   /api/admin/e/:id/history/:entity/:id
 
 ### Riwayat per baris
 
-Panel **Riwayat** memadukan dua sumber: kolom `original_*`/`moderated_*` di baris yang bersangkutan (permanen) dan entri log Analytics Engine yang `target = (entity, id)` (selama retensi log). Karena itu nilai asli review **tidak hilang walau log kedaluwarsa**.
+Setiap baris Data Grid menautkan **Riwayat** ke halaman Log terfilter (`?target=<id>`). Untuk review, kolom `original_*`/`moderated_*` di D1 juga tampil langsung pada sel review lewat penanda `*` (tooltip) sehingga nilai asli **tidak hilang walau log kedaluwarsa**; rute `GET …/history/:entity/:id` terpisah tidak dibuat di MVP.
 
 ## B19. Implementasi animasi hemat resource
 
@@ -2238,9 +2240,9 @@ Tautan event dan booth sering dibagikan (juga lewat QR), padahal aplikasi ini SP
 
 ### Animasi otomatis saat halaman dibuka setelah event selesai (mode `replay`)
 
-- **Syarat**: fase `ended` **dan** `results_published_at` terisi. Setiap pengunjung yang membuka atau **menyegarkan** halaman event melihat `WinnerReveal` diputar otomatis dari `results_json`. Tidak ada penyimpanan "sudah dilihat", jadi setiap muat ulang memutar lagi (sesuai keputusan).
-- **Bisa dilewati**: tombol *Lewati*, `Esc`, atau sentuh; di akhir ada tombol "Lihat halaman (hanya-baca)". Setelah ditutup, halaman tampil hanya-baca dengan banner "Event telah berakhir" dan tautan "Putar ulang animasi pemenang".
-- **Opsi "jangan putar otomatis lagi di perangkat ini"**: kotak centang di bawah lapisan animasi (terlihat sejak awal, sehingga bisa dicentang bersamaan dengan Lewati). Disimpan **hanya di browser** (`localStorage`, cadangan: memori) dengan kunci `winnerAutoplayOff:{eventId}:{results_version}`, tanpa data pribadi dan tanpa penyimpanan di server. Karena kuncinya memuat `results_version`, **pemutaran otomatis menyala kembali** bila admin memperbarui hasil. Default **Nyala**. Pengunjung tetap bisa memutar manual lewat "Putar ulang animasi pemenang" dan menyalakan/mematikan lewat tombol "Putar otomatis saat dibuka: Nyala/Mati" di banner hanya-baca. Mode `live` (diputar admin) tidak terpengaruh opsi ini.
+- **Syarat**: fase `ended` **dan** `results_published_at` terisi. Setiap pengunjung yang baru membuka halaman, **menyegarkan (refresh)**, membuka ulang tab, atau saat versi hasil baru diterbitkan melihat `WinnerReveal` diputar otomatis dari `results_json`; sedangkan perpindahan halaman di dalam sesi SPA yang sama (`/b/:id` ↔ `/` ↔ `/results`) tidak memutarnya berulang kali setelah ditutup. Tidak ada penyimpanan "sudah dilihat" di server/localStorage untuk pemutaran pertama, jadi muat ulang halaman tetap memutar lagi kecuali dicentang opsi berhenti putar otomatis.
+- **Bisa dilewati**: tombol *Lewati*, `Esc`, atau sentuh; di akhir ada tombol "Lihat halaman". Setelah ditutup, halaman tampil hanya-baca dengan alert "Event telah berakhir" dan tombol terbang ikon Play di pojok kanan bawah untuk memutar ulang animasi pemenang.
+- **Opsi "jangan putar otomatis lagi di perangkat ini"**: kotak centang di bawah lapisan animasi (terlihat sejak awal, sehingga bisa dicentang bersamaan dengan Lewati). Disimpan **hanya di browser** (`localStorage`, cadangan: memori) dengan kunci `winnerAutoplayOff:{eventId}:{results_version}`, tanpa data pribadi dan tanpa penyimpanan di server. Karena kuncinya memuat `results_version`, **pemutaran otomatis menyala kembali** bila admin memperbarui hasil. Default **Nyala**. Pengunjung tetap bisa memutar manual lewat tombol terbang Play di kanan bawah dan menyalakan/mematikan opsi langsung dari lapisan animasi. Mode `live` (diputar admin) tidak terpengaruh opsi ini.
 - **Hanya di halaman event** (dan `/results`). Halaman booth dan tautan QR tidak memutarnya.
 - **Belum diumumkan** (event selesai, `results_published_at` kosong): tidak ada animasi; tampil "Hasil segera diumumkan", dan peringkat mengikuti `ranking_mode`/`ratings_mode`.
 - **Ringan**: data animasi adalah `results_json` (nama, skor, kunci foto sampul thumb per booth atau `null` bila tanpa foto, lalu `ResultsList` memakai bingkai, A16; ±10 KB untuk 100 booth) di dalam snapshot pasca-event (cache lebih lama, `snapshotTtlSecAfterEnd`). Foto juara 1–3 dimuat saat lapisan mulai; foto booth lain (thumb) dimuat *lazy* saat daftar digulir. Dengan `prefers-reduced-motion` langsung menampilkan daftar akhir tanpa urutan.
@@ -2560,20 +2562,18 @@ function SafeImage({ src, alt = "", aspect, fallback }: Props) {
               style={{ aspectRatio: aspect }} onError={() => setFailed(true)} />;
 }
 
-// Strategi BINGKAI
-<SafeImage src={thumbUrl(b.coverThumbKey)} aspect="4/3"
-           fallback={<PhotoFrame size="md" id={b.id} name={b.name} boothNo={b.boothNo} />} />
-
-// Strategi HILANG
-<SafeImage src={thumbUrl(b.logoKey)} aspect="1/1" fallback={null} />
+// Strategi HILANG / HANYA-TEKS (diperbarui atas permintaan pemilik proyek):
+// Ketika foto kosong atau gagal dimuat, jangan tampilkan PhotoFrame (kotak inisial);
+// tampilkan bersih nama/teks saja agar tampilan tidak penuh kotak placeholder.
+<SafeImage src={thumbUrl(b.coverThumbKey)} aspect="4/3" fallback={null} />
 
 // Strategi HANYA TEKS (tata letak berganti): dipilih di komponen induk
 const hasPhoto = !!b.coverKey;
 <section className={hasPhoto ? "spot spot--photo" : "spot spot--text"}> … </section>
 ```
 
-- **`PhotoFrame`** murni CSS/teks: tanpa gambar, tanpa permintaan jaringan, tanpa ikon. Nama panjang dipotong 3 baris (`overflow-wrap: anywhere`). Warna dari token tema (B4), dipilih `hash32(id) % n`, jadi stabil tiap muat dan tidak bergantung urutan.
-- **Ukuran tetap**: `SafeImage` dan `PhotoFrame` memakai `aspect-ratio` yang sama dengan gambar aslinya, sehingga kartu berfoto, berbingkai, dan hanya-teks pada grid yang sama berukuran identik (keadilan, A8) dan tidak ada *layout shift* saat gambar tiba atau gagal.
+- **Tanpa foto (diperbarui)**: ketika gambar kosong atau gagal dimuat (`fallback={null}`), komponen tidak menampilkan kotak inisial (`PhotoFrame` / `BD`), melainkan langsung merapikan tata letak ke mode bersih **hanya nama & data teks** (berlaku pada `WinnerReveal`, `ResultsList`, `BoothCard`, `ProductCard`, dan `ScreenPanels`).
+- **Ukuran tetap saat ada foto**: `SafeImage` tetap memakai `aspect-ratio` yang sama dengan gambar aslinya sehingga tidak ada *layout shift* saat gambar dimuat.
 - **`Present`** membungkus tiap bagian opsional (tagline, deskripsi, "Kenalan", produk, stiker nomor). Karena mengembalikan `null`, `gap` pada induk flex/grid tidak menyisakan celah dan judul bagian tidak pernah tampil sendirian. Judul bagian selalu **anak** dari `Present`, bukan saudaranya.
 - **Pergeseran saat gambar gagal**: bila `src` ada tetapi gagal dimuat, strategi *bingkai* dan *hanya teks* berganti tanpa mengubah ukuran; strategi *hilang* boleh bergeser sedikit (kasus langka, tidak diperhalus). Ruang dipertahankan selama gambar masih dimuat.
 - **Aksesibilitas**: gambar dekoratif memakai `alt=""`; bingkai `aria-hidden` karena nama booth sudah ada sebagai teks di sebelahnya.
@@ -2618,7 +2618,7 @@ Jawaban atas ini akan mengubah rancangan; yang bercetak tebal paling berpengaruh
 14. ~~Booth setelah event selesai~~ **Selesai**: semua tampilan **hanya-baca**; portal booth tetap bisa dibuka (login OTP akun yang sudah ada) tetapi tidak bisa mengubah apa pun (A2, B17).
 15. ~~Sunting review oleh admin~~ **Selesai**: admin boleh mengubah bintang/komentar/status (alasan wajib, nilai asli tersimpan) lewat **halaman Data ala Excel** (A3, B18). Membuat review baru atas nama admin tetap tidak disertakan kecuali kamu minta.
 16. **Format ekspor**: cukup **CSV**, atau perlu **XLSX** juga di MVP? (CSV sudah masuk MVP; XLSX dijadwalkan v1.)
-17. **Gaya gerak (A12)**: setuju **Glide sebagai default**, **Pop** sebagai pilihan, dan **Mati** (tanpa confetti dan mahkota), dengan pengaturan *Penuh/Hemat/Mati*? Perlukah **efek suara** di reveal pemenang (saran: ada tetapi mati secara default)?
+17. ~~Gaya gerak (A12)~~ **Selesai (diperbarui)**: Pop sebagai bawaan gaya Seru dan Glide untuk Profesional/Layar, dengan `prefers-reduced-motion`. **Animasi pemenang** ditingkatkan menjadi gaya **motion graphic** lengkap dengan pita, bunting, kilau bintang, confetti palet UNIMED, piala vektor SVG (tanpa emoji), serta efek suara B23 bawaan nyala (lihat item 40–41 dan A8).
 18. **Spotlight & ulasan pilihan (A8)**: saya mengartikan "yang bagus saja" sebagai **ulasan yang tampil di spotlight hanya ★4–5, komentar ≥ 30 karakter, lolos moderasi, dan bisa disematkan admin**. Apakah juga perlu **booth yang ratingnya rendah tidak disorot**, atau semua booth tetap kebagian giliran (saran: semua tetap kebagian, karena tujuannya pemerataan)? Berapa **foto minimal/maksimal** per booth? *(Diperbarui: foto **tidak wajib**, minimal 0; maksimal tetap 6. Booth tanpa foto memakai bingkai atau tata letak hanya-teks, A16.)*
 19. ~~Peringkat di Layar Besar~~ **Selesai**: boleh tampil, tetapi **selalu panel terakhir/paling bawah**, tidak pernah di atas, supaya tidak ada sorotan ke peringkat 1 (A8).
 20. ~~Kategori ulasan~~ **Selesai**: hanya **chip pilihan** untuk meramaikan, diatur admin (A5). Ditambahkan: **peringkat adalah komponen opsional** yang bisa disembunyikan admin, dan admin bisa **memutar animasi pemenang** (A3, A8, B20).
@@ -2657,7 +2657,7 @@ Jawaban atas ini akan mengubah rancangan; yang bercetak tebal paling berpengaruh
 52. **Tindakan default filter**: usulan komentar **berat → ditahan** (bintang tetap dihitung), **ringan → tayang dengan kata disamarkan**, kontak/tautan/iklan → ditahan. Sesuai, atau ingin semua temuan ditahan dulu sampai admin menyetujui (lebih aman, tetapi butuh admin siaga)?
 53. **Klasifikasi AI** (OpenAI/Workers AI): usulan **tidak dipakai di MVP** (bahasa Indonesia tidak terdokumentasi, teks dikirim ke pihak ketiga, Perspective API ditutup 31 Des 2026). Bisa dievaluasi setelah ada contoh komentar nyata.
 54. ~~Booth dibuat admin / tanpa pemilik~~ **Diterapkan (permintaan baru)**: admin dapat membuat dan mengelola booth sendiri; **pemilik boleh tidak ada**; data minimal hanya **nama**. Pemilik bisa ditambah (isi email) atau dilepas kapan saja, dan sesi lamanya otomatis tidak sah (A16, B7, B26). **Disetujui:** (a) **email pemilik benar-benar opsional**, booth berjalan penuh tanpa email dan semua keputusan ada di admin; (b) booth buatan admin **selalu langsung tayang**, tanpa opsi draf; (c) untuk booth **tanpa pemilik** admin tidak perlu mengisi alasan saat mengubahnya (tetap tercatat di log), sedangkan untuk booth berpemilik aktif alasan tetap wajib; (d) mengisi email pemilik **tidak otomatis mengirim email**, undangan lewat tombol terpisah.
-55. ~~Komponen tanpa gambar~~ **Diterapkan (permintaan baru)**: tidak ada "gambar tidak ditemukan" di halaman pengunjung. Tiap komponen memakai satu strategi tetap: **bingkai** (kartu grid, baris peringkat, juara), **hanya teks** (sorotan, hero halaman booth, produk andalan), atau **hilang** (logo, kolase hero, thumbnail kecil). Bila tak ada satu pun item berfoto di sebuah grid, seluruh grid beralih ke mode hanya-teks. Foto yang gagal dimuat diperlakukan sama dengan tidak ada (A16, B26).
+55. ~~Komponen tanpa gambar~~ **Diperbarui atas permintaan pemilik proyek**: tidak ada "gambar tidak ditemukan" dan **tidak memakai bingkai inisial (`BD` / `PhotoFrame`) ketika gambar tidak ada**. Karena foto sepenuhnya opsional, item tanpa gambar (atau gagal dimuat) tampil **bersih hanya nama & teks saja** di seluruh komponen (`WinnerReveal`, `ResultsList`, `BoothCard`, `ProductCard`, `ScreenPanels`).
 56. ~~Foto wajib untuk pendaftaran mandiri~~ **Selesai (disetujui): foto sepenuhnya opsional**, tanpa pengaturan untuk mewajibkannya. Dasarnya: bila tidak ada gambar, semua komponen beralih ke bingkai, hanya-teks, atau hilang (A16, B26). Form dan portal hanya memberi saran lembut.
 57. ~~Impor CSV booth~~ **Selesai (disetujui): masuk MVP.** Kolom wajib hanya `nama`; email dan kolom lain opsional; semua baris langsung tayang (A16, B26).
 58. **Ambang minimal review untuk masuk peringkat (A7).** Bawaan saat ini `minReviewsToRank = 3` dan `m = 5`. Uji Tahap 2 menunjukkan bila rata-rata semua review ≈ 4,8, booth 3 review ★5 mengalahkan booth 80 review 4,8 apa pun `m`-nya. Pilihan: (a) naikkan `minReviewsToRank` (mis. 5–10, sesuai perkiraan jumlah review per booth; **perlu perkiraan skala, item 1**); (b) ganti rumus dengan batas bawah interval Wilson (lebih tegas terhadap sampel kecil, tetapi lebih sulit dijelaskan ke pengunjung); (c) biarkan seperti sekarang. Saran saya: (a).

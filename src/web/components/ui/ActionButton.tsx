@@ -109,6 +109,7 @@ export function ActionButton({
         style={lockedWidth ? { width: lockedWidth } : undefined}
         onClick={handleClick}
         {...rest}
+        icon={pending ? false : rest.icon}
       >
         {pending && <Spinner />}
         {label}

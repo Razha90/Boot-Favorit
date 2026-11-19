@@ -56,7 +56,7 @@ describe("WriteAction", () => {
     );
     // Di dalam <fieldset disabled>, isian ditandai lewat pseudo-kelas :disabled (bukan properti .disabled).
     expect(screen.getByLabelText("nama").matches(":disabled")).toBe(true);
-    expect(screen.getByRole("button").matches(":disabled")).toBe(true);
+    expect(screen.getByRole("button", { name: "Simpan" }).matches(":disabled")).toBe(true);
     expect(screen.getByRole("status").textContent).toContain("hanya-baca");
   });
 

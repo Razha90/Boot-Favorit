@@ -10,6 +10,7 @@ import { QueryState } from "../../../components/ui/states";
 import { copy } from "../../../lib/copy";
 import { formatDateTime, formatScore } from "../../../lib/format";
 import { adminKeys } from "../api";
+import { downloadCsv } from "../csv-export";
 import { resultsApi, resultsKeys } from "../results-api";
 
 const R = copy.admin.results;
@@ -29,7 +30,7 @@ function ModeSelect({
   const [mode, setMode] = useState(value);
   return (
     <div className="flex flex-wrap items-end gap-2">
-      <Field label={label}>
+      <Field label={label} className="min-w-0 flex-1">
         {(id) => (
           <Select id={id} value={mode} onChange={(e) => setMode(e.target.value as DisplayMode)}>
             {MODES.map((m) => (
@@ -77,6 +78,24 @@ export function ResultsCard({ event }: { event: AdminEventView }) {
     if (confirm === "refresh") await resultsApi.refresh(event.id, ctx);
     if (confirm === "reveal") await resultsApi.reveal(event.id, target, ctx);
     await refresh();
+  };
+
+  const exportRows = view?.frozen ?? view?.live ?? [];
+  const exportCsv = () => {
+    downloadCsv(
+      `hasil-${event.id.slice(0, 8)}.csv`,
+      ["rank", "boothId", "boothNo", "name", "average", "reviewCount", "score", "topCategories"],
+      exportRows.map((r) => [
+        r.rank,
+        r.boothId,
+        r.boothNo,
+        r.name,
+        r.average,
+        r.reviewCount,
+        r.score,
+        r.topCategories.map((c) => `${c.label} (${c.count})`).join("; "),
+      ]),
+    );
   };
 
   return (
@@ -145,16 +164,24 @@ export function ResultsCard({ event }: { event: AdminEventView }) {
               </Button>
             </>
           )}
+          <Button onClick={exportCsv} disabled={exportRows.length === 0}>
+            {R.exportCsv}
+          </Button>
+          <Button onClick={() => window.print()} disabled={exportRows.length === 0}>
+            {R.printPdf}
+          </Button>
         </div>
       </div>
 
       <QueryState loading={q.isLoading} error={q.error}>
-        <ol className="grid gap-1 text-sm">
+        <ol className="grid divide-y divide-line rounded-card border-(length:--border-w) border-line bg-surface px-3 text-sm">
           {(view?.live ?? []).slice(0, 10).map((r) => (
-            <li key={r.boothId} className="flex flex-wrap gap-2">
-              <span className="w-8 font-bold">{r.rank ?? "–"}</span>
-              <span className="min-w-40 [overflow-wrap:anywhere]">{r.name}</span>
-              <span className="text-muted">
+            <li key={r.boothId} className="flex flex-wrap items-center gap-2 py-2">
+              <span className="w-7 font-extrabold text-primary-strong">{r.rank ?? "–"}</span>
+              <span className="min-w-40 flex-1 font-semibold [overflow-wrap:anywhere]">
+                {r.name}
+              </span>
+              <span className="text-xs text-muted sm:text-sm">
                 {r.average === null
                   ? copy.visitor.noRatingsYet
                   : `${r.average.toFixed(2).replace(".", ",")} · ${copy.results.reviews(r.reviewCount)}`}
@@ -162,7 +189,7 @@ export function ResultsCard({ event }: { event: AdminEventView }) {
               </span>
             </li>
           ))}
-          {(view?.live.length ?? 0) === 0 && <li className="text-muted">{R.none}</li>}
+          {(view?.live.length ?? 0) === 0 && <li className="py-2 text-muted">{R.none}</li>}
         </ol>
       </QueryState>
 

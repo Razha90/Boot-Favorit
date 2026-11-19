@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Present } from "../../../components/shared/Present";
 import { SafeImage } from "../../../components/shared/SafeImage";
+import { Icon } from "../../../components/ui/Icon";
+import { pointerTiltProps } from "../../../features/fx/ClickFx";
 import { cn } from "../../../lib/cn";
 import { copy } from "../../../lib/copy";
 import { countdownText, heroCopy, splitHighlight } from "../../../lib/hero-copy";
@@ -39,8 +41,9 @@ export function PolaroidCollage({
       {keys.map((k, i) => (
         <figure
           key={k}
+          {...pointerTiltProps()}
           className={cn(
-            "relative w-[74%] shrink-0 snap-center rounded-card border-(length:--border-w) border-line bg-surface-raised p-2 pb-8 shadow-card lg:w-auto in-data-[vibe=pro]:rotate-0",
+            "seru-tilt relative w-[74%] shrink-0 snap-center rounded-card border-(length:--border-w) border-line bg-surface-raised p-2 pb-8 shadow-card lg:w-auto in-data-[vibe=pro]:rotate-0",
             TILTS[i % TILTS.length],
             keys.length === 1 && "lg:col-start-2",
           )}
@@ -111,10 +114,24 @@ export function Hero({ event, state, boothCount, serverNow, registrationVisible 
       id="top"
       data-hero-layout={hasCollage ? "collage" : "text"}
       className={cn(
-        "mx-auto grid max-w-6xl gap-8 px-4 pb-10 pt-8",
+        "relative mx-auto grid max-w-6xl gap-8 overflow-x-clip px-4 pb-10 pt-8",
         hasCollage && "lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-center",
       )}
     >
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 48 48"
+        className="reveal-twinkle pointer-events-none absolute right-4 top-6 size-10 text-accent in-data-[vibe=pro]:hidden"
+      >
+        <path
+          d="M24 4 C25 16 32 23 44 24 C32 25 25 32 24 44 C23 32 16 25 4 24 C16 23 23 16 24 4Z"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
       <div className="grid content-center gap-5">
         <span className="flex flex-wrap items-center gap-3">
           <StatusPill live={c.live}>{c.badge}</StatusPill>
@@ -171,7 +188,7 @@ export function Hero({ event, state, boothCount, serverNow, registrationVisible 
               aria-hidden="true"
               className="grid size-7 place-items-center rounded-full bg-accent text-accent-fg transition-transform group-hover:translate-x-0.5"
             >
-              →
+              <Icon name="arrow-right" className="size-4" />
             </span>
           </a>
           {registrationVisible && (

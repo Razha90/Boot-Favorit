@@ -194,7 +194,8 @@ await optBox?.click();
 await tap(await btn(visitorPage, "Lewati"));
 await visitorPage.waitForFunction(() => !document.querySelector("dialog[open]"), { timeout: 5000 });
 const ended = await text(visitorPage);
-check("Mode hanya-baca: banner berakhir + hasil akhir + 'Putar ulang animasi pemenang'", ended.includes("Event telah berakhir") && ended.includes("Hasil akhir") && ended.includes("Putar ulang animasi pemenang"));
+const replayBtn = await visitorPage.$(`button[aria-label="Putar ulang animasi pemenang"]`);
+check("Mode hanya-baca: banner berakhir + hasil akhir + tombol terbang putar ulang", ended.includes("Event telah berakhir") && ended.includes("Hasil akhir") && !!replayBtn);
 const tiers = await visitorPage.$$eval("[data-tier]", (n) => n.map((x) => x.getAttribute("data-tier")));
 check("Hasil akhir: juara 1-3 berbingkai khusus, sisanya baris", JSON.stringify(tiers.slice(0, 3)) === JSON.stringify(["1", "2", "3"]), tiers.join(","));
 await visitorPage.evaluate(() => document.querySelector("section[aria-labelledby='peringkat']")?.scrollIntoView());
@@ -205,7 +206,9 @@ check("Mobile: tanpa gulir horizontal pada halaman hasil", noOverflow <= 0, `${n
 await visitorPage.reload({ waitUntil: "networkidle0" });
 await sleep(1500);
 check("Setelah memilih 'jangan putar otomatis': muat ulang TIDAK memutar animasi", !(await visitorPage.$("dialog[open]")));
-await tap(await btn(visitorPage, "Putar ulang animasi pemenang"));
+const replayBtnAfter = await visitorPage.$(`button[aria-label="Putar ulang animasi pemenang"]`);
+if (!replayBtnAfter) throw new Error('Tombol terbang "Putar ulang animasi pemenang" tidak ada');
+await tap(replayBtnAfter);
 await visitorPage.waitForSelector("dialog[open]", { timeout: 5000 }).then(() => check("'Putar ulang animasi pemenang' memutar manual", true), () => check("'Putar ulang animasi pemenang' memutar manual", false));
 
 // /results

@@ -3,6 +3,7 @@ import { ImageUploader } from "../../../components/shared/ImageUploader";
 import { SafeImage } from "../../../components/shared/SafeImage";
 import { ActionButton } from "../../../components/ui/ActionButton";
 import { Card } from "../../../components/ui/Card";
+import { InfoTip } from "../../../components/ui/InfoTip";
 import { copy } from "../../../lib/copy";
 import { mediaUrl, thumbKeyOf } from "../../../lib/media-url";
 import { adminApi } from "../api";
@@ -51,11 +52,11 @@ export function EventMediaCard({
       adminApi.uploadEventMedia(event.id, kind, slot, image, ctx);
 
   return (
-    <Card title={copy.admin.event.media.title}>
-      <p className="text-sm text-muted">{copy.admin.event.media.hint}</p>
-
-      <h3 className="text-sm font-bold">{copy.admin.event.media.hero}</h3>
-      <p className="text-xs text-muted">{copy.admin.event.media.heroHint}</p>
+    <Card title={copy.admin.event.media.title} info={copy.admin.event.media.hint}>
+      <div className="flex items-center gap-1.5">
+        <h3 className="text-sm font-bold">{copy.admin.event.media.hero}</h3>
+        <InfoTip text={copy.admin.event.media.heroInfo} title={copy.admin.event.media.hero} />
+      </div>
       <ul className="grid gap-3 sm:grid-cols-3">
         {[0, 1, 2].map((slot) => (
           <li key={`hero-${slot}`} className="grid content-start gap-2">
@@ -87,7 +88,10 @@ export function EventMediaCard({
           />
         </div>
         <div className="grid content-start gap-2">
-          <h3 className="text-sm font-bold">{copy.admin.event.media.logo}</h3>
+          <div className="flex items-center gap-1.5">
+            <h3 className="text-sm font-bold">{copy.admin.event.media.logo}</h3>
+            <InfoTip text={copy.admin.event.media.logoInfo} title={copy.admin.event.media.logo} />
+          </div>
           <p className="text-xs text-muted">{copy.admin.event.media.logoHint}</p>
           <Current fullKey={m.logoKey} onRemove={remove("logo", 0)} />
           <ImageUploader

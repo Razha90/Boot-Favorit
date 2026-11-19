@@ -26,4 +26,8 @@ interface Env {
   RESEND_API_KEY?: string;
   /** Alamat pengirim yang sudah diverifikasi di penyedia email, mis. "Booth Favorit <no-reply@eventunimed.id>". */
   EMAIL_FROM?: string;
+  /** Account id Cloudflare untuk membaca log aktivitas (Analytics Engine SQL API). Opsional: tanpanya halaman Log kosong. */
+  CF_ACCOUNT_ID?: string;
+  /** Token API Cloudflare READ-ONLY (Account Analytics: Read). Rahasia Worker; tidak pernah dikirim ke klien. */
+  CF_API_TOKEN?: string;
 }

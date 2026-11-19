@@ -3,6 +3,7 @@ import { ImageUploader } from "../../components/shared/ImageUploader";
 import { SafeImage } from "../../components/shared/SafeImage";
 import { ActionButton } from "../../components/ui/ActionButton";
 import { Card } from "../../components/ui/Card";
+import { Icon } from "../../components/ui/Icon";
 import { QueryState } from "../../components/ui/states";
 import { copy } from "../../lib/copy";
 import { mediaUrl, thumbKeyOf } from "../../lib/media-url";
@@ -56,30 +57,33 @@ export function MediaCard({ scope, booth, refresh }: EditorProps) {
                 <span className="flex gap-1">
                   <ActionButton
                     size="sm"
+                    icon={false}
                     aria-label={copy.admin.common.moveUp}
                     disabled={i === 0}
                     action={move(i, -1)}
                   >
-                    ←
+                    <Icon name="arrow-left" />
                   </ActionButton>
                   <ActionButton
                     size="sm"
+                    icon={false}
                     aria-label={copy.admin.common.moveDown}
                     disabled={i === list.length - 1}
                     action={move(i, 1)}
                   >
-                    →
+                    <Icon name="arrow-right" />
                   </ActionButton>
                   <ActionButton
                     size="sm"
                     variant="danger"
+                    icon={false}
                     aria-label={copy.admin.common.delete}
                     action={async (ctx) => {
                       await scope.deletePhoto(p.id, ctx);
                       await reload();
                     }}
                   >
-                    ✕
+                    <Icon name="trash" />
                   </ActionButton>
                 </span>
               </li>

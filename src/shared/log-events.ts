@@ -68,6 +68,7 @@ export const LOG_ACTIONS = [
   "admin.booth_owner_removed",
   "admin.booth_invite_sent",
   "admin.product_removed",
+  "admin.product_edited",
   "admin.data_exported",
   // sistem
   "email.skipped",

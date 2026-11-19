@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Link, useParams } from "react-router";
+import { useParams } from "react-router";
 import { Button } from "../../../components/ui/Button";
 import { Card } from "../../../components/ui/Card";
 import { QueryState } from "../../../components/ui/states";
@@ -26,11 +26,8 @@ export function Component() {
 
   return (
     <>
-      <div className="grid gap-2">
-        <Link to={`/admin/e/${id}`} className="text-sm text-muted underline">
-          ← {copy.admin.events.title}
-        </Link>
-        <h1 className="font-display text-3xl font-extrabold">{M.title}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-display text-2xl font-extrabold sm:text-3xl">{M.title}</h1>
       </div>
 
       <div role="tablist" aria-label={M.title} className="flex flex-wrap gap-2">

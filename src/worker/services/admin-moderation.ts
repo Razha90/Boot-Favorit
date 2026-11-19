@@ -242,7 +242,8 @@ async function apply(
         moderatedBy: actor,
         moderatedAt: d.now,
         moderationReason: reason,
-        updatedAt: d.now,
+        // Versi selalu naik, walau dua suntingan jatuh pada milidetik yang sama (kontrol konkurensi Data Grid, B18).
+        updatedAt: Math.max(d.now, cur.updatedAt + 1),
       })
       .where(eq(reviews.id, cur.id)),
     recomputeStatsStatement(db, cur.boothId, d.now),
@@ -388,6 +389,9 @@ async function one(db: Db, eventId: string, id: string): Promise<AdminReview> {
   return toAdminReview(row);
 }
 
+/** `updated_at` pengunjung = token versi: selalu naik, walau dua perubahan dalam milidetik yang sama. */
+const nextVisitorVersion = (now: number) => sql`MAX(${now}, ${visitors.updatedAt} + 1)`;
+
 export async function setVisitorBlocked(
   db: Db,
   d: Deps,
@@ -397,7 +401,22 @@ export async function setVisitorBlocked(
 ): Promise<void> {
   const r = await db
     .update(visitors)
-    .set({ blocked: blocked ? 1 : 0, updatedAt: d.now })
+    .set({ blocked: blocked ? 1 : 0, updatedAt: nextVisitorVersion(d.now) })
+    .where(and(eq(visitors.id, visitorId), eq(visitors.eventId, eventId)));
+  if ((r.meta?.changes ?? 0) === 0) throw new ApiError("not_found", "visitor");
+}
+
+/** Ubah nama tampil pengunjung (Data Grid). Nama kosong = tanpa nama (tampil sebagai "Pengunjung"). */
+export async function setVisitorName(
+  db: Db,
+  d: Deps,
+  eventId: string,
+  visitorId: string,
+  displayName: string | null,
+): Promise<void> {
+  const r = await db
+    .update(visitors)
+    .set({ displayName, updatedAt: nextVisitorVersion(d.now) })
     .where(and(eq(visitors.id, visitorId), eq(visitors.eventId, eventId)));
   if ((r.meta?.changes ?? 0) === 0) throw new ApiError("not_found", "visitor");
 }

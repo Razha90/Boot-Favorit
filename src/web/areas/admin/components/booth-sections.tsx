@@ -65,7 +65,7 @@ export function ProfileCard({ eventId, booth, refresh }: SectionProps) {
           />
         )}
       </Field>
-      <Field label={copy.admin.booth.about} hint={copy.admin.booth.aboutHint}>
+      <Field label={copy.admin.booth.about} info={copy.admin.booth.aboutInfo}>
         {(id) => (
           <Textarea
             id={id}
@@ -104,7 +104,7 @@ export function ProfileCard({ eventId, booth, refresh }: SectionProps) {
         )}
       </div>
       {owned && (
-        <Field label={copy.admin.booth.reason} hint={copy.admin.booth.reasonHint}>
+        <Field label={copy.admin.booth.reason} info={copy.admin.booth.reasonInfo}>
           {(id) => (
             <Input id={id} value={f.reason} onChange={(e) => set("reason", e.target.value)} />
           )}
@@ -166,7 +166,7 @@ export function OwnerCard({ eventId, booth, refresh }: SectionProps) {
         )}
       </Field>
       {owned && (
-        <Field label={copy.admin.booth.reason} hint={copy.admin.booth.reasonHint}>
+        <Field label={copy.admin.booth.reason} info={copy.admin.booth.reasonInfo}>
           {(id) => <Input id={id} value={reason} onChange={(e) => setReason(e.target.value)} />}
         </Field>
       )}

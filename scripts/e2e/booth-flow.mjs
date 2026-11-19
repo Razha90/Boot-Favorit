@@ -126,7 +126,7 @@ await tap(await btn(owner, "Verifikasi"));
 await waitText(owner, "Kopi Rempah Nusantara");
 await waitText(owner, "Profil booth");
 const home = await bodyText(owner);
-check("Portal: status, ringkasan, ulasan, profil, WhatsApp, bagikan", ["Booth tayang", "Ringkasan penilaian", "Ulasan masuk", "Profil booth", "WhatsApp (opsional)", "Bagikan booth"].every((s) => home.includes(s)));
+check("Portal: status, ringkasan, ulasan, profil, WhatsApp, bagikan", ["Booth tayang", "Ringkasan penilaian", "Ulasan masuk", "Profil booth", "WhatsApp", "Bagikan booth"].every((s) => home.includes(s)));
 check("Mobile: tanpa gulir horizontal", (await overflow(owner)) <= 0, `${await overflow(owner)}px`);
 check("QR booth tampil (SVG berlabel)", (await owner.$("svg[role='img'][aria-label='QR menuju halaman booth']")) !== null);
 await owner.screenshot({ path: path.join(OUT, "booth-portal-mobile.png"), fullPage: true });

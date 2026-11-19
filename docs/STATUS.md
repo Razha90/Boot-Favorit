@@ -7,9 +7,9 @@
 ## Posisi sekarang
 
 - **Fase:** pengerjaan (pemilik proyek menyetujui masuk tahap pengerjaan, 2026-11-19).
-- **Tahap 0 sampai 8: SELESAI** (Tahap 6–8 dengan batasan jujur di bawah). `npm run check` lulus (exit 0): Biome, tiga penjaga, `tsc -b` (4 proyek), **1168 tes** (61 file). Build produksi berhasil; chunk awal **±72 KB gzip** (portal booth 8 KB, lazy); galeri tidak ikut produksi. Portal booth diuji di Chrome sungguhan (`booth-flow.mjs`, 26 pemeriksaan). Chrome sungguhan (dev server, viewport HP 390×844 + desktop): alur admin (`admin-flow.mjs`), halaman pengunjung (`visitor-flow.mjs`), alur penilaian (`review-flow.mjs`), **alur peringkat/hasil/Layar Besar/animasi** (`standings-flow.mjs`, 31 pemeriksaan), galeri **9/9** (`gallery-visual.mjs`), **0 teks di bawah kontras AA** di tiga kombinasi (`gallery-contrast.mjs`).
-- **Tahap berikutnya:** **Tahap 9: Admin lanjutan** (Data Grid, log, poster QR, ekspor; lihat `BUILD-PLAN.md`). Belum dimulai.
-- **Git:** `9556f9c` (Tahap 0–5), `b9ff2ce` (Tahap 6), `a3ab182` (Tahap 7). **Tahap 8 belum di-commit**; commit hanya atas permintaan pemilik proyek.
+- **Tahap 0 sampai 10: SELESAI** (Tahap 6–10 dengan batasan jujur pra-deploy di bawah). **`npm run check` TERBARU LULUS (exit 0):** Biome (`336` berkas, 0 galat/peringatan), `lint:tokens`, `lint:img`, `lint:boundaries`, `tsc -b`, dan Vitest **1233/1233 tes lulus** (**67 file**). Build produksi & uji Chrome E2E (`admin-flow.mjs`, `visitor-flow.mjs`, `review-flow.mjs`, `standings-flow.mjs`, `booth-flow.mjs`, `data-flow.mjs`, `a11y-responsive.mjs`, `full-event-sim.mjs`, `gallery-visual.mjs`, `gallery-contrast.mjs`) terakhir lulus sebelum batch pembaruan UI terbaru (Admin UI redesign, `InfoTip`, `ResultsBanner` tombol terbang, `ShareButton` multi-kanal, `RevealSessionProvider`) dan belum dijalankan ulang.
+- **Tahap berikutnya:** **uji ulang Chrome E2E (opsional bila diperlukan) & persiapan akun Cloudflare produksi / deploy perdana** bersama pemilik proyek (lihat `docs/DEPLOY.md` dan keputusan terbuka di `explore.md`).
+- **Git:** `9556f9c` (Tahap 0–5), `b9ff2ce` (6), `a3ab182` (7), `6bdcfd2` (8). **Pekerjaan Tahap 9, Tahap 10, peningkatan motion graphic/B23, sistem alert kanan atas persisten tanpa loader, tampilan bersih tanpa `PhotoFrame` saat gambar kosong, sistem ikon vektor animatif penuh (`Icon.tsx` + `Button.tsx`), perancangan ulang UI Admin (`EventWorkspace` + KPI/tab di `/admin/e/:id` + 2 kolom di `/admin`), komponen `InfoTip` pengganti tanda kurung, kontrol pemutar animasi terbang + `RevealSessionProvider`, serta perluasan menu Bagikan belum di-commit** (di working tree). Database D1 lokal telah dibersihkan hingga tersisa 1 event aktif contoh. Commit hanya atas permintaan pemilik proyek.
 
 ## Sudah ada
 
@@ -128,7 +128,7 @@
 
 - **Cache API, Durable Object, dan WebSocket hanya diuji di dev lokal (workerd)**, belum di Cloudflare produksi. Uji beban hanya lokal, **bukan** k6 terhadap produksi; angka kapasitas (400 penonton) belum terbukti di edge.
 - **Item 58** (ambang peringkat) masih default sementara: 3 review, `m` = 5. Belum keputusan pemilik.
-- **Suara animasi tidak diimplementasikan.** Ulasan pilihan / `GET /spotlight` belum ada. Pembatas laju tegas (Rate Limiting binding) belum.
+- ~~Suara animasi tidak diimplementasikan~~ **Dipulihkan & diimplementasikan (setelah Tahap 10)**: efek suara sintesis B23 (`sfx.ts` + `SoundProvider` + `SoundToggle`), efek klik/mouse (`ClickFx`, kursor `--cursor-*`, `pointerTiltProps`, `burstStars`), marquee & progress bar sorotan, serta **WinnerReveal** panggung gelap bergaya motion graphic lengkap pita juara, bunting, confetti palet UNIMED, dan piala SVG (`fx.test.tsx`, `results.test.tsx`, `standings-flow.mjs`). Ulasan pilihan / `GET /spotlight` belum ada. Pembatas laju tegas (Rate Limiting binding) belum.
 - Penonton biasa **setelah event selesai** menerima animasi `everyone` lewat polling jarang (60 dtk) atau saat membuka/menyegarkan halaman, bukan WebSocket (soketnya ditutup; hanya Layar Besar yang tetap).
 - Penutupan soket dari sisi server tidak terlihat di klien lewat proxy dev Vite (diverifikasi lewat ping tak dijawab); klien nyata menutup sendiri saat menerima `event_status`.
 - `GET /api/event` belum lewat Cache API.
@@ -170,9 +170,47 @@
 | Melepas pemilik membuat sesi lama `401 owner_changed` | `auth.test.ts` (lepas dan ganti), E2E |
 | Hanya-baca setelah event selesai | `auth.test.ts`, `event-gate.test.ts` (penelusuran semua rute tulis), `booth.test.tsx`, E2E |
 
-## Langkah berikutnya (Tahap 9: Admin lanjutan, A3, B13, B18)
+## Tahap 9 (admin lanjutan: Data Grid, log, poster QR, ekspor): ringkasan
 
-Baca `BUILD-PLAN.md` Tahap 9: Data Grid (sunting sel, alasan wajib, pratinjau dampak peringkat), log, poster QR (pakai `QrCode`), ekspor. Opsional yang tertunda: ulasan pilihan (`/spotlight`), pembatas laju tegas, balasan ulasan oleh booth.
+- **`src/shared/`**: `data-grid.ts` (satu sumber kolom per tab `GRID_COLUMNS`: booths, products, reviews, visitors, ranking; validator sunting `EDIT_SCHEMAS`; skema `gridQuerySchema` dan `bulkEditSchema`), `rank-impact.ts` (`rankImpact` untuk pratinjau dampak peringkat di browser memakai `scoring.ts`).
+- **Backend** (`routes/admin/data.ts`, `logs.ts`, `services/data/`): `GET /api/admin/e/:id/data/:entity` (SQL berparameter whitelist, filter, urut, pencarian, paginasi keyset, ringkasan, tab Peringkat terhitung), `PATCH /api/admin/e/:id/data/bulk` (memanggil layanan yang sama dengan rute admin lain, kontrol versi awal baris, `atomic`, alasan ≥5, Idempotency-Key wajib, 1 entri log per perubahan dengan meta before/after, email pemilik saat status booth berubah), `GET …/data/:entity/export` (CSV streaming BOM UTF-8 + pelindung CSV-injection + log `admin.data_exported`), `GET /api/admin/e/:id/logs` (Analytics Engine SQL API, `{configured:false}` bila secret kosong). Bug yang diperbaiki: `updated_at` review/pengunjung naik monoton (`max(now, lama+1)`) dan `null ?? x` pada hasil grup bulk.
+- **Frontend** (`areas/admin/`): `data-api.ts`, `csv-export.ts`, halaman `/admin/e/:id/data` (`DataGrid`, `DataCell`, `FilterRow`, `ChangeReviewDialog`, `useGridEdits`: sticky header/kolom pertama, urut, filter per kolom, tampil/sembunyikan kolom + kerapatan di penyimpanan peramban, sunting langsung dblklik/Enter/Esc/Tab/panah/Ctrl+C/V, sel tertunda kuning, "+ Booth" cepat, seleksi baris Shift-klik + aksi massal, pratinjau dampak peringkat, penanda `*` riwayat moderasi review, footer ringkasan, Muat lebih banyak, ekspor CSV), `/admin/e/:id/logs` (filter rentang/kategori/level/aksi/pelaku/target, auto-refresh 15 dtk, ekspor CSV, tautan `?target=` dari baris grid), `/admin/e/:id/posters` (poster QR A4/A5 murni klien untuk booth `approved` + `/register`), `ResultsCard` (ekspor hasil CSV + cetak/PDF), tautan navigasi di `pages/event.tsx`, `ToastProvider` di `areas/admin/layout.tsx`, label teks di `lib/copy.ts`.
+- **Tes**: shared (`rank-impact.test.ts` 7), Worker (`data.test.ts` 31, `logs.test.ts` 10), web (`data.test.tsx` 7, `results.test.tsx` +1), E2E Chrome (`scripts/e2e/data-flow.mjs`: 19 pemeriksaan termasuk fungsi penuh setelah event selesai).
+
+### Batasan jujur Tahap 9
+
+- Simpan massal TIDAK satu `batch()` D1 untuk seluruh permintaan: tiap baris atomik di layanannya; `atomic: true` memeriksa semua dulu (celah balapan sempit antara periksa dan terap dilaporkan per perubahan).
+- Riwayat per baris untuk booth/produk/pengunjung hanya lewat halaman Log (AE, terfilter `target`); hanya review yang punya `original_*`/`moderated_*` permanen di D1. AE tidak tersedia di dev lokal, jadi `GET …/logs` baru teruji dengan `fetch` palsu, belum dengan Cloudflare asli.
+- Pratinjau dampak peringkat memakai data tab Peringkat tanpa `lastReviewAt` (pemutus seri) sehingga hanya mendekati pada seri yang persis sama; hanya untuk suntingan review (bukan perubahan status booth).
+- Header CSV Data Grid dan ekspor hasil memakai kunci kolom (Inggris), bukan label Indonesia; ekspor XLSX dan tampilan tersimpan tetap di v1; ekspor PDF hasil memakai cetak browser (`window.print()`).
+
+## Kriteria selesai Tahap 9 (BUILD-PLAN): terpenuhi
+
+| Kriteria | Bukti |
+|---|---|
+| Semua entitas bisa dilihat/disunting dengan jejak sebelum → sesudah | `data.test.ts` (Worker: 31 tes + log before/after), `data.test.tsx` (7 tes), `data-flow.mjs` |
+| Berfungsi penuh setelah event selesai | `data-flow.mjs` (dijalankan pada event berstatus `ended`), `event-gate.test.ts` |
+
+## Tahap 10 (pengerasan & rilis): ringkasan
+
+- **Keamanan HTTP & CSRF (B11):** `src/worker/middleware/security.ts` (`SECURITY_HEADERS`, `buildCsp`, `securityHeaders` yang melewati respons `101` WebSocket agar tidak `RangeError`, `csrfOriginGuard` dengan `Sec-Fetch-Site` + `Origin` pada rute tulis `/api/*`), `public/_headers` (tersalin ke `dist/client/_headers`), dipasang di `src/worker/index.ts` dan `src/worker/routes/pages.ts`. Produksi CSP tidak memakai `'unsafe-inline'` di `script-src`; dev Vite HMR memakai `'unsafe-inline'`. `security.test.ts` (4 tes) memverifikasi header, CSP dev/prod, guard CSRF, dan fail-closed `requireAdmin`.
+- **Observability hari-H (B12):** `EventHealth` di `src/shared/api-types.ts`, method RPC `LiveHub.stats()` di `src/worker/live/hub.ts`, endpoint `GET /api/admin/e/:id/health` di `src/worker/routes/admin/logs.ts` (`logs.test.ts`, 11 tes), dan kartu **Kesehatan hari-H** di `src/web/areas/admin/pages/logs.tsx`.
+- **Responsif & aksesibilitas (A13):** `Form.tsx` kontrol memakai `text-base sm:text-sm` (16px di layar sempit mencegah auto-zoom iOS Safari), `Button.tsx` ukuran `md` memakai `min-h-11 sm:min-h-0` (target sentuh >= 44px di HP). E2E `scripts/e2e/a11y-responsive.mjs` lolos di 5 viewport (`360×800`, `390×844`, `768×1024`, `1280×800`, `1920×1080`) pada `/`, `/b/:id`, `/results`, `/register`, `/booth`, `/screen` (`0` gagal, `0` horizontal overflow, `prefers-reduced-motion: reduce`), serta `gallery-contrast.mjs` (`0` teks di bawah AA) dan `standings-flow.mjs` (`31` pemeriksaan).
+- **Simulasi penuh & runbook rilis:** `scripts/e2e/full-event-sim.mjs` (`0` gagal, `0` HTTP 5xx, `0` galat JS) menguji siklus lengkap dari persiapan booth (hanya-nama, CSV, daftar mandiri OTP), penilaian pengunjung OTP + filter komentar `held`, `/health`, publikasi hasil + `WinnerReveal`, status `ended` hanya-baca, hingga `/logs` + `/posters`. Panduan rilis & hari-H ditulis di `docs/DEPLOY.md`; CI di `.github/workflows/ci.yml`.
+
+### Batasan jujur Tahap 10
+
+- Semua pengujian Tahap 10 dijalankan di lingkungan lokal (Vitest + D1 lokal/SQLite + Vite dev server dengan `workerd`/Miniflare). **Provisioning dan deploy Cloudflare produksi live** (D1 remote, bucket R2 `booth-media` + domain `media.eventunimed.id`, Cloudflare Access `/admin*`, `wrangler secret put`, Analytics Engine live, Workers Paid + budget alert) belum dijalankan di akun Cloudflare pemilik proyek.
+
+## Kriteria selesai Tahap 10 (BUILD-PLAN): terpenuhi (pra-deploy)
+
+| Kriteria | Bukti |
+|---|---|
+| Semua tes lulus & build bersih | `npm run check` (`332` berkas Biome bersih, 3 penjaga bersih, `tsc -b` bersih, **1233 tes** di **67 file** lulus) + `npm run build` |
+| Ditinjau & dikeraskan terhadap B11 | `security.ts`, `public/_headers`, `security.test.ts` (4 tes), fail-closed admin/prod |
+| Ditinjau & disiapkan terhadap B12 | `GET /api/admin/e/:id/health`, `LiveHub.stats()`, kartu Kesehatan hari-H, `.github/workflows/ci.yml`, `docs/DEPLOY.md` |
+| Responsif & aksesibilitas (A13) | `a11y-responsive.mjs` (5 viewport, 0 overflow, 16px/44px, reduced-motion), `gallery-contrast.mjs` (0 teks < AA) |
+| Simulasi hari-H penuh tanpa eror | `full-event-sim.mjs` (`Total gagal: 0`, 0 HTTP 5xx, 0 JS errors), `standings-flow.mjs` (31 pemeriksaan) |
 
 ## Keputusan sementara (default dipakai sampai pemilik proyek memutuskan)
 
@@ -186,5 +224,7 @@ Baca `BUILD-PLAN.md` Tahap 9: Data Grid (sunting sel, alasan wajib, pratinjau da
 
 ## Blokir / pertanyaan terbuka
 
-- Tidak ada yang memblokir Tahap 9. **Item 58** (ambang peringkat) dan perkiraan skala (item 1) perlu dijawab pemilik proyek sebelum peringkat tampil; **penyedia email (item 5)** sebelum OTP bisa dipakai di produksi (dan Tahap 8).
+- Tidak ada blokir kode atau tes (Tahap 0–10 selesai di lokal). Sebelum deploy produksi live (`docs/DEPLOY.md`):
+  1. Provisioning akun Cloudflare: buat D1 produksi + terapkan migrasi `--remote`, bucket R2 `booth-media` + Custom Domain `media.eventunimed.id`, Cloudflare Access pada `/admin*`, setel `wrangler secret put` (`SESSION_SECRET`, `TURNSTILE_SECRET`, `TURNSTILE_SITE_KEY`, `GOOGLE_CLIENT_ID`, `RESEND_API_KEY`, `EMAIL_FROM`, `CF_ACCOUNT_ID`, `CF_API_TOKEN`), dan aktifkan Workers Paid + budget alert.
+  2. Keputusan terbuka pemilik proyek di `explore.md`: perkiraan skala (**item 1**), konfirmasi mode masuk pengunjung (**item 2**), penyedia email & domain terverifikasi SPF/DKIM (**item 5**), daftar awal kata terlarang (**item 51**), dan ambang peringkat Bayesian `minReviewsToRank`/`m` (**item 58**).
 - `demo-event.html` belum menampilkan booth tanpa foto/hanya nama (A16); opsional diperbarui.

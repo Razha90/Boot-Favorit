@@ -27,16 +27,13 @@ export function Component() {
 
   return (
     <>
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="grid gap-1">
-          <Link to={`/admin/e/${eventId}`} className="text-sm text-muted underline">
-            ← {copy.admin.booths.backToEvent}
-          </Link>
-          <h1 className="font-display text-3xl font-extrabold">{copy.admin.booths.title}</h1>
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-display text-2xl font-extrabold sm:text-3xl">
+          {copy.admin.booths.title}
+        </h1>
         <Link
           to={`/admin/e/${eventId}/booths/import`}
-          className="rounded-chip border-(length:--border-w) border-line px-4 py-2 text-sm font-bold"
+          className="rounded-chip border-(length:--border-w) border-line bg-surface-raised px-4 py-2 text-sm font-bold hover:bg-surface-tint"
         >
           {copy.admin.booths.importCsv}
         </Link>
