@@ -254,7 +254,7 @@ export function BoothCard({
         {/* Baris institusi/fakultas selalu disisakan (tinggi tetap) agar kartu tetap seragam walau datanya kosong. */}
         <span
           title={booth.teamName ?? undefined}
-          className="block h-4 truncate text-xs font-semibold text-muted"
+          className="block h-4 truncate pr-11 text-xs font-semibold text-muted"
         >
           {booth.teamName}
         </span>
@@ -377,7 +377,7 @@ function FeaturedMini({ booth }: { booth: PublicBooth }) {
   const p = booth.featuredProduct;
   if (!p) return null;
   return (
-    <div className="relative z-10 flex items-center gap-3 rounded-card bg-surface-raised/70 p-2 text-text">
+    <div className="relative z-10 flex w-fit max-w-full items-center gap-3 rounded-card bg-surface-raised/70 p-2 pr-4 text-text md:max-w-[calc(100%-14rem)]">
       <SafeImage
         src={resolve(p.thumbKey)}
         aspect="1/1"

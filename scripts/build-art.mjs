@@ -83,6 +83,7 @@ function shot(html, outFile, w, h) {
       "--disable-gpu",
       "--hide-scrollbars",
       "--force-device-scale-factor=1",
+      "--default-background-color=00000000", // latar transparan (ikon bulat tanpa bingkai)
       "--virtual-time-budget=4000",
       `--window-size=${w},${h}`,
       `--screenshot=${outFile}`,
@@ -151,19 +152,22 @@ FOOD_NAMES.forEach((name, i) => {
 });
 
 // ---------- 3. Ikon situs ----------
-// Ikon situs: lambang resmi UNIMED (public/brand/unimed-seal.png) di atas krem.
+// Ikon situs: lambang resmi UNIMED (public/brand/unimed-seal.png) APA ADANYA, hanya bulatnya, latar TRANSPARAN (tab,
+// layar utama Android). Dua pengecualian yang memang butuh latar solid: apple-touch-icon (iOS mengisi transparan dengan
+// hitam) dan ikon maskable (Android memotongnya jadi bentuk apa pun), keduanya putih dengan lambang di zona aman.
 const SEAL_URI = `data:image/png;base64,${readFileSync(join(PUBLIC, "brand", "unimed-seal.png")).toString("base64")}`;
-const iconPng = (file, size, pad) =>
+const iconPng = (file, size, pad, bg = "transparent") =>
   shot(
-    `<div style="width:${size}px;height:${size}px;background:${CREAM};display:grid;place-items:center"><img src="${SEAL_URI}" style="display:block;width:${Math.round(size * pad)}px;height:${Math.round(size * pad)}px;object-fit:contain"></div>`,
+    `<div style="width:${size}px;height:${size}px;background:${bg};display:grid;place-items:center"><img src="${SEAL_URI}" style="display:block;width:${Math.round(size * pad)}px;height:${Math.round(size * pad)}px;object-fit:contain"></div>`,
     file,
     size,
     size,
   );
-iconPng(join(PUBLIC, "icon-512.png"), 512, 0.74);
-iconPng(join(PUBLIC, "icon-192.png"), 192, 0.74);
-iconPng(join(PUBLIC, "apple-touch-icon.png"), 180, 0.86);
-iconPng(join(work, "ico-48.png"), 48, 0.96);
+iconPng(join(PUBLIC, "icon-512.png"), 512, 1);
+iconPng(join(PUBLIC, "icon-192.png"), 192, 1);
+iconPng(join(PUBLIC, "icon-maskable-512.png"), 512, 0.72, "#ffffff");
+iconPng(join(PUBLIC, "apple-touch-icon.png"), 180, 0.9, "#ffffff");
+iconPng(join(work, "ico-48.png"), 48, 1);
 
 // favicon.ico berisi satu gambar PNG (didukung semua peramban modern)
 {

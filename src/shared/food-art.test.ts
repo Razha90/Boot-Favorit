@@ -30,6 +30,7 @@ describe("ilustrasi makanan pengganti foto", () => {
       "apple-touch-icon.png",
       "icon-192.png",
       "icon-512.png",
+      "icon-maskable-512.png",
     ]) {
       expect(existsSync(file(f)), f).toBe(true);
     }
