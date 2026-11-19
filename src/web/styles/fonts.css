@@ -1,0 +1,5 @@
+/* Font di-host sendiri lewat paket Fontsource (tanpa permintaan ke pihak ketiga).
+   Nama font HANYA ditulis di berkas ini dan theme.css (explore.md B4, B20). */
+@import "@fontsource-variable/dm-sans";
+@import "@fontsource-variable/bricolage-grotesque";
+@import "@fontsource-variable/caveat";

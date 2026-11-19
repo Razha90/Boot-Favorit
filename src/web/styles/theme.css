@@ -1,0 +1,175 @@
+@import "tailwindcss";
+
+/* =====================================================================
+   SATU-SATUNYA tempat warna dan nama font hidup (explore.md B4).
+   Komponen hanya memakai token: bg-primary, text-muted, border-line, font-display, dst.
+   Dijaga skrip `npm run lint:tokens`.
+
+   Dua sumbu tema pada <html>:
+     data-theme = kertas | panggung   (terang | gelap)
+     data-vibe  = seru | pro          (pengunjung | admin & portal booth)
+   Dari UNIMED hanya meniru PALET: hijau #1EB05F, oranye #FDA31B, gelap #19232B, krem turunan.
+   ===================================================================== */
+
+/* 1) NILAI DASAR: tema kertas + gaya pro */
+:root {
+  --primary: #1eb05f; /* isian: tombol, badge, blok */
+  --primary-fg: #19232b; /* teks di atas primary (gelap, AA 5.6:1) */
+  --primary-strong: #13803f; /* teks/tautan hijau di latar terang (AA 5.0:1) */
+  --primary-soft: #e8f6ee; /* latar tint hijau sangat muda */
+
+  --accent: #fda31b;
+  --accent-fg: #19232b; /* AA 7.9:1 */
+  --accent-strong: #9a5a00; /* teks oranye di latar terang (AA 5.5:1) */
+
+  --surface: #faf8f5;
+  --surface-raised: #ffffff;
+  --surface-tint: #f1eadc;
+  --text: #19232b;
+  --muted: #55656d;
+  --line: #d8d3c6;
+
+  --star: var(--accent);
+  --star-off: #8f8975; /* bintang kosong: kontras ≥ 3:1 di atas permukaan terang (WCAG 1.4.11) */
+  --success: #159a52;
+  --warning: #e09a00;
+  --danger: #b42318;
+
+  /* Warna stiker (gaya seru). Palet dibatasi hijau-oranye-krem (keputusan 31). */
+  --c1: #1eb05f;
+  --c2: #fda31b;
+  --c3: #ffe2a0;
+  --c4: #9be0b8;
+  --c5: #ffcb7a;
+
+  --radius-card: 0.75rem;
+  --radius-chip: 9999px;
+  --border-w: 1px;
+  --shadow-card: 0 1px 3px #19232b14;
+  --shadow-press: 0 0 0 transparent;
+
+  --motion-fast: 150ms;
+  --motion-base: 300ms;
+  --motion-slow: 700ms;
+  --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-glide: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 2) GAYA SERU: scrapbook/pasar malam. Hanya menimpa variabel. */
+[data-vibe="seru"] {
+  --surface: #faf8f5;
+  --surface-tint: #f1eadc;
+  --line: #19232b; /* garis tebal berwarna tinta */
+  --radius-card: 1rem;
+  --border-w: 3px;
+  --shadow-card: 6px 6px 0 #19232b; /* bayangan keras ala stiker */
+  --shadow-press: 2px 2px 0 #19232b;
+}
+
+/* 3) TEMA GELAP "panggung" (layar besar dan admin gelap) */
+[data-theme="panggung"] {
+  --surface: #0e1612;
+  --surface-raised: #16201a;
+  --surface-tint: #1b2720;
+  --text: #edf2ee;
+  --muted: #98a79f;
+  --line: #26342c;
+  --primary-strong: #2bd47a;
+  --accent-strong: #ffc25c;
+  --primary-soft: #14301f;
+  --star-off: #6f8277;
+  --danger: #ff9a90;
+  --shadow-card: 0 1px 3px #00000066;
+}
+
+/* 4) PEMETAAN KE TAILWIND. "inline" agar nilai dibaca saat runtime, sehingga override
+      lewat data-theme/data-vibe atau style inline (tema per event) langsung berlaku. */
+@theme inline {
+  --color-primary: var(--primary);
+  --color-primary-fg: var(--primary-fg);
+  --color-primary-strong: var(--primary-strong);
+  --color-primary-soft: var(--primary-soft);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-strong: var(--accent-strong);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-tint: var(--surface-tint);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-star: var(--star);
+  --color-star-off: var(--star-off);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-sticker-1: var(--c1);
+  --color-sticker-2: var(--c2);
+  --color-sticker-3: var(--c3);
+  --color-sticker-4: var(--c4);
+  --color-sticker-5: var(--c5);
+
+  --radius-card: var(--radius-card);
+  --radius-chip: var(--radius-chip);
+  --shadow-card: var(--shadow-card);
+  --shadow-press: var(--shadow-press);
+
+  --ease-pop: var(--ease-pop);
+  --ease-glide: var(--ease-glide);
+}
+
+/* 5) TOKEN FONT: satu-satunya tempat nama font (berkas font di fonts.css).
+      Dipakai lewat utilitas font-ui / font-display / font-hand. */
+@theme {
+  --font-ui: "DM Sans Variable", system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque Variable", system-ui, sans-serif;
+  --font-hand: "Caveat Variable", cursive;
+}
+
+/* 5b) ANIMASI. Pewaktu slideshow = animasi CSS pada segmen progres: bila animasi dijeda, pergantian foto
+      ikut berhenti tanpa setInterval terpisah yang bisa tidak sinkron (B20). */
+@keyframes slide-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Kanvas halaman pengunjung: grid grafik tipis (A12). Memakai `background` (bukan background-image). */
+.event-canvas {
+  background:
+    linear-gradient(color-mix(in oklab, var(--text) 6%, transparent) 1px, transparent 1px) 0 0 /
+    28px 28px,
+    linear-gradient(90deg, color-mix(in oklab, var(--text) 6%, transparent) 1px, transparent 1px) 0
+    0 / 28px 28px,
+    var(--surface);
+}
+[data-vibe="pro"] .event-canvas {
+  background: var(--surface);
+}
+
+/* 6) DASAR HALAMAN */
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  html[data-theme="panggung"] {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-surface font-ui text-text antialiased;
+  }
+  /* Hormati preferensi gerak minimal (A10, B19). */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

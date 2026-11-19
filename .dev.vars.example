@@ -1,0 +1,2 @@
+# Salin ke .dev.vars untuk pengembangan lokal (tidak di-commit)
+DEV_ADMIN_EMAIL=admin@localhost.test

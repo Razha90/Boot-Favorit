@@ -1,0 +1,27 @@
+{
+  "name": "booth-favorit",
+  "main": "src/worker/index.ts",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    // Binding agar Worker bisa mengambil index.html dan menyisipkan meta tag pratinjau tautan (B20).
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    // Worker berjalan lebih dulu untuk API, WebSocket, gambar cadangan, pengalihan WhatsApp, serta halaman
+    // yang sering dibagikan (/ dan /b/*) agar pratinjau tautan berisi nama event/booth.
+    "run_worker_first": ["/api/*", "/ws/*", "/media/*", "/go/*", "/", "/b/*"]
+  },
+  "vars": { "APP_ENV": "development" },
+  // Database utama (B6). Migrasi SQL dihasilkan drizzle-kit ke ./drizzle:
+  //   lokal:  npx wrangler d1 migrations apply booth-favorit --local
+  //   produksi: database_id diisi saat database dibuat (npx wrangler d1 create booth-favorit)
+  "d1_databases": [
+    { "binding": "DB", "database_name": "booth-favorit", "migrations_dir": "drizzle" }
+  ],
+  // Gambar booth/produk/event (WebP hasil konversi di client, B15). Disajikan dari media.eventunimed.id.
+  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "booth-media" }],
+  // Log aktivitas yang tampil di admin (B13): tanpa tabel D1.
+  "analytics_engine_datasets": [{ "binding": "LOG", "dataset": "booth_favorit_logs" }],
+  "observability": { "enabled": true, "head_sampling_rate": 1 }
+  // Durable Object LIVE_HUB ditambahkan di Tahap 7 (B8); cron dan rahasia (kunci Turnstile, email, HMAC)
+  // lewat `wrangler secret`, tidak di berkas ini.
+}
