@@ -30,6 +30,9 @@
   --line: #d8d3c6;
 
   --star: #cc7700; /* amber turunan oranye: bintang terisi ≥ 3:1 di permukaan terang (WCAG 1.4.11); oranye murni hanya 1,9:1 */
+  /* QR: SELALU gelap di atas terang, di tema apa pun (pemindai tak andal bila dibalik) */
+  --qr-fg: #19232b;
+  --qr-bg: #ffffff;
   --star-off: #8f8975; /* bintang kosong: kontras ≥ 3:1 di atas permukaan terang (WCAG 1.4.11) */
   --success: #159a52;
   --warning: #e09a00;
@@ -100,6 +103,8 @@
   --color-line: var(--line);
   --color-star: var(--star);
   --color-star-off: var(--star-off);
+  --color-qr-fg: var(--qr-fg);
+  --color-qr-bg: var(--qr-bg);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);

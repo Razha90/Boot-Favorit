@@ -3,10 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Badge, Card } from "../../../components/ui/Card";
 import { Field, Select } from "../../../components/ui/Form";
+import { QueryState } from "../../../components/ui/states";
 import { copy } from "../../../lib/copy";
 import { moderationApi, moderationKeys, type ReviewFilters } from "../moderation-api";
 import { AdminReviewSummary } from "./AdminReviewSummary";
-import { QueryState } from "./bits";
 import { type ReasonedAction, ReasonedActions } from "./ReasonedActions";
 
 const M = copy.admin.moderation;

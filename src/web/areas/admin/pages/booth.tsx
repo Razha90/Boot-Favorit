@@ -1,16 +1,19 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { Link, useParams } from "react-router";
 import { Badge } from "../../../components/ui/Card";
+import { QueryState } from "../../../components/ui/states";
+import { MediaCard } from "../../../features/booth-editor/MediaCard";
+import { ProductsCard } from "../../../features/booth-editor/ProductsCard";
+import { adminScope } from "../../../features/booth-editor/scope";
 import { copy } from "../../../lib/copy";
 import { adminApi, adminKeys } from "../api";
-import { QueryState } from "../components/bits";
 import { OwnerCard, ProfileCard, WhatsappCard } from "../components/booth-sections";
-import { MediaCard } from "../components/MediaCard";
-import { ProductsCard } from "../components/ProductsCard";
 
 export function Component() {
   const { id: eventId = "", bid: boothId = "" } = useParams();
   const qc = useQueryClient();
+  const scope = useMemo(() => adminScope(eventId, boothId), [eventId, boothId]);
   const q = useQuery({
     queryKey: adminKeys.booth(eventId, boothId),
     queryFn: () => adminApi.booth(eventId, boothId),
@@ -49,8 +52,8 @@ export function Component() {
             booth={q.data.booth}
             refresh={refresh}
           />
-          <MediaCard eventId={eventId} booth={q.data.booth} refresh={refresh} />
-          <ProductsCard eventId={eventId} booth={q.data.booth} refresh={refresh} />
+          <MediaCard scope={scope} booth={q.data.booth} refresh={refresh} />
+          <ProductsCard scope={scope} refresh={refresh} />
           <WhatsappCard eventId={eventId} booth={q.data.booth} refresh={refresh} />
         </>
       )}

@@ -7,9 +7,9 @@
 ## Posisi sekarang
 
 - **Fase:** pengerjaan (pemilik proyek menyetujui masuk tahap pengerjaan, 2026-11-19).
-- **Tahap 0 sampai 7: SELESAI** (Tahap 6 dan 7 dengan batasan jujur di bawah). `npm run check` lulus (exit 0): Biome, tiga penjaga, `tsc -b` (4 proyek), **1091 tes** (57 file). Build produksi berhasil; chunk awal **±72 KB gzip**; galeri tidak ikut produksi. Chrome sungguhan (dev server, viewport HP 390×844 + desktop): alur admin (`admin-flow.mjs`), halaman pengunjung (`visitor-flow.mjs`), alur penilaian (`review-flow.mjs`), **alur peringkat/hasil/Layar Besar/animasi** (`standings-flow.mjs`, 31 pemeriksaan), galeri **9/9** (`gallery-visual.mjs`), **0 teks di bawah kontras AA** di tiga kombinasi (`gallery-contrast.mjs`).
-- **Tahap berikutnya:** **Tahap 8: portal booth** (lihat `BUILD-PLAN.md`). Belum dimulai.
-- **Git:** `9556f9c` (Tahap 0–5), `b9ff2ce` (Tahap 6). **Tahap 7 belum di-commit**; commit hanya atas permintaan pemilik proyek.
+- **Tahap 0 sampai 8: SELESAI** (Tahap 6–8 dengan batasan jujur di bawah). `npm run check` lulus (exit 0): Biome, tiga penjaga, `tsc -b` (4 proyek), **1168 tes** (61 file). Build produksi berhasil; chunk awal **±72 KB gzip** (portal booth 8 KB, lazy); galeri tidak ikut produksi. Portal booth diuji di Chrome sungguhan (`booth-flow.mjs`, 26 pemeriksaan). Chrome sungguhan (dev server, viewport HP 390×844 + desktop): alur admin (`admin-flow.mjs`), halaman pengunjung (`visitor-flow.mjs`), alur penilaian (`review-flow.mjs`), **alur peringkat/hasil/Layar Besar/animasi** (`standings-flow.mjs`, 31 pemeriksaan), galeri **9/9** (`gallery-visual.mjs`), **0 teks di bawah kontras AA** di tiga kombinasi (`gallery-contrast.mjs`).
+- **Tahap berikutnya:** **Tahap 9: Admin lanjutan** (Data Grid, log, poster QR, ekspor; lihat `BUILD-PLAN.md`). Belum dimulai.
+- **Git:** `9556f9c` (Tahap 0–5), `b9ff2ce` (Tahap 6), `a3ab182` (Tahap 7). **Tahap 8 belum di-commit**; commit hanya atas permintaan pemilik proyek.
 
 ## Sudah ada
 
@@ -93,9 +93,9 @@
 
 ## Belum dikerjakan dari lingkup Tahap 3 (sengaja)
 
-- **"Kirim undangan"** ke pemilik (`POST …/invite`): menunggu penyedia email (Tahap 8). Mengisi email sudah bekerja tanpa mengirim apa pun.
+- ~~"Kirim undangan" ke pemilik~~: selesai di Tahap 8.
 - ~~Unggah gambar event~~: selesai di Tahap 5 (`EventMediaCard`).
-- **`ProductEditor`/`BoothProfileForm` masih di `areas/admin/components/`**, bukan `shared/`: pindah ke `shared/` saat portal booth (Tahap 8) memakainya, lalu beri adaptor API (pemilik vs admin).
+- ~~`ProductEditor` ke `shared/`~~: selesai di Tahap 8 (`features/booth-editor/` + `BoothScope`).
 - **Pembatas laju unggahan per booth**: Tahap 6 (bersama pembatas yang tegas).
 - Konversi gambar masih di thread utama (belum Web Worker) dan tanpa encoder WASM cadangan (B15).
 
@@ -144,9 +144,35 @@
 | Layar Besar berganti panel dan tersinkron | `screen.test.tsx`, `standings-flow.mjs` |
 | Realtime hemat: satu bacaan D1 per tick | `live-core.test.ts`, `live-load.mjs` |
 
-## Langkah berikutnya (Tahap 8: portal booth & pendaftaran mandiri)
+## Tahap 8 (portal booth & pendaftaran mandiri): ringkasan
 
-Baca `BUILD-PLAN.md` Tahap 8. Termasuk yang tertunda: laporan oleh **booth** (tabel dan antrean sudah siap), "Kirim undangan" ke pemilik (butuh penyedia email), `ProductEditor`/`BoothProfileForm` dipindah ke `shared/` untuk dipakai portal booth. Opsional dari Tahap 6/7: ulasan pilihan (`/spotlight`) dan pembatas laju tegas.
+- **Auth booth** (`routes/booth/auth.ts`, `lib/booth-session.ts`, `middleware/booth-session.ts`): OTP email dengan tujuan terpisah (`booth_register`/`booth_login`/`visitor`). Login hanya mengirim kode bila email tercatat, tetapi **jawabannya sama** (email tak terbongkar; jeda OTP juga disamarkan). Sesi = cookie `booth_session` bertanda tangan, klaim `{sub, eid, eh, exp}`; **setiap permintaan** mencocokkan `eh` dengan HMAC(`booths.email`) di D1, jadi pemilik dilepas/diganti admin → `401 owner_changed` + cookie dihapus. Pendaftaran: OTP → cookie bukti email `booth_register` (30 mnt) → `POST /api/booth/register` (email harus sama dengan bukti) → `pending`, `is_late` bila lewat penutupan reguler, langsung bersesi.
+- **Portal** (`routes/booth/portal.ts`): `GET/PUT /api/booth/me` (skema strict: tanpa status/email/kolom moderasi), `POST /resubmit` (hanya dari `revision`), foto/logo/produk/WhatsApp **dengan bentuk rute sama seperti admin** dan layanan yang sama (`boothId` dari sesi), ulasan masuk (baca saja) dan **laporan oleh booth** (tidak menyembunyikan apa pun). `rejected`/`suspended` → hanya-baca (`booth_not_editable`); event selesai → `403 event_ended` kecuali login/OTP/logout (allowlist). Produk `removed_by_admin` tidak bisa disentuh pemilik. Statistik portal mengikuti aturan tampil publik (rating/peringkat tersembunyi = semua angka null).
+- **Email**: `lib/email.ts` kini punya pengirim **Resend** (aktif bila `RESEND_API_KEY` + `EMAIL_FROM`); tanpa itu perilaku lama (dev: `devCode`, produksi: gagal). Admin: notifikasi ke pemilik saat status berubah (disetujui/revisi/ditolak/ditangguhkan, `lib/booth-mail.ts`; gagal kirim tidak menggagalkan aksi) dan **`POST …/booths/:bid/invite`** (jeda 60 dtk) + tombol di kartu Pemilik.
+- **Frontend**: `areas/booth/` (layout dengan `EventBoundary`, halaman `register` 3 langkah, `portal`; komponen OtpForm, LoginPanel, StatusBanner, StatsCard, ReviewsCard + dialog laporan, ProfileCard dengan **draf di penyimpanan peramban**, WhatsappCard, ShareCard dengan **QR**). `features/booth-editor/` (`BoothScope` + `MediaCard`/`ProductsCard`) dipakai admin **dan** portal dengan basis path berbeda; `QueryState` pindah ke `components/ui/states`. `components/shared/QrCode` (dependensi baru `uqr`, MIT, 79 KB; SVG tanpa innerHTML; token `--qr-fg/--qr-bg` tetap gelap-di-atas-terang di tema mana pun).
+- **Tes**: Worker: auth booth 21, portal 27, email/mail 5 (total Worker 416), web 24 (`booth.test.tsx`). E2E Chrome `booth-flow.mjs` (26 pemeriksaan: login OTP, edit profil, unggah foto, produk, WhatsApp, owner_changed, daftar → pending → revisi → kirim ulang → disetujui, hanya-baca setelah event selesai).
+- **Hasil uji yang mengubah kode**: (1) **`FROZEN_ALLOWLIST` tidak pernah cocok di aplikasi nyata** (`routePath` jatuh ke catch-all `/api/*`): kini mencocokkan path persis; tanpa ini login booth setelah event selesai ditolak; (2) `key={booth.version}` me-remount `ProfileCard` sehingga "Profil tersimpan." hilang (ketahuan E2E, bukan tes unit); (3) inventaris rute B25 diperbarui: hanya `GET /api/booth/reviews` dan `POST /api/booth/reviews/:rid/report` yang baru, tidak ada PATCH/PUT/DELETE; (4) di Bash lingkungan ini heredoc berisi tanda kutip melengkung kadang membuat seluruh perintah gagal: pakai alat Write.
+
+### Batasan jujur Tahap 8
+
+- **Resend belum diuji dengan layanan asli** (hanya dengan `fetch` palsu); penyedia email (keputusan terbuka 5) tetap sementara dan mudah diganti (satu fungsi `EmailSender`). Domain pengirim harus diverifikasi di penyedia sebelum produksi.
+- **Poster QR dan unduhan poster** (A4 "Unduh poster QR booth") belum ada: portal hanya menampilkan QR; poster cetak ada di Tahap 9. QR memakai `?src=qr` yang belum dibedakan dari lainnya di sinyal risiko.
+- **Balasan publik pemilik atas ulasan** (A4, opsional) tidak dibuat. **Prefill dari event sebelumnya** (A4) tidak dibuat (nice-to-have yang sengaja ditunda).
+- Pembatas laju OTP booth masih di memori satu isolate (best-effort), batas OTP per email di D1 tegas (sama dengan pengunjung). Laporan oleh booth dibatasi 10/jam di D1.
+- Sesi booth 3 hari (`auth.sessionDays`), tanpa pencabutan manual selain `owner_changed`. Booth yang dilepas pemiliknya tidak bisa masuk sama sekali (sesuai B7).
+- Aksi admin "Kirim undangan" di prod gagal bila penyedia email belum diatur; di dev mengembalikan `sent:false`.
+
+## Kriteria selesai Tahap 8 (BUILD-PLAN): terpenuhi
+
+| Kriteria | Bukti |
+|---|---|
+| Alur daftar → verifikasi → login berjalan | `auth.test.ts`, `booth.test.tsx`, `booth-flow.mjs` |
+| Melepas pemilik membuat sesi lama `401 owner_changed` | `auth.test.ts` (lepas dan ganti), E2E |
+| Hanya-baca setelah event selesai | `auth.test.ts`, `event-gate.test.ts` (penelusuran semua rute tulis), `booth.test.tsx`, E2E |
+
+## Langkah berikutnya (Tahap 9: Admin lanjutan, A3, B13, B18)
+
+Baca `BUILD-PLAN.md` Tahap 9: Data Grid (sunting sel, alasan wajib, pratinjau dampak peringkat), log, poster QR (pakai `QrCode`), ekspor. Opsional yang tertunda: ulasan pilihan (`/spotlight`), pembatas laju tegas, balasan ulasan oleh booth.
 
 ## Keputusan sementara (default dipakai sampai pemilik proyek memutuskan)
 
@@ -160,5 +186,5 @@ Baca `BUILD-PLAN.md` Tahap 8. Termasuk yang tertunda: laporan oleh **booth** (ta
 
 ## Blokir / pertanyaan terbuka
 
-- Tidak ada yang memblokir Tahap 8. **Item 58** (ambang peringkat) dan perkiraan skala (item 1) perlu dijawab pemilik proyek sebelum peringkat tampil; **penyedia email (item 5)** sebelum OTP bisa dipakai di produksi (dan Tahap 8).
+- Tidak ada yang memblokir Tahap 9. **Item 58** (ambang peringkat) dan perkiraan skala (item 1) perlu dijawab pemilik proyek sebelum peringkat tampil; **penyedia email (item 5)** sebelum OTP bisa dipakai di produksi (dan Tahap 8).
 - `demo-event.html` belum menampilkan booth tanpa foto/hanya nama (A16); opsional diperbarui.

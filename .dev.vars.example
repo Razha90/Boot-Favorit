@@ -10,3 +10,8 @@ DEV_ADMIN_EMAIL=admin@localhost.test
 # TURNSTILE_SECRET=
 # TURNSTILE_SITE_KEY=
 # GOOGLE_CLIENT_ID=
+
+# Email (Tahap 8): OTP booth/pengunjung dan notifikasi persetujuan. Tanpa keduanya, di dev kode OTP dikembalikan
+# sebagai `devCode` dan notifikasi dilewati; di produksi permintaan GAGAL (tidak diam-diam "terkirim").
+# RESEND_API_KEY=
+# EMAIL_FROM=

@@ -54,3 +54,24 @@ export function ErrorState({
     </div>
   );
 }
+
+/** Pembungkus data yang dimuat lewat query: memuat → galat → isi. Teks umum di `copy.admin.common`. */
+export function QueryState({
+  loading,
+  error,
+  children,
+}: {
+  loading: boolean;
+  error: unknown;
+  children: ReactNode;
+}) {
+  if (loading) return <p className="text-sm text-muted">{copy.admin.common.loading}</p>;
+  if (error) {
+    return (
+      <p role="alert" className="text-sm text-danger">
+        {copy.admin.common.loadFailed}
+      </p>
+    );
+  }
+  return <>{children}</>;
+}

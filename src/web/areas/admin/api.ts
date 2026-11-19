@@ -4,8 +4,6 @@ import type {
   AdminEventView,
   CategoryView,
   ImportSummary,
-  PhotoView,
-  ProductView,
   PublicEventMedia,
 } from "@shared/api-types";
 import type { ImportRow } from "@shared/schemas";
@@ -108,70 +106,13 @@ export const adminApi = {
       body,
       key,
     }),
+  invite: (eventId: string, boothId: string, { key }: Key) =>
+    api<{ sent: boolean }>("POST", `${A}/e/${eventId}/booths/${boothId}/invite`, { key }),
   setWhatsapp: (eventId: string, boothId: string, body: unknown, { key }: Key) =>
     api<{ booth: AdminBoothView }>("PUT", `${A}/e/${eventId}/booths/${boothId}/whatsapp`, {
       body,
       key,
     }),
-
-  // ---- media ----
-  photos: (eventId: string, boothId: string) =>
-    api<{ photos: PhotoView[] }>("GET", `${A}/e/${eventId}/booths/${boothId}/photos`),
-  upload: (
-    eventId: string,
-    boothId: string,
-    kind: "photo" | "logo" | "product",
-    image: ConvertedImage,
-    { key }: Key,
-    productId?: string,
-  ) =>
-    api<unknown>(
-      "POST",
-      `${A}/e/${eventId}/booths/${boothId}/media?kind=${kind}${productId ? `&productId=${productId}` : ""}`,
-      { form: multipart(image), key },
-    ),
-  deletePhoto: (eventId: string, boothId: string, photoId: string, { key }: Key) =>
-    api<{ photos: PhotoView[] }>(
-      "DELETE",
-      `${A}/e/${eventId}/booths/${boothId}/photos/${photoId}`,
-      {
-        key,
-      },
-    ),
-  reorderPhotos: (eventId: string, boothId: string, ids: string[], { key }: Key) =>
-    api<{ photos: PhotoView[] }>("PUT", `${A}/e/${eventId}/booths/${boothId}/photos/order`, {
-      body: { ids },
-      key,
-    }),
-  removeLogo: (eventId: string, boothId: string, { key }: Key) =>
-    api<{ ok: true }>("DELETE", `${A}/e/${eventId}/booths/${boothId}/logo`, { key }),
-
-  // ---- produk ----
-  products: (eventId: string, boothId: string) =>
-    api<{ products: ProductView[] }>("GET", `${A}/e/${eventId}/booths/${boothId}/products`),
-  createProduct: (eventId: string, boothId: string, body: unknown, { key }: Key) =>
-    api<{ product: ProductView }>("POST", `${A}/e/${eventId}/booths/${boothId}/products`, {
-      body,
-      key,
-    }),
-  patchProduct: (eventId: string, boothId: string, id: string, body: unknown) =>
-    api<{ product: ProductView }>("PATCH", `${A}/e/${eventId}/booths/${boothId}/products/${id}`, {
-      body,
-    }),
-  deleteProduct: (eventId: string, boothId: string, id: string, { key }: Key) =>
-    api<{ ok: true }>("DELETE", `${A}/e/${eventId}/booths/${boothId}/products/${id}`, { key }),
-  setFeatured: (eventId: string, boothId: string, id: string, { key }: Key) =>
-    api<{ products: ProductView[] }>(
-      "PUT",
-      `${A}/e/${eventId}/booths/${boothId}/products/${id}/featured`,
-      { key },
-    ),
-  removeProductPhoto: (eventId: string, boothId: string, id: string, { key }: Key) =>
-    api<{ product: ProductView }>(
-      "DELETE",
-      `${A}/e/${eventId}/booths/${boothId}/products/${id}/photo`,
-      { key },
-    ),
 };
 
 export const adminKeys = {
@@ -180,6 +121,4 @@ export const adminKeys = {
   categories: (id: string) => ["admin", "categories", id] as const,
   booths: (eventId: string) => ["admin", "booths", eventId] as const,
   booth: (eventId: string, boothId: string) => ["admin", "booth", eventId, boothId] as const,
-  photos: (boothId: string) => ["admin", "photos", boothId] as const,
-  products: (boothId: string) => ["admin", "products", boothId] as const,
 };

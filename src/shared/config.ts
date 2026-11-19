@@ -68,6 +68,8 @@ export const CONFIG = {
     otpMaxAttempts: 5,
     otpRequestsPerEmailPerHour: 5,
     sessionDays: 3,
+    /** Bukti email terverifikasi untuk pendaftaran booth (menit); cukup untuk mengisi formulir profil */
+    registerProofMinutes: 30,
   },
   spam: {
     maxReviewsPerVisitorPerMinute: 4,
@@ -82,10 +84,14 @@ export const CONFIG = {
     sabotageMinReviews: 3,
     /** Batas laju laporan komentar per pengunjung per jam */
     maxReportsPerVisitorPerHour: 10,
+    /** Batas laju laporan komentar per booth per jam (A15) */
+    maxReportsPerBoothPerHour: 10,
   },
   registration: {
     allowLateRegistrationDefault: true,
     adminReasonMinLength: 5,
+    /** Jeda minimal antar undangan email ke pemilik booth yang sama (detik) */
+    inviteCooldownSec: 60,
     countdownShowWithinHours: 72,
   },
   net: {

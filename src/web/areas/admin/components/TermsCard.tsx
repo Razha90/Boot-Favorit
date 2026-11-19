@@ -4,9 +4,9 @@ import { useState } from "react";
 import { ActionButton } from "../../../components/ui/ActionButton";
 import { Badge, Card } from "../../../components/ui/Card";
 import { Field, Input, Select, Textarea } from "../../../components/ui/Form";
+import { QueryState } from "../../../components/ui/states";
 import { copy } from "../../../lib/copy";
 import { moderationApi, moderationKeys } from "../moderation-api";
-import { QueryState } from "./bits";
 import { MIN_REASON } from "./ReasonedActions";
 
 const M = copy.admin.moderation;

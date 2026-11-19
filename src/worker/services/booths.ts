@@ -22,7 +22,7 @@ export interface ListFilters {
 const norm = (s: string) => s.trim().toLowerCase();
 
 /** Versi selalu naik, walau dua perubahan jatuh pada milidetik yang sama (kontrol konkurensi, B18). */
-const nextVersion = (row: Pick<BoothRow, "updatedAt">, now: number) =>
+export const nextVersion = (row: Pick<BoothRow, "updatedAt">, now: number) =>
   Math.max(now, row.updatedAt + 1);
 
 async function viewsFor(db: Db, eventId: string, rows: BoothRow[]): Promise<AdminBoothView[]> {
@@ -138,7 +138,7 @@ async function assertEmailFree(db: Db, eventId: string, email: string, exceptBoo
   if (taken && taken.id !== exceptBoothId) throw new ApiError("email_in_use");
 }
 
-const bumpStats = (db: Db, eventId: string, now: number) =>
+export const bumpStats = (db: Db, eventId: string, now: number) =>
   db
     .update(events)
     .set({ statsVersion: sql`${events.statsVersion} + 1`, updatedAt: now })
@@ -380,18 +380,20 @@ export async function setOwner(
 
 // ---------- WhatsApp (A14, B24) ----------
 
-/** Admin mengisi nomor atas nama pemilik hanya setelah mengonfirmasi persetujuannya. */
-export async function setWhatsappByAdmin(
+/**
+ * Isi/ubah/hapus nomor WhatsApp. Pemilik menyetujui sendiri (`consent`); admin hanya boleh mengisi atas nama pemilik
+ * setelah mengonfirmasi persetujuannya. Menghapus tidak butuh persetujuan.
+ */
+export async function setWhatsapp(
   db: Db,
   eventId: string,
   boothId: string,
-  number: string | null | undefined,
-  consentConfirmedByAdmin: boolean,
+  o: { number: string | null | undefined; consent: boolean; by: "owner" | "admin" },
   d: Deps,
-): Promise<{ booth: AdminBoothView; removed: boolean }> {
+): Promise<{ removed: boolean }> {
   const row = await getBoothRow(db, eventId, boothId);
   const version = nextVersion(row, d.now);
-  const blank = number === null || number === undefined || number.trim() === "";
+  const blank = o.number === null || o.number === undefined || o.number.trim() === "";
 
   if (blank) {
     await db
@@ -403,21 +405,64 @@ export async function setWhatsappByAdmin(
         updatedAt: version,
       })
       .where(eq(booths.id, boothId));
-    return { booth: await getBoothView(db, eventId, boothId), removed: true };
+    return { removed: true };
   }
 
-  const e164 = normalizeWhatsapp(number);
+  const e164 = normalizeWhatsapp(o.number as string);
   if (!e164) throw new ApiError("validation_error", "invalid_whatsapp");
-  if (!consentConfirmedByAdmin) throw new ApiError("validation_error", "consent_required");
+  if (!o.consent) throw new ApiError("validation_error", "consent_required");
 
   await db
     .update(booths)
     .set({
       whatsappE164: e164,
       whatsappConsentAt: d.now,
-      whatsappConsentBy: "admin",
+      whatsappConsentBy: o.by,
       updatedAt: version,
     })
     .where(eq(booths.id, boothId));
-  return { booth: await getBoothView(db, eventId, boothId), removed: false };
+  return { removed: false };
+}
+
+/** Admin mengisi nomor atas nama pemilik hanya setelah mengonfirmasi persetujuannya. */
+export async function setWhatsappByAdmin(
+  db: Db,
+  eventId: string,
+  boothId: string,
+  number: string | null | undefined,
+  consentConfirmedByAdmin: boolean,
+  d: Deps,
+): Promise<{ booth: AdminBoothView; removed: boolean }> {
+  const { removed } = await setWhatsapp(
+    db,
+    eventId,
+    boothId,
+    { number, consent: consentConfirmedByAdmin, by: "admin" },
+    d,
+  );
+  return { booth: await getBoothView(db, eventId, boothId), removed };
+}
+
+// ---------- Undangan pemilik (A4, A16) ----------
+
+/** Catat undangan terkirim. Butuh email pemilik; jeda antar undangan dibatasi (mencegah email-bombing). */
+export async function markInvited(
+  db: Db,
+  eventId: string,
+  boothId: string,
+  d: Deps,
+): Promise<BoothRow> {
+  const row = await getBoothRow(db, eventId, boothId);
+  if (!row.email) throw new ApiError("validation_error", "no_owner_email");
+  if (
+    row.ownerInvitedAt !== null &&
+    d.now - row.ownerInvitedAt < CONFIG.registration.inviteCooldownSec * 1000
+  ) {
+    throw new ApiError("rate_limited");
+  }
+  await db
+    .update(booths)
+    .set({ ownerInvitedAt: d.now, updatedAt: nextVersion(row, d.now) })
+    .where(eq(booths.id, boothId));
+  return row;
 }

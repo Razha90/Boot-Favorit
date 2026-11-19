@@ -151,6 +151,23 @@
 | Pil nomor booth `PhotoFrame` memakai `text-text` | Di tema panggung teks mewarisi warna gelap bingkai di atas pil gelap (tak terbaca) |
 | Suara animasi tidak diimplementasikan | Di luar lingkup; bukan kebutuhan acara |
 
+### Keputusan teknis dari pengerjaan (Tahap 8)
+
+| Keputusan | Alasan |
+|---|---|
+| Sesi booth = cookie HttpOnly bertanda tangan `{sub, eid, eh, exp}`; **tiap permintaan** membandingkan `eh` dengan HMAC(`booths.email`) di D1 → `401 owner_changed` | B7: pemilik dilepas/diganti admin langsung memutus sesi lama; token tidak dipercaya untuk kepemilikan |
+| OTP login booth: jawaban **sama** untuk email terdaftar dan tidak (tanpa kode/email untuk yang tak terdaftar); jeda OTP pada login disamarkan | Tidak membocorkan email mana yang terdaftar. Pendaftaran justru memberi `email_in_use` (pendaftar perlu tahu) |
+| Pendaftaran = OTP → **cookie bukti email** (`booth_register`, 30 mnt, awalan token berbeda dari sesi) → `POST /register` yang mensyaratkan email sama dengan bukti | Email terbukti milik pendaftar tanpa menyimpan state di server; token sesi tidak bisa dipakai sebagai bukti dan sebaliknya |
+| Rute portal booth **berbentuk sama** dengan rute admin (`/api/booth/...`) dan memakai layanan yang sama; `boothId` dari sesi | Satu logika (batas produk, foto, validasi gambar); UI memakai `BoothScope` dengan basis path berbeda |
+| Pemilik: skema profil **strict** (tanpa status/email/kolom moderasi), status produk hanya `active`/`hidden`, produk `removed_by_admin` tidak bisa disentuh | Pemilik tidak punya jalur menyembunyikan komentar atau menghapus bukti moderasi (A4, A15, B25) |
+| `rejected`/`suspended` → portal hanya-baca (`booth_not_editable`); hanya `revision` bisa kirim ulang → `pending` | A4: tolak/revisi/kirim ulang; yang ditolak tidak bisa mengubah-ubah |
+| Statistik portal mengikuti `visibility()`: rating/peringkat tersembunyi = semua angka null | Konsisten dengan aturan publik; tidak ada kebocoran lewat portal |
+| Allowlist pembekuan mencocokkan **path persis**, bukan pola rute | `routePath` jatuh ke catch-all `/api/*` di aplikasi nyata sehingga allowlist tidak pernah cocok (login booth setelah event selesai terblokir) |
+| Penyedia email sementara: **Resend** lewat `fetch`, aktif bila `RESEND_API_KEY` + `EMAIL_FROM` | Item 5 masih terbuka; satu fungsi `EmailSender`, mudah diganti. Tanpa penyedia: dev `devCode`, produksi gagal |
+| Notifikasi ke pemilik saat status berubah; gagal kirim **tidak** menggagalkan aksi admin; undangan eksplisit lewat tombol (jeda 60 dtk) | Email hanya pelengkap; mengisi email tidak mengirim apa pun (A16) |
+| Draf profil disimpan di penyimpanan peramban (`boothDraft:{id}`) | B7: isian belum tersimpan tidak hilang saat sesi berakhir |
+| QR: dependensi `uqr` (matriks modul, digambar sebagai SVG), token warna tetap `--qr-fg/--qr-bg` | Pemindai tak andal bila terbalik di tema gelap; tanpa innerHTML; 79 KB, MIT; dipakai lagi untuk poster di Tahap 9 |
+
 ## Gaya kode (disetujui)
 
 Lihat bagian "Gaya kode" di `AGENTS.md`. Ringkas: kode berbahasa Inggris, teks pengguna Indonesia; TypeScript strict tanpa `any`; tipe dari Zod; logika bisnis murni; server berlapis route → service → query; Biome untuk format dan lint; tes bersama fitur; commit `feat:`/`fix:`/`docs:`.

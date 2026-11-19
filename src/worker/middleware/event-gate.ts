@@ -3,7 +3,6 @@
 
 import { ApiError } from "@shared/errors";
 import { createMiddleware } from "hono/factory";
-import { routePath } from "hono/route";
 import type { AppEnv } from "../app-env";
 import { getDb } from "../lib/db";
 import { eventState, findActiveEvent } from "../lib/event";
@@ -41,7 +40,9 @@ export const eventWriteGate = createMiddleware<AppEnv>(async (c, next) => {
   const event = c.get("event");
   if (!event) throw new ApiError("no_active_event");
 
-  const route = `${c.req.method} ${routePath(c, -1)}`;
+  // Path persis (bukan pola rute): di aplikasi nyata `routePath` jatuh ke catch-all `/api/*`, sehingga allowlist tak pernah cocok.
+  // Isi allowlist tanpa parameter, jadi pencocokan path persis aman.
+  const route = `${c.req.method} ${c.req.path}`;
   if (FROZEN_ALLOWLIST.has(route)) return next();
 
   if (eventState(event, c.get("now")()).frozen) {

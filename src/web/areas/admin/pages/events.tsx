@@ -4,10 +4,11 @@ import { Link } from "react-router";
 import { ActionButton } from "../../../components/ui/ActionButton";
 import { Card } from "../../../components/ui/Card";
 import { Field, Input, Select } from "../../../components/ui/Form";
+import { QueryState } from "../../../components/ui/states";
 import { copy } from "../../../lib/copy";
 import { formatDateTime } from "../../../lib/format";
 import { adminApi, adminKeys } from "../api";
-import { EventBadges, QueryState } from "../components/bits";
+import { EventBadges } from "../components/bits";
 import { parseSchedule, ScheduleFields, type ScheduleValues } from "../components/ScheduleFields";
 
 const ZONES = ["Asia/Jakarta", "Asia/Makassar", "Asia/Jayapura"] as const;

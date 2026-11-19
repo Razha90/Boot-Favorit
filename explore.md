@@ -1347,6 +1347,7 @@ Catatan penting:
 **Booth** (passwordless):
 - `POST /api/booth/otp/request` → kirim OTP 6 digit ke email → `.../verify`.
 - Sesi = cookie `HttpOnly; Secure; SameSite=Lax` berisi token bertanda tangan dengan klaim `{ sub: boothId, eventId, role: "booth" }`. Karena `eventId` ada di klaim dan `UNIQUE(event_id, email)` di database, **akun tidak bisa dipakai di event lain**.
+- *(Tahap 8) Sesi booth diimplementasikan sebagai cookie `booth_session` (`{sub, eid, eh, exp}`); `eh` dicocokkan dengan HMAC(`booths.email`) di D1 pada **setiap** permintaan (`owner_changed`). OTP login booth menjawab sama untuk email terdaftar atau tidak. Pendaftaran memakai cookie bukti email `booth_register` (30 menit) yang harus cocok dengan email di `POST /api/booth/register`. OTP booth lewat `/api/booth/otp/request|verify` dengan body `{ email, purpose: register|login }` (bukan dua rute terpisah).*
 - *(Tahap 6) Sesi pengunjung diimplementasikan sebagai cookie `visitor_session` bertanda tangan HMAC (`{sub, eid, exp}`); identitas Google dan OTP sama-sama `HMAC(email terverifikasi)` (bukan `sub`) agar satu orang satu identitas lintas penyedia dan bisa dicocokkan dengan email booth. Sesi booth (portal) baru di Tahap 8.*
 - Tidak ada password → tidak perlu hashing password, tidak ada reset password.
 - Tindakan sensitif memeriksa status booth di D1 (mis. `suspended` langsung ditolak walau token masih berlaku).
@@ -1547,6 +1548,10 @@ Reviewer
 POST /api/booths/:id/review     upsert review (Turnstile + sesi)
 GET  /api/me/reviews            booth yang sudah kubuat nilai
 POST /api/reviews/:id/report    pengunjung melaporkan komentar (sesi + Turnstile; satu laporan per komentar)
+
+# Status implementasi Tahap 8: semua rute Booth di bawah sudah ada, dengan penyesuaian: GET /api/booth/me mengembalikan { me | null, turnstileSiteKey }
+# (null = belum masuk); PUT /api/booth/me skema strict; tambahan POST /api/booth/resubmit, GET /api/booth/reviews, GET/DELETE /api/booth/photos[/:pid],
+# PUT /api/booth/photos/order, DELETE /api/booth/logo, POST /api/booth/media, DELETE /api/booth/products/:pid/photo, POST /api/admin/e/:id/booths/:bid/invite.
 
 Booth
 GET  /api/booth/me              profil + statistik + review

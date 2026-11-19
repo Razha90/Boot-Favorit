@@ -13,6 +13,10 @@ export const LOG_ACTIONS = [
   // booth
   "booth.registered",
   "booth.registered_late",
+  "booth.resubmitted",
+  "booth.profile_updated",
+  "booth.report_sent",
+  "booth.owner_invalidated",
   "booth.approved",
   "booth.rejected",
   "booth.suspended",
@@ -67,6 +71,8 @@ export const LOG_ACTIONS = [
   "admin.data_exported",
   // sistem
   "email.skipped",
+  "email.sent",
+  "email.failed",
   "event.write_blocked_ended",
   "system.idempotent_replay",
   "system.request_in_progress",

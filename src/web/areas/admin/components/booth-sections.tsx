@@ -143,6 +143,7 @@ export function ProfileCard({ eventId, booth, refresh }: SectionProps) {
 export function OwnerCard({ eventId, booth, refresh }: SectionProps) {
   const [email, setEmail] = useState(booth.email ?? "");
   const [reason, setReason] = useState("");
+  const [inviteNote, setInviteNote] = useState<string | null>(null);
   const owned = booth.ownerState === "active";
   const tone = { none: "muted", invited: "accent", active: "primary" } as const;
 
@@ -179,6 +180,29 @@ export function OwnerCard({ eventId, booth, refresh }: SectionProps) {
           </ActionButton>
         )}
       </div>
+      {booth.email && (
+        <div className="grid gap-1">
+          <div>
+            <ActionButton
+              action={async (ctx) => {
+                const r = await adminApi.invite(eventId, booth.id, ctx);
+                setInviteNote(
+                  r.sent ? copy.admin.booth.inviteSent : copy.admin.booth.inviteSkipped,
+                );
+                await refresh();
+              }}
+            >
+              {copy.admin.booth.invite}
+            </ActionButton>
+          </div>
+          <p className="text-xs text-muted">{copy.admin.booth.inviteHint}</p>
+          {inviteNote && (
+            <p role="status" className="text-sm">
+              {inviteNote}
+            </p>
+          )}
+        </div>
+      )}
     </Card>
   );
 }

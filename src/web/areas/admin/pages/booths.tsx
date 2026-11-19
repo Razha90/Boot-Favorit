@@ -5,9 +5,9 @@ import { Link, useParams } from "react-router";
 import { ActionButton } from "../../../components/ui/ActionButton";
 import { Badge, Card } from "../../../components/ui/Card";
 import { Field, Input, Select } from "../../../components/ui/Form";
+import { QueryState } from "../../../components/ui/states";
 import { copy } from "../../../lib/copy";
 import { adminApi, adminKeys } from "../api";
-import { QueryState } from "../components/bits";
 
 const OWNER_TONE = { none: "muted", invited: "accent", active: "primary" } as const;
 const COMPLETE_TONE = { name_only: "muted", partial: "accent", full: "primary" } as const;

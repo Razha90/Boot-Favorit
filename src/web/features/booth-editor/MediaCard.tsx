@@ -1,19 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
-import { ImageUploader } from "../../../components/shared/ImageUploader";
-import { SafeImage } from "../../../components/shared/SafeImage";
-import { ActionButton } from "../../../components/ui/ActionButton";
-import { Card } from "../../../components/ui/Card";
-import { copy } from "../../../lib/copy";
-import { mediaUrl, thumbKeyOf } from "../../../lib/media-url";
-import { adminApi, adminKeys } from "../api";
-import { QueryState } from "./bits";
-import type { SectionProps } from "./booth-sections";
+import { ImageUploader } from "../../components/shared/ImageUploader";
+import { SafeImage } from "../../components/shared/SafeImage";
+import { ActionButton } from "../../components/ui/ActionButton";
+import { Card } from "../../components/ui/Card";
+import { QueryState } from "../../components/ui/states";
+import { copy } from "../../lib/copy";
+import { mediaUrl, thumbKeyOf } from "../../lib/media-url";
+import type { EditorProps } from "./types";
 
 /** Foto galeri dan logo. Semuanya opsional: tanpa foto, tampilan publik beralih sendiri (A16). */
-export function MediaCard({ eventId, booth, refresh }: SectionProps) {
+export function MediaCard({ scope, booth, refresh }: EditorProps) {
   const photos = useQuery({
-    queryKey: adminKeys.photos(booth.id),
-    queryFn: () => adminApi.photos(eventId, booth.id),
+    queryKey: ["booth-editor", "photos", scope.boothId],
+    queryFn: () => scope.photos(),
   });
   const reload = async () => {
     await photos.refetch();
@@ -26,7 +25,7 @@ export function MediaCard({ eventId, booth, refresh }: SectionProps) {
     const j = i + d;
     if (j < 0 || j >= ids.length) return;
     [ids[i], ids[j]] = [ids[j] as string, ids[i] as string];
-    await adminApi.reorderPhotos(eventId, booth.id, ids, ctx);
+    await scope.reorderPhotos(ids, ctx);
     await reload();
   };
 
@@ -76,7 +75,7 @@ export function MediaCard({ eventId, booth, refresh }: SectionProps) {
                     variant="danger"
                     aria-label={copy.admin.common.delete}
                     action={async (ctx) => {
-                      await adminApi.deletePhoto(eventId, booth.id, p.id, ctx);
+                      await scope.deletePhoto(p.id, ctx);
                       await reload();
                     }}
                   >
@@ -91,7 +90,7 @@ export function MediaCard({ eventId, booth, refresh }: SectionProps) {
       <ImageUploader
         kind="photo"
         label={copy.admin.booth.addPhoto}
-        onUpload={(image, ctx) => adminApi.upload(eventId, booth.id, "photo", image, ctx)}
+        onUpload={(image, ctx) => scope.upload("photo", image, ctx)}
         onUploaded={reload}
       />
 
@@ -102,7 +101,7 @@ export function MediaCard({ eventId, booth, refresh }: SectionProps) {
           <ActionButton
             variant="danger"
             action={async (ctx) => {
-              await adminApi.removeLogo(eventId, booth.id, ctx);
+              await scope.removeLogo(ctx);
               await refresh();
             }}
           >
@@ -113,7 +112,7 @@ export function MediaCard({ eventId, booth, refresh }: SectionProps) {
       <ImageUploader
         kind="logo"
         label={booth.logoKey ? copy.admin.booth.replaceLogo : copy.admin.booth.addLogo}
-        onUpload={(image, ctx) => adminApi.upload(eventId, booth.id, "logo", image, ctx)}
+        onUpload={(image, ctx) => scope.upload("logo", image, ctx)}
         onUploaded={refresh}
       />
     </Card>

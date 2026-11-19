@@ -50,7 +50,11 @@ export async function listProducts(db: Db, eventId: string, boothId: string) {
   return rows.map(view);
 }
 
-async function getProductRow(db: Db, boothId: string, productId: string): Promise<ProductRow> {
+export async function getProductRow(
+  db: Db,
+  boothId: string,
+  productId: string,
+): Promise<ProductRow> {
   const row = await db
     .select()
     .from(products)

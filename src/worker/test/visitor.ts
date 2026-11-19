@@ -14,6 +14,8 @@ export interface VisitorCallOptions {
   headers?: Record<string, string>;
   /** Env khusus panggilan ini (mis. APP_ENV produksi) tanpa merusak penyemaian lewat jalur dev admin. */
   env?: Partial<Env>;
+  /** Badan mentah (mis. FormData untuk unggahan); menimpa `body` JSON. */
+  raw?: BodyInit;
 }
 
 /** Env "produksi": bukan development, jadi bypass dev (Turnstile, devCode, email) tidak berlaku. */
@@ -27,13 +29,17 @@ export function visitorClient(h: ReturnType<typeof adminHarness>) {
   const jar = new Map<string, string>();
   async function call(method: string, path: string, body?: unknown, o: VisitorCallOptions = {}) {
     const headers: Record<string, string> = { ...o.headers };
-    if (body !== undefined) headers["content-type"] = "application/json";
+    if (body !== undefined && o.raw === undefined) headers["content-type"] = "application/json";
     if (method !== "GET" && o.key !== false)
       headers["Idempotency-Key"] = o.key ?? crypto.randomUUID();
     if (jar.size > 0) headers.cookie = [...jar].map(([k, v]) => `${k}=${v}`).join("; ");
     const res = await h.app.request(
       `http://localhost${path}`,
-      { method, headers, body: body === undefined ? undefined : JSON.stringify(body) },
+      {
+        method,
+        headers,
+        body: o.raw ?? (body === undefined ? undefined : JSON.stringify(body)),
+      },
       { ...h.env(), ...o.env } as Env,
     );
     for (const sc of res.headers.getSetCookie()) {

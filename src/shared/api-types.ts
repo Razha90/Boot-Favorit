@@ -405,3 +405,52 @@ export interface AdminResultsView {
   /** Peringkat terkini berbeda dari hasil beku → admin dapat menekan "Perbarui hasil" */
   differs: boolean;
 }
+
+// ---------- Portal booth (A4, B7) ----------
+
+/** Profil booth bagi pemilik sendiri: tanpa data admin; nomor WhatsApp milik sendiri tampil. */
+export interface BoothSelfView {
+  id: string;
+  name: string;
+  boothNo: string | null;
+  tagline: string | null;
+  description: string | null;
+  about: string | null;
+  teamName: string | null;
+  status: BoothStatus;
+  /** Alasan penolakan/revisi dari admin (dilihat pemilik) */
+  rejectReason: string | null;
+  isLate: boolean;
+  createdBy: "self" | "admin";
+  logoKey: string | null;
+  coverThumbKey: string | null;
+  photoCount: number;
+  productCount: number;
+  /** Nomor WhatsApp format 62 (milik sendiri), null bila tidak diisi */
+  whatsapp: string | null;
+  completeness: Completeness;
+  version: number;
+}
+
+/** Statistik ulasan booth. Mengikuti aturan tampil publik: rating disembunyikan, semua angka null. */
+export interface BoothStatsView {
+  ratingsVisible: boolean;
+  reviewCount: number | null;
+  average: number | null;
+  distribution: [number, number, number, number, number] | null;
+  /** null = peringkat tidak ditampilkan, atau booth belum cukup ulasan untuk diperingkat */
+  rank: number | null;
+  /** Jumlah booth yang sudah diperingkat; null bila peringkat tidak ditampilkan */
+  rankedCount: number | null;
+}
+
+export interface BoothMe {
+  booth: BoothSelfView;
+  stats: BoothStatsView;
+}
+
+/** Jawaban GET /api/booth/me: `me` null = belum masuk. Memuat nilai publik untuk form masuk. */
+export interface BoothSession {
+  me: BoothMe | null;
+  turnstileSiteKey: string | null;
+}

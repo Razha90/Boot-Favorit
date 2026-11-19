@@ -10,6 +10,7 @@ export const ERROR_STATUS = {
   payload_too_large: 413,
   unauthorized: 401,
   owner_changed: 401,
+  booth_not_editable: 403,
   forbidden: 403,
   not_found: 404,
   conflict: 409,

@@ -7,6 +7,8 @@ import type { TurnstileVerifier } from "./lib/turnstile";
 import { baseContext, handleError, notFoundJson } from "./middleware/base";
 import { eventWriteGate, loadActiveEvent } from "./middleware/event-gate";
 import { createAdminRoutes } from "./routes/admin";
+import { createBoothAuthRoutes } from "./routes/booth/auth";
+import { boothPortalRoutes } from "./routes/booth/portal";
 import { eventRoutes } from "./routes/event";
 import { goRoutes } from "./routes/go";
 import { liveRoutes } from "./routes/live";
@@ -55,7 +57,10 @@ export function createApp(deps: AppDeps = {}) {
     }),
   );
   app.route("/", createReviewRoutes({ turnstile: deps.turnstile }));
-  app.route("/", createAdminRoutes({ getJwks: deps.getJwks }));
+  // Urutan penting: rute auth booth (tanpa sesi) SEBELUM portal, yang memasang requireBooth untuk semua /api/booth/*.
+  app.route("/", createBoothAuthRoutes({ turnstile: deps.turnstile, email: deps.email }));
+  app.route("/", boothPortalRoutes);
+  app.route("/", createAdminRoutes({ getJwks: deps.getJwks, email: deps.email }));
 
   // Rute /api/* lain belum ada; jangan jatuh ke SPA fallback.
   app.all("/api/*", notFoundJson);

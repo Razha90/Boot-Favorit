@@ -22,4 +22,8 @@ interface Env {
   TURNSTILE_SITE_KEY?: string;
   /** OAuth client id Google Identity Services (publik). Kosong = tombol Google tidak tampil. */
   GOOGLE_CLIENT_ID?: string;
+  /** Kunci API penyedia email (Resend). Bersama EMAIL_FROM mengaktifkan pengiriman OTP dan notifikasi booth. */
+  RESEND_API_KEY?: string;
+  /** Alamat pengirim yang sudah diverifikasi di penyedia email, mis. "Booth Favorit <no-reply@eventunimed.id>". */
+  EMAIL_FROM?: string;
 }

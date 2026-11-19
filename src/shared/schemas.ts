@@ -227,6 +227,7 @@ export const selfRegisterSchema = z.object({
   boothNo: boothFields.boothNo,
   tagline: boothFields.tagline,
   description: boothFields.description,
+  teamName: optionalText(CONFIG.profile.teamNameMaxLength),
 });
 export type SelfRegisterInput = z.infer<typeof selfRegisterSchema>;
 
@@ -324,6 +325,52 @@ export const reportRequestSchema = z
   .object({ reason: reportReasonSchema, note: optionalText(200), turnstileToken })
   .strict();
 
+// ---------- Portal booth (A4, B7) ----------
+
+export const boothAuthPurposeSchema = z.enum(["register", "login"]);
+export type BoothAuthPurpose = z.infer<typeof boothAuthPurposeSchema>;
+
+export const boothOtpRequestSchema = z
+  .object({ email: emailSchema, purpose: boothAuthPurposeSchema, turnstileToken })
+  .strict();
+export const boothOtpVerifySchema = z
+  .object({
+    email: emailSchema,
+    purpose: boothAuthPurposeSchema,
+    code: z.string().regex(/^\d{6}$/),
+  })
+  .strict();
+
+/** Pendaftaran mandiri: email harus sama dengan yang sudah diverifikasi lewat OTP (bukti di cookie). */
+export const boothRegisterSchema = selfRegisterSchema.extend({ email: emailSchema }).strict();
+export type BoothRegisterInput = z.infer<typeof boothRegisterSchema>;
+
+/** Pemilik menyunting profil sendiri. Tanpa status, email, atau kolom moderasi (strict: kolom asing ditolak). */
+export const boothSelfUpdateSchema = z
+  .object({
+    name: requiredText(CONFIG.profile.nameMaxLength).optional(),
+    boothNo: optionalText(CONFIG.profile.boothNoMaxLength).optional(),
+    tagline: optionalText(CONFIG.profile.taglineMaxLength).optional(),
+    description: optionalText(CONFIG.profile.descriptionMaxLength).optional(),
+    about: optionalText(CONFIG.booth.aboutMaxLength).optional(),
+    teamName: optionalText(CONFIG.profile.teamNameMaxLength).optional(),
+  })
+  .strict();
+export type BoothSelfUpdateInput = z.infer<typeof boothSelfUpdateSchema>;
+
+export const boothSelfWhatsappSchema = z
+  .object({
+    /** null atau kosong menghapus nomor */
+    number: z.string().trim().max(30).nullish(),
+    /** Pemilik menyetujui nomornya dihubungi pengunjung (A14). */
+    consent: z.boolean().default(false),
+  })
+  .strict();
+
+export const boothReportSchema = z
+  .object({ reason: reportReasonSchema, note: optionalText(200) })
+  .strict();
+
 export const COMMENT_STATUS_VALUES = ["visible", "masked", "held", "hidden"] as const;
 const adminReason = z.string().trim().min(CONFIG.registration.adminReasonMinLength).max(500);
 
@@ -383,3 +430,8 @@ export const eventSettingsSchema = z.object({
   allowLateRegistration: z.boolean().optional(),
 });
 export type EventSettings = z.infer<typeof eventSettingsSchema>;
+
+/** Pemilik hanya boleh menampakkan/menyembunyikan produk; `removed_by_admin` hanya bisa diatur admin. */
+export const ownerProductPatchSchema = productPatchSchema.extend({
+  status: z.enum(["active", "hidden"]).optional(),
+});

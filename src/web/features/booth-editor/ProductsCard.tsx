@@ -1,25 +1,25 @@
 import type { ProductView } from "@shared/api-types";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ImageUploader } from "../../../components/shared/ImageUploader";
-import { SafeImage } from "../../../components/shared/SafeImage";
-import { ActionButton } from "../../../components/ui/ActionButton";
-import { Badge, Card } from "../../../components/ui/Card";
-import { Field, Input, Select } from "../../../components/ui/Form";
-import { copy } from "../../../lib/copy";
-import { formatRupiah } from "../../../lib/format";
-import { mediaUrl } from "../../../lib/media-url";
-import { adminApi, adminKeys } from "../api";
-import { QueryState } from "./bits";
-import type { SectionProps } from "./booth-sections";
+import { ImageUploader } from "../../components/shared/ImageUploader";
+import { SafeImage } from "../../components/shared/SafeImage";
+import { ActionButton } from "../../components/ui/ActionButton";
+import { Badge, Card } from "../../components/ui/Card";
+import { Field, Input, Select } from "../../components/ui/Form";
+import { QueryState } from "../../components/ui/states";
+import { copy } from "../../lib/copy";
+import { formatRupiah } from "../../lib/format";
+import { mediaUrl } from "../../lib/media-url";
+import type { BoothScope } from "./scope";
+import type { EditorProps } from "./types";
 
 const emptyForm = { name: "", price: "", compare: "", category: "", badge: "", terms: false };
 
 /** Produk & harga (A14). Sepenuhnya opsional; foto produk juga opsional. */
-export function ProductsCard({ eventId, booth, refresh }: SectionProps) {
+export function ProductsCard({ scope, refresh }: Pick<EditorProps, "scope" | "refresh">) {
   const q = useQuery({
-    queryKey: adminKeys.products(booth.id),
-    queryFn: () => adminApi.products(eventId, booth.id),
+    queryKey: ["booth-editor", "products", scope.boothId],
+    queryFn: () => scope.products(),
   });
   const reload = async () => {
     await q.refetch();
@@ -44,13 +44,7 @@ export function ProductsCard({ eventId, booth, refresh }: SectionProps) {
         )}
         <ul className="grid gap-3">
           {q.data?.products.map((p) => (
-            <ProductRow
-              key={p.id}
-              product={p}
-              eventId={eventId}
-              boothId={booth.id}
-              reload={reload}
-            />
+            <ProductRow key={p.id} product={p} scope={scope} reload={reload} />
           ))}
         </ul>
       </QueryState>
@@ -122,9 +116,7 @@ export function ProductsCard({ eventId, booth, refresh }: SectionProps) {
           disabled={!valid}
           resetOn={JSON.stringify(f)}
           action={async (ctx) => {
-            await adminApi.createProduct(
-              eventId,
-              booth.id,
+            await scope.createProduct(
               {
                 name: f.name,
                 priceIdr: price,
@@ -148,13 +140,11 @@ export function ProductsCard({ eventId, booth, refresh }: SectionProps) {
 
 function ProductRow({
   product: p,
-  eventId,
-  boothId,
+  scope,
   reload,
 }: {
   product: ProductView;
-  eventId: string;
-  boothId: string;
+  scope: BoothScope;
   reload: () => Promise<unknown>;
 }) {
   const hidden = p.status !== "active";
@@ -183,7 +173,7 @@ function ProductRow({
             <ActionButton
               size="sm"
               action={async (ctx) => {
-                await adminApi.setFeatured(eventId, boothId, p.id, ctx);
+                await scope.setFeatured(p.id, ctx);
                 await reload();
               }}
             >
@@ -192,10 +182,8 @@ function ProductRow({
           )}
           <ActionButton
             size="sm"
-            action={async () => {
-              await adminApi.patchProduct(eventId, boothId, p.id, {
-                status: hidden ? "active" : "hidden",
-              });
+            action={async (ctx) => {
+              await scope.patchProduct(p.id, { status: hidden ? "active" : "hidden" }, ctx);
               await reload();
             }}
           >
@@ -205,7 +193,7 @@ function ProductRow({
             size="sm"
             variant="danger"
             action={async (ctx) => {
-              await adminApi.deleteProduct(eventId, boothId, p.id, ctx);
+              await scope.deleteProduct(p.id, ctx);
               await reload();
             }}
           >
@@ -221,7 +209,7 @@ function ProductRow({
               size="sm"
               variant="danger"
               action={async (ctx) => {
-                await adminApi.removeProductPhoto(eventId, boothId, p.id, ctx);
+                await scope.removeProductPhoto(p.id, ctx);
                 await reload();
               }}
             >
@@ -231,9 +219,7 @@ function ProductRow({
           <ImageUploader
             kind="product"
             label={copy.admin.products.uploadPhoto}
-            onUpload={(image, ctx) =>
-              adminApi.upload(eventId, boothId, "product", image, ctx, p.id)
-            }
+            onUpload={(image, ctx) => scope.upload("product", image, ctx, p.id)}
             onUploaded={reload}
           />
         </div>

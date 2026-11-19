@@ -1,5 +1,4 @@
 import type { AdminEventView } from "@shared/api-types";
-import type { ReactNode } from "react";
 import { Badge } from "../../../components/ui/Card";
 import { copy } from "../../../lib/copy";
 
@@ -14,24 +13,4 @@ export function EventBadges({ event }: { event: AdminEventView }) {
       <Badge>{phase}</Badge>
     </span>
   );
-}
-
-export function QueryState({
-  loading,
-  error,
-  children,
-}: {
-  loading: boolean;
-  error: unknown;
-  children: ReactNode;
-}) {
-  if (loading) return <p className="text-sm text-muted">{copy.admin.common.loading}</p>;
-  if (error) {
-    return (
-      <p role="alert" className="text-sm text-danger">
-        {copy.admin.common.loadFailed}
-      </p>
-    );
-  }
-  return <>{children}</>;
 }

@@ -1,5 +1,5 @@
 import type { Context } from "hono";
-import type { EventRow, VisitorRow } from "./db/schema";
+import type { BoothRow, EventRow, VisitorRow } from "./db/schema";
 
 export type AppEnv = {
   Bindings: Env;
@@ -13,6 +13,8 @@ export type AppEnv = {
     admin: { email: string };
     /** Pengunjung dari cookie sesi (null = belum masuk). Diisi oleh loadVisitor di rute pengunjung. */
     visitor: VisitorRow | null;
+    /** Booth dari cookie sesi (hanya ada di rute portal yang lolos requireBooth). */
+    booth: BoothRow;
   };
 };
 

@@ -9,7 +9,7 @@ import type { Db } from "../lib/db";
 import { hmacHex, safeEqual } from "../lib/identity";
 import type { Deps } from "./visitors";
 
-const PURPOSE = "visitor" as const;
+export type OtpPurpose = "visitor" | "booth_login" | "booth_register";
 const HOUR_MS = 3_600_000;
 
 /** Enam digit seragam (tanpa bias modulo). */
@@ -31,7 +31,7 @@ const codeHash = (secret: string, emailHash: string, code: string) =>
 export async function issueOtp(
   db: Db,
   d: Deps,
-  o: { secret: string; eventId: string; emailHash: string },
+  o: { secret: string; eventId: string; emailHash: string; purpose?: OtpPurpose },
 ): Promise<string> {
   const recent = await db
     .select({ createdAt: authOtps.createdAt })
@@ -39,7 +39,7 @@ export async function issueOtp(
     .where(
       and(
         eq(authOtps.eventId, o.eventId),
-        eq(authOtps.purpose, PURPOSE),
+        eq(authOtps.purpose, o.purpose ?? "visitor"),
         eq(authOtps.emailHash, o.emailHash),
         gt(authOtps.createdAt, d.now - HOUR_MS),
       ),
@@ -56,7 +56,7 @@ export async function issueOtp(
   await db.insert(authOtps).values({
     id: d.newId(),
     eventId: o.eventId,
-    purpose: PURPOSE,
+    purpose: o.purpose ?? "visitor",
     emailHash: o.emailHash,
     codeHash: await codeHash(o.secret, o.emailHash, code),
     expiresAt: d.now + CONFIG.auth.otpTtlMinutes * 60_000,
@@ -69,7 +69,7 @@ export async function issueOtp(
 export async function consumeOtp(
   db: Db,
   d: Deps,
-  o: { secret: string; eventId: string; emailHash: string; code: string },
+  o: { secret: string; eventId: string; emailHash: string; code: string; purpose?: OtpPurpose },
 ): Promise<void> {
   const row = await db
     .select()
@@ -77,7 +77,7 @@ export async function consumeOtp(
     .where(
       and(
         eq(authOtps.eventId, o.eventId),
-        eq(authOtps.purpose, PURPOSE),
+        eq(authOtps.purpose, o.purpose ?? "visitor"),
         eq(authOtps.emailHash, o.emailHash),
       ),
     )
@@ -101,7 +101,7 @@ export async function consumeOtp(
     .where(
       and(
         eq(authOtps.eventId, o.eventId),
-        eq(authOtps.purpose, PURPOSE),
+        eq(authOtps.purpose, o.purpose ?? "visitor"),
         eq(authOtps.emailHash, o.emailHash),
       ),
     );

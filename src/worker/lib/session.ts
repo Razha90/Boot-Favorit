@@ -17,13 +17,13 @@ export interface VisitorClaims {
   exp: number;
 }
 
-const b64url = (s: string) =>
+export const b64url = (s: string) =>
   btoa(String.fromCharCode(...new TextEncoder().encode(s)))
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=+$/, "");
 
-const unb64url = (s: string) => {
+export const unb64url = (s: string) => {
   const padded = s
     .replace(/-/g, "+")
     .replace(/_/g, "/")
@@ -66,7 +66,7 @@ export async function verifyVisitorToken(
   }
 }
 
-const isHttps = (c: AppContext) => new URL(c.req.url).protocol === "https:";
+export const isHttps = (c: AppContext) => new URL(c.req.url).protocol === "https:";
 
 export function setVisitorCookie(c: AppContext, token: string, maxAgeSec: number): void {
   setCookie(c, VISITOR_COOKIE, token, {

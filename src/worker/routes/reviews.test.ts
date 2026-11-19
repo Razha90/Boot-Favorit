@@ -579,6 +579,9 @@ describe("B25 pengujian 1: tidak ada jalur non-admin yang mengubah status modera
         "POST /api/booths/:id/review",
         "GET /api/me/reviews",
         "POST /api/reviews/:id/report",
+        // Portal booth (A4, A15): hanya membaca ulasan masuk dan MELAPORKAN; tidak ada jalur menyembunyikan.
+        "GET /api/booth/reviews",
+        "POST /api/booth/reviews/:rid/report",
       ].sort(),
     );
     // Tidak ada PATCH/PUT/DELETE non-admin pada ruang review/moderasi.

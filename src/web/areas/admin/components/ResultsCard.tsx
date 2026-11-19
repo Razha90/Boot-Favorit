@@ -6,11 +6,11 @@ import { Button } from "../../../components/ui/Button";
 import { Card } from "../../../components/ui/Card";
 import { Field, Select } from "../../../components/ui/Form";
 import { ConfirmDialog } from "../../../components/ui/Modal";
+import { QueryState } from "../../../components/ui/states";
 import { copy } from "../../../lib/copy";
 import { formatDateTime, formatScore } from "../../../lib/format";
 import { adminKeys } from "../api";
 import { resultsApi, resultsKeys } from "../results-api";
-import { QueryState } from "./bits";
 
 const R = copy.admin.results;
 const MODES: DisplayMode[] = ["visible", "hidden", "on_results"];

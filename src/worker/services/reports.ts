@@ -64,3 +64,63 @@ export async function reportReviewAsVisitor(
     .onConflictDoNothing();
   return { alreadyReported: (r.meta?.changes ?? 0) === 0 };
 }
+
+/**
+ * Booth melaporkan komentar di booth-nya sendiri (A4, A15). Hanya menulis baris laporan: booth TIDAK bisa
+ * menyembunyikan apa pun; keputusan ada di admin.
+ */
+export async function reportReviewAsBooth(
+  db: Db,
+  d: Deps,
+  o: {
+    eventId: string;
+    boothId: string;
+    reviewId: string;
+    reason: (typeof REPORT_REASONS)[number];
+    note: string | null;
+  },
+): Promise<{ alreadyReported: boolean }> {
+  const review = await db
+    .select()
+    .from(reviews)
+    .where(
+      and(
+        eq(reviews.id, o.reviewId),
+        eq(reviews.eventId, o.eventId),
+        eq(reviews.boothId, o.boothId), // hanya komentar di booth sendiri
+        isNotNull(reviews.comment),
+      ),
+    )
+    .get();
+  const visible =
+    review?.status === "visible" &&
+    (review.commentStatus === "visible" || review.commentStatus === "masked");
+  if (!review || !visible) throw new ApiError("not_found", "review");
+
+  const recent = await db
+    .select({ n: count() })
+    .from(reviewReports)
+    .where(
+      and(
+        eq(reviewReports.reporterBoothId, o.boothId),
+        gt(reviewReports.createdAt, d.now - HOUR_MS),
+      ),
+    )
+    .get();
+  if ((recent?.n ?? 0) >= CONFIG.spam.maxReportsPerBoothPerHour) throw new ApiError("rate_limited");
+
+  const r = await db
+    .insert(reviewReports)
+    .values({
+      id: d.newId(),
+      eventId: o.eventId,
+      reviewId: review.id,
+      reporterRole: "booth",
+      reporterBoothId: o.boothId,
+      reason: o.reason,
+      note: o.note,
+      createdAt: d.now,
+    })
+    .onConflictDoNothing();
+  return { alreadyReported: (r.meta?.changes ?? 0) === 0 };
+}
