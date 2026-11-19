@@ -2,18 +2,18 @@
 // mengubahnya tanpa deploy. Daftar dikompilasi sekali per versi di memori isolat; `version` = waktu perubahan terakhir
 // (dicatat pada tiap review sebagai `filter_version`).
 
+import type { AdminTerm, ModerationTestResult } from "@shared/api-types";
 import { CONFIG } from "@shared/config";
 import {
   type CompiledTerms,
   compileTerms,
   type ModerationPolicy,
   type ModerationResult,
-  moderateComment,
   type ModerationTerm,
+  moderateComment,
   normalizeWord,
 } from "@shared/moderation";
 import { SEED_TERMS } from "@shared/moderation-seed";
-import type { AdminTerm, ModerationTestResult } from "@shared/api-types";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { type ModerationTermRow, moderationTerms } from "../db/schema";
 import { type Db, runBatch } from "../lib/db";

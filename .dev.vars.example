@@ -1,2 +1,12 @@
 # Salin ke .dev.vars untuk pengembangan lokal (tidak di-commit)
 DEV_ADMIN_EMAIL=admin@localhost.test
+
+# Penilaian pengunjung (Tahap 6). Semua OPSIONAL di dev lokal:
+# - tanpa SESSION_SECRET dipakai nilai bawaan dev (hanya bila APP_ENV=development)
+# - tanpa TURNSTILE_SECRET pemeriksaan robot dilewati (hanya di localhost + development)
+# - OTP email: tanpa penyedia, kode dikembalikan sebagai `devCode` dan terisi otomatis di form
+# Produksi: semuanya WAJIB lewat `wrangler secret put` (jangan isi di berkas ini untuk produksi).
+# SESSION_SECRET=ganti-dengan-string-acak-panjang
+# TURNSTILE_SECRET=
+# TURNSTILE_SITE_KEY=
+# GOOGLE_CLIENT_ID=

@@ -25,7 +25,11 @@ export async function deliver(
     return true;
   }
   if (isLocalDev(c)) {
-    logEvent(c, { eventId: c.get("event")?.id ?? "-", category: "system", action: "email.skipped" });
+    logEvent(c, {
+      eventId: c.get("event")?.id ?? "-",
+      category: "system",
+      action: "email.skipped",
+    });
     return false;
   }
   throw new ApiError("internal_error", "email_not_configured");

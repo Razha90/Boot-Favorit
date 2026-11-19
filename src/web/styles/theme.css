@@ -29,7 +29,7 @@
   --muted: #55656d;
   --line: #d8d3c6;
 
-  --star: var(--accent);
+  --star: #cc7700; /* amber turunan oranye: bintang terisi ≥ 3:1 di permukaan terang (WCAG 1.4.11); oranye murni hanya 1,9:1 */
   --star-off: #8f8975; /* bintang kosong: kontras ≥ 3:1 di atas permukaan terang (WCAG 1.4.11) */
   --success: #159a52;
   --warning: #e09a00;

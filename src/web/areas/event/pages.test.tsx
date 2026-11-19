@@ -5,6 +5,7 @@ import type {
   PublicEvent,
   PublicEventResponse,
   PublicProducts,
+  PublicReviews,
   PublicSnapshot,
 } from "@shared/api-types";
 import type { EventSchedule } from "@shared/event-state";
@@ -47,6 +48,8 @@ interface Api {
   snapshot: PublicSnapshot | "fail";
   booth: Record<string, PublicBoothDetail>;
   products: Record<string, PublicProducts>;
+  /** Ulasan publik per booth (bawaan: kosong) */
+  reviews?: Record<string, PublicReviews>;
 }
 
 const snapshotOf = (
@@ -71,6 +74,7 @@ const detailOf = (
   ratingsHidden: false,
   distribution: [0, 0, 0, 0, 0],
   hasWhatsapp: false,
+  topCategories: [],
   ...over,
 });
 
@@ -86,6 +90,19 @@ function mockApi(api: Api) {
     if (products) {
       const p = api.products[products[1] ?? ""];
       return p ? json(p) : json({ products: [], hasWhatsapp: false });
+    }
+    if (path === "/api/visitor/me") {
+      return json({
+        visitor: null,
+        authMode: "google_or_email",
+        googleClientId: null,
+        turnstileSiteKey: null,
+        reviewed: [],
+      });
+    }
+    const reviews = path.match(/^\/api\/booths\/([^/?]+)\/reviews/);
+    if (reviews) {
+      return json(api.reviews?.[reviews[1] ?? ""] ?? { reviews: [], next: null });
     }
     const booth = path.match(/^\/api\/booths\/([^/]+)$/);
     if (booth) {
@@ -486,5 +503,109 @@ describe("Matriks data kosong: halaman utuh × fixture booth", () => {
     assertNoBrokenUI(container, "home/semua");
     await act(async () => void failAllImages(container));
     assertNoBrokenUI(container, "home/semua/setelah-404");
+  });
+});
+
+describe("Halaman booth: penilaian dan ulasan (Tahap 6)", () => {
+  const live = () =>
+    eventResponse(
+      makeEvent({ schedule: scheduleAt("live"), reviewCategories: [{ id: "c1", label: "Seru" }] }),
+    );
+  const withReviews = (over: Partial<PublicBoothDetail> = {}, reviews?: PublicReviews) => {
+    const booth = detailOf(BOOTHS.lengkap, {
+      ratingCount: 2,
+      ratingAverage: 4.5,
+      distribution: [0, 0, 0, 1, 1],
+      ...over,
+    });
+    mockApi({
+      event: live(),
+      snapshot: snapshotOf([BOOTHS.lengkap]),
+      booth: { [booth.id]: booth },
+      products: { [booth.id]: { products: [], hasWhatsapp: false } },
+      reviews: reviews ? { [booth.id]: reviews } : undefined,
+    });
+    return booth;
+  };
+
+  it("saat voting: kotak penilaian menampilkan ajakan masuk (bukan lagi pengganti 'disiapkan')", async () => {
+    const booth = withReviews();
+    mount(`/b/${booth.id}`);
+    expect(await screen.findByText(copy.event.login.title)).toBeTruthy();
+    expect(screen.queryByText(copy.event.rate.liveSoon)).toBeNull();
+  });
+
+  it("ulasan pengunjung lain dan 'Sering disebut' tampil di bawah sebaran bintang", async () => {
+    const booth = withReviews(
+      { topCategories: [{ id: "c1", label: "Seru", count: 2 }] },
+      {
+        reviews: [
+          {
+            id: "r1",
+            stars: 5,
+            text: "Kopinya enak sekali",
+            displayName: "Budi",
+            categories: [{ id: "c1", label: "Seru" }],
+            createdAt: 2,
+          },
+          {
+            id: "r2",
+            stars: 4,
+            text: "Ramah dan cepat",
+            displayName: "Pengunjung",
+            categories: [],
+            createdAt: 1,
+          },
+        ],
+        next: null,
+      },
+    );
+    const { container } = mount(`/b/${booth.id}`);
+    expect(await screen.findByText("Kopinya enak sekali")).toBeTruthy();
+    expect(screen.getByText("Ramah dan cepat")).toBeTruthy();
+    expect(container.textContent).toContain("Sering disebut: Seru (2)");
+    assertNoBrokenUI(container, "booth/ulasan");
+  });
+
+  it("tanpa ulasan dan tanpa kategori: tidak ada bagian kosong; ajakan menjadi yang pertama", async () => {
+    const booth = withReviews({
+      ratingCount: 0,
+      ratingAverage: null,
+      distribution: [0, 0, 0, 0, 0],
+    });
+    const { container } = mount(`/b/${booth.id}`);
+    await screen.findByText(copy.event.booth.noReviews);
+    expect(container.textContent).not.toContain("Sering disebut");
+    expect(screen.queryByRole("article")).toBeNull();
+  });
+
+  it("event selesai: kotak penilaian 'ditutup' dan tidak ada tombol lapor", async () => {
+    const booth = detailOf(BOOTHS.lengkap);
+    mockApi({
+      event: eventResponse(makeEvent({ schedule: scheduleAt("ended") })),
+      snapshot: snapshotOf([BOOTHS.lengkap]),
+      booth: { [booth.id]: booth },
+      products: { [booth.id]: { products: [], hasWhatsapp: false } },
+      reviews: {
+        [booth.id]: {
+          reviews: [
+            {
+              id: "r1",
+              stars: 5,
+              text: "Mantap",
+              displayName: "Budi",
+              categories: [],
+              createdAt: 1,
+            },
+          ],
+          next: null,
+        },
+      },
+    });
+    mount(`/b/${booth.id}`);
+    await screen.findByText("Mantap");
+    expect(screen.getByText(copy.event.rate.ended)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: copy.event.reviews.report })).toBeNull();
+    expect(screen.queryByText(copy.event.login.title)).toBeNull();
   });
 });

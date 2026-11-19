@@ -19,6 +19,8 @@ import {
 } from "../components/booth-parts";
 import { BackButton } from "../components/chrome";
 import { PhotoSlideshow } from "../components/PhotoSlideshow";
+import { ReviewFlow } from "../components/ReviewFlow";
+import { ReviewsSection, TopCategories } from "../components/ReviewsSection";
 import { Showcase } from "../components/Showcase";
 import { SaveButton, ShareButton } from "../components/share-wishlist";
 import { useBoothQuery, useEventData, useProductsQuery } from "../data";
@@ -210,17 +212,21 @@ function BoothView({ booth }: { booth: PublicBoothDetail }) {
           </Present>
 
           <Card title={copy.event.booth.reviews}>
+            <TopCategories items={booth.topCategories} />
             <RatingBreakdown distribution={booth.distribution} />
             {(booth.ratingsHidden || booth.ratingCount === 0) && (
               <p className="text-sm text-muted">
                 {booth.ratingsHidden ? copy.visitor.ratingsHidden : copy.event.booth.noReviews}
               </p>
             )}
+            <ReviewsSection boothId={booth.id} />
           </Card>
         </div>
 
         <aside className="lg:sticky lg:top-6">
-          <RatePanel id="nilai" />
+          <RatePanel id="nilai">
+            <ReviewFlow booth={booth} />
+          </RatePanel>
         </aside>
       </div>
 

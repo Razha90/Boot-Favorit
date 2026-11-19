@@ -7,9 +7,9 @@
 ## Posisi sekarang
 
 - **Fase:** pengerjaan (pemilik proyek menyetujui masuk tahap pengerjaan, 2026-11-19).
-- **Tahap 0 sampai 5: SELESAI.** `npm run check` lulus (exit 0): Biome, tiga penjaga, `tsc -b` (4 proyek), **615 tes**. Build produksi berhasil; bundle awal **±69 KB gzip**; galeri tidak ikut produksi. Chrome sungguhan (dev server, viewport HP 390×844 + desktop): alur admin **17/17** (`admin-flow.mjs`), **halaman pengunjung semua lulus** (`visitor-flow.mjs`, ±65 pemeriksaan), galeri **9/9** (`gallery-visual.mjs`), **0 teks di bawah kontras AA** di tiga kombinasi gaya/tema (`gallery-contrast.mjs`).
-- **Tahap berikutnya:** **Tahap 6: Review, peringkat, moderasi dasar** (lihat `BUILD-PLAN.md`). Belum dimulai. **Item 58** (ambang peringkat) perlu dijawab dulu.
-- **Git:** repo diinisialisasi (`main`). **Belum ada commit**; commit hanya atas permintaan pemilik proyek.
+- **Tahap 0 sampai 6: SELESAI** (Tahap 6 dengan batasan jujur di bawah). `npm run check` lulus (exit 0): Biome, tiga penjaga, `tsc -b` (4 proyek), **951 tes**. Build produksi berhasil; bundle awal **±69 KB gzip**; galeri tidak ikut produksi. Chrome sungguhan (dev server, viewport HP 390×844 + desktop): alur admin (`admin-flow.mjs`), halaman pengunjung (`visitor-flow.mjs`), **alur penilaian** (`review-flow.mjs`, ±32 pemeriksaan), galeri **9/9** (`gallery-visual.mjs`), **0 teks di bawah kontras AA** di tiga kombinasi (`gallery-contrast.mjs`).
+- **Tahap berikutnya:** **Tahap 7: Realtime, peringkat, hasil** (lihat `BUILD-PLAN.md`). Belum dimulai.
+- **Git:** satu commit awal `9556f9c` (Tahap 0–5). **Tahap 6 belum di-commit**; commit hanya atas permintaan pemilik proyek.
 
 ## Sudah ada
 
@@ -43,6 +43,33 @@
 - **Tes**: Worker 222; web: komponen event (41), halaman utuh dengan `fetch` palsu (32, termasuk matriks setiap fixture booth di halaman booth dan beranda sebelum/sesudah semua gambar 404), matriks data kosong komponen event (42), pembantu `src/web/test/render.tsx` (`renderEvent`, `isEmpty`). Galeri `/dev/components` kini memuat `dev/EventGallery.tsx` (Hero ×4 status, slideshow 0/1/3, sorotan, etalase, Kenalan, kartu penilaian ×3, kaki halaman).
 - **Hasil uji yang mengubah desain/kode**: (1) tinggi kartu booth bergantung kelengkapan data (booth hanya-nama 26 px lebih pendek) → blok info kartu kini **tinggi tetap** (baris stiker disisakan, judul `line-clamp-2` + tinggi 2 baris; diukur 318 px untuk 8 fixture) dan nomor booth tidak diulang di dalam bingkai; (2) `Modal` memakai `id="modal-title"` tetap → id ganda dan `aria-labelledby` salah bila banyak dialog (satu per tombol Bagikan) → `useId`; (3) segmen progres slideshow adalah `<li>` kosong → disembunyikan dari teknologi bantu; (4) skrip kontras tidak membaca `oklab()` (positif palsu) → membaca warna lewat canvas, dan bagian "Event ·" hanya diukur di seru/kertas karena area event tidak pernah memakai tema lain.
 - **Catatan jujur**: kartu penilaian saat event berjalan masih pengganti ("Form penilaian lagi disiapkan") sampai **Tahap 6**. Snapshot dibaca langsung dari D1 (tanpa Cache API/Durable Object) sampai **Tahap 7**. Kontras halaman sungguhan diukur lewat komponen di galeri, bukan skrip khusus halaman.
+
+## Tahap 6 (review, moderasi): ringkasan
+
+- **Fungsi murni** (`src/shared/`): `moderation.ts` (normalisasi kata: huruf berulang, leetspeak, homoglyph, penanda tak terlihat, eja "a.n.j.i.n.g", imbuhan; pencocokan kata utuh vs `contains`; `allow` menang atas `block`; pola kontak/tautan/iklan; penyamaran `b***t`), `moderation-seed.ts` (**daftar awal**, ±39 entri termasuk 4 pengecualian), `risk.ts` (skor risiko), `schemas.ts` (skema masukan **strict**: kolom asing ditolak).
+- **Worker**: login pengunjung (`routes/visitor.ts`: email OTP, Google ID token, kode tiket, anonim bila mode terbuka; mode diatur per event; cookie HttpOnly bertanda tangan terikat event; Turnstile; pembatas laju), review (`routes/reviews.ts`: kirim/edit, daftar publik berkursor, milikku, lapor), moderasi admin (`routes/admin/moderation.ts`: antrean, keputusan laporan, status komentar, sunting/pulihkan/hapus, daftar kata + uji kalimat, blokir pengunjung). Layanan: `reviews`, `public-reviews`, `reports`, `admin-moderation`, `moderation`, `otp`, `visitors`, `stats`.
+- **Statistik**: `booth_stats` dihitung **ulang dari tabel review** dalam satu pernyataan SQL di dalam `batch()` yang sama dengan penulisan review (`services/stats.ts`); hanya review `visible` yang dihitung; komentar `held`/`masked` tidak mempengaruhi bintang. Peringkat (`rankBooths`) dibuktikan konsisten dengan review di tes.
+- **Frontend**: `ReviewFlow` (masuk → form → terima kasih) di kartu penilaian, `ReviewsSection` (ulasan berkursor + "Sering disebut"), `ReportDialog`; admin: halaman **Moderasi** (4 tab) dan pemilih **mode masuk** di pengaturan event. Teks di `copy.ts`; widget Turnstile dan Google dimuat dinamis (tidak di bundle awal).
+- **Tes**: shared (moderasi 163 termasuk korpus salah-tangkap/lolos dan kinerja, risiko), Worker +105 (login 28, review 52, moderasi admin 25), web ±62 (komponen review 33, halaman booth +4, matriks data kosong +14, UI admin 11). Galeri `ReviewGallery` + fixture `REVIEWS`.
+- **Hasil uji yang mengubah desain/kode**: (1) `db.run(sql…)` **tidak bisa dimasukkan ke `batch()`** Drizzle D1 (`stmt.bind` tak ada) → pernyataan statistik ditulis sebagai `update().set()` dengan sub-kueri; (2) bintang terisi oranye murni hanya 1,9:1 → token `--star` diganti amber turunan `#cc7700` (≥ 3:1); (3) booth tanpa pemilik dilewati pada cek "menilai diri sendiri"; (4) tes login yang lulus palsu karena `await` hilang pada D1 → dikoreksi.
+
+### Batasan jujur Tahap 6 (belum selesai atau belum teruji sungguhan)
+
+- **Google, Turnstile, dan email OTP belum diuji dengan layanan asli.** Verifikasi Google diuji dengan JWT RS256 palsu bertanda tangan sungguhan; Turnstile dengan verifikator palsu; email lewat pengirim palsu. Di dev lokal: tanpa kunci, Turnstile dilewati dan kode OTP dikembalikan sebagai `devCode` (hanya `APP_ENV=development` + `localhost`); **di produksi tanpa kunci/penyedia permintaan GAGAL** (tidak dilewati). **Penyedia email belum dipilih (item 5)**: OTP produksi belum bisa mengirim email.
+- **Daftar kata hanyalah daftar awal** (`moderation-seed.ts`): belum dari sumber A15, **belum ditinjau panitia**, skrip `build-terms` dan `THIRD_PARTY_NOTICES` belum ada. Filter pasti meloloskan sebagian dan salah tangkap sebagian; admin bisa menambah/mengecualikan tanpa deploy.
+- **Pembatas laju tetap di memori satu isolate** (best-effort): Workers Rate Limiting binding/Durable Object untuk yang tegas **belum dipasang**. Batas OTP per email (di D1) sudah tegas.
+- **Belum ada**: laporan oleh **booth** (butuh sesi booth, Tahap 8; tabel dan antrean sudah siap, termasuk penanda "pelaporan mencurigakan" yang diuji lewat data langsung); **pembuat kode tiket** di admin (mode `ticket_code` baru berguna bila kode disiapkan lewat cara lain); tautan QR ber-`?k=` (`qr_required`); **ulasan pilihan / `GET /spotlight`**; pembatas laju unggahan per booth; Data Grid review (Tahap 9).
+- **Identitas pengunjung = HMAC(email)** untuk Google **dan** OTP (spesifikasi B7 menyebut HMAC(`sub`)): satu orang satu identitas lintas penyedia agar tidak bisa menilai dua kali, dan bisa dicocokkan dengan email booth. Lihat DECISIONS.
+- **Mode `open_turnstile`** membuat identitas acak per login (paling mudah diakali, sesuai A6).
+
+## Kriteria selesai Tahap 6 (BUILD-PLAN): terpenuhi
+
+| Kriteria | Bukti |
+|---|---|
+| Review masuk dan mengubah peringkat konsisten (batch atomik) | `reviews.test.ts` (invarian statistik == hitungan ulang dari review), `moderation.test.ts` admin (peringkat berubah/keluar ambang), E2E |
+| Duplikat ditolak | satu baris per (booth, pengunjung): kirim ulang = edit; indeks unik; tes + E2E (tetap 1 ulasan) |
+| Booth tidak bisa menyembunyikan komentar (B25 butir 1) | skema strict (kolom status ditolak 400), inventaris rute non-admin (hanya 4 rute review yang sah, tanpa PATCH/PUT/DELETE), PATCH/DELETE publik 404, laporan tidak mengubah status |
+| Komentar `held`/`hidden` tidak pernah di respons publik | tes (daftar ulasan, detail, snapshot) + E2E (JSON publik) |
 
 ## Kriteria selesai Tahap 5 (BUILD-PLAN): terpenuhi
 
@@ -83,15 +110,17 @@
 - **E2E pengunjung**: jalankan dev server (`npx vite --port 5197 --strictPort`) lalu `node scripts/e2e/visitor-flow.mjs`. Skrip menyemai event BARU lewat API admin dan **mengaktifkannya** (menggantikan event aktif di D1 lokal), membuat foto WebP sungguhan lewat canvas, dan mengubah jadwal untuk menguji tiga status. Pelajaran: bilah bawah HP bersifat `fixed`, jadi klik harus didahului gulir ke tengah (`tap()`); gambar *lazy* di luar layar belum `complete`, jangan dihitung rusak.
 - Tes jsdom memakai docblock `// @vitest-environment jsdom`; di jsdom `offsetWidth` = 0 dan isian di `<fieldset disabled>` dicek dengan `:disabled`.
 - Versi paket lebih baru dari yang lazim (Vite 8, React Router 8, TypeScript 7, Biome 2.6, Vitest 5, React Query 5.108); semuanya berjalan bersama. `npm audit`: temuan hanya di rantai dev `drizzle-kit → esbuild`; jangan `fix --force`.
-- Pembatas laju masih di memori satu isolate (best-effort); yang tegas dipasang di Tahap 6.
+- Pembatas laju per IP/pengunjung masih di memori satu isolate (best-effort); OTP per email tegas (D1). Pemasangan yang tegas untuk review/laporan belum dilakukan (lihat batasan Tahap 6).
+- **Sebelum deploy** tambahan (Tahap 10): `wrangler secret put` untuk `SESSION_SECRET`, `TURNSTILE_SECRET`; set `TURNSTILE_SITE_KEY` dan `GOOGLE_CLIENT_ID` (publik); pilih dan pasang penyedia email; tinjau daftar kata dengan panitia.
+- **E2E penilaian**: `node scripts/e2e/review-flow.mjs` (dev server hidup). Tiap pengunjung diberi `cf-connecting-ip` sendiri karena pembatas login per-IP di dev memakai satu kunci "unknown" bila header tak ada. Kode OTP dibaca dari `devCode`.
+- **Pola tes Worker pengunjung**: `liveHarness()` (event berlangsung dengan jendela panjang), `loginWithOtp()`, `directVisitor()` (pengunjung langsung di DB + cookie sah, untuk skenario berskala), `visitorClient()` (cookie jar), `PROD_ENV` per panggilan (`{ env }`) agar penyemaian admin tetap lewat jalur dev.
 
-## Langkah berikutnya (Tahap 6: Review, peringkat, moderasi dasar, A5–A7, A15, B9, B25)
+## Langkah berikutnya (Tahap 7: Realtime, peringkat, hasil, A8, B8, B20)
 
-1. Login reviewer (Google 1-tap + OTP email, Turnstile), form review di `RatePanel` (saat ini pengganti), satu review per orang per booth, `booth_stats` dihitung dalam `batch()` yang sama, `stats_version` naik.
-2. Filter kata, laporan, review `held`, deteksi anomali dasar; **booth tidak boleh menyembunyikan komentar** (tes B25 butir 1).
-3. Pembatas laju yang tegas (review, OTP, unggahan per booth) lewat antarmuka `rateLimit` yang sudah ada.
-4. Ulasan pada halaman booth (kartu "Kata pengunjung lain" saat ini hanya sebaran + ajakan; isi ulasan menyusul bersama API review).
-5. Halaman booth: prefill/`?p=` sudah siap; kartu penilaian cukup mengganti `children` pada `RatePanel`.
+1. Snapshot dengan cache edge (Cache API, kunci memuat `eventId` + `stats_version`) menggantikan pembacaan D1 langsung; `LiveHub` (Durable Object) hemat; polling klien sudah berjitter.
+2. Bagian 03 halaman event: peringkat (selalu di bawah, tanpa lencana di kartu) + ulasan terbaru; **item 58** (ambang peringkat) perlu dijawab pemilik proyek (default sementara 3 review, `m` = 5).
+3. Layar besar `/screen`; mode peringkat/rating (`ranking_mode`/`ratings_mode` sudah ditegakkan server pada snapshot/ulasan; kontrol admin belum ada); "Umumkan hasil", `WinnerReveal`, `ResultsList`.
+4. Bila sempat: ulasan pilihan (`/spotlight`) dan pembatas laju tegas (Rate Limiting binding) yang tertunda dari Tahap 6.
 
 ## Keputusan sementara (default dipakai sampai pemilik proyek memutuskan)
 
@@ -105,5 +134,5 @@
 
 ## Blokir / pertanyaan terbuka
 
-- Tidak ada yang memblokir Tahap 6 selain **item 58** di bawah. **Item 58** (ambang peringkat) dan perkiraan skala (item 1) perlu dijawab sebelum Tahap 6; penyedia email (item 5) sebelum Tahap 8.
+- Tidak ada yang memblokir Tahap 7. **Item 58** (ambang peringkat) dan perkiraan skala (item 1) perlu dijawab pemilik proyek sebelum peringkat tampil; **penyedia email (item 5)** sebelum OTP bisa dipakai di produksi (dan Tahap 8).
 - `demo-event.html` belum menampilkan booth tanpa foto/hanya nama (A16); opsional diperbarui.

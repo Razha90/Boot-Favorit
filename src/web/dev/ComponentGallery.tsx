@@ -18,6 +18,7 @@ import { MediaUrlProvider } from "../lib/media-url";
 import { applyTheme, type ThemeMode, type Vibe } from "../lib/theme-loader";
 import { EventGallery } from "./EventGallery";
 import { BOOTH_NAMES, BOOTHS, PRODUCTS, sampleResolver } from "./fixtures";
+import { ReviewGallery } from "./ReviewGallery";
 
 const LABEL: Record<string, string> = {
   lengkap: "Lengkap",
@@ -293,6 +294,7 @@ export function Component() {
           </Section>
 
           <EventGallery Section={Section} />
+          <ReviewGallery Section={Section} />
 
           <UiSection />
         </main>

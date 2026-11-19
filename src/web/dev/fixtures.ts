@@ -1,6 +1,6 @@
 // Fixture data booth/produk untuk galeri komponen dan matriks uji "data kosong" (explore.md A16, B26).
 // Kunci gambar: "ok:N" → gambar contoh; "broken:N" → URL yang 404 (menguji gambar gagal dimuat).
-import type { PublicBooth, PublicProduct } from "@shared/api-types";
+import type { PublicBooth, PublicProduct, PublicReview } from "@shared/api-types";
 import type { MediaUrlResolver } from "../lib/media-url";
 
 /** Gambar contoh sebagai data URI SVG. Nama warna CSS (bukan hex) agar lolos lint-tokens. */
@@ -146,3 +146,43 @@ export const PRODUCTS = {
     priceIdr: 25000,
   },
 } satisfies Record<string, PublicProduct>;
+
+// ---------- Ulasan (Tahap 6) ----------
+
+const rbase: PublicReview = {
+  id: "rv-base",
+  stars: 4,
+  text: "Kopinya enak dan pelayanannya ramah.",
+  displayName: "Budi",
+  categories: [],
+  createdAt: 1,
+};
+
+export const REVIEWS = {
+  lengkap: {
+    ...rbase,
+    id: "rv-lengkap",
+    stars: 5,
+    categories: [
+      { id: "c1", label: "Seru" },
+      { id: "c2", label: "Ramah" },
+    ],
+  },
+  tanpaKategori: { ...rbase, id: "rv-nokat" },
+  ratingDisembunyikan: { ...rbase, id: "rv-hidden", stars: null },
+  tanpaNama: { ...rbase, id: "rv-pengunjung", displayName: "Pengunjung" },
+  teksPanjang: {
+    ...rbase,
+    id: "rv-panjang",
+    text: `${"Pelayanannya cepat dan ramah sekali, ".repeat(7)}`.trim(),
+  },
+  tanpaSpasi: { ...rbase, id: "rv-tanpaspasi", text: "Enak".repeat(70) },
+  emoji: { ...rbase, id: "rv-emoji", text: "Mantap banget 🍜🔥👍", displayName: "Siti 🌸" },
+  samaran: { ...rbase, id: "rv-samaran", text: "Kopinya enak tapi antrean a***r lama" },
+  namaPanjang: {
+    ...rbase,
+    id: "rv-namapanjang",
+    displayName: "Namaparahpanjangtanpaspasiapapunjugasampaisepuluhhuruf",
+  },
+  multibaris: { ...rbase, id: "rv-multi", text: "Baris pertama.\n\nBaris ketiga setelah jeda." },
+} satisfies Record<string, PublicReview>;

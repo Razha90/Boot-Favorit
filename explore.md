@@ -1347,6 +1347,7 @@ Catatan penting:
 **Booth** (passwordless):
 - `POST /api/booth/otp/request` → kirim OTP 6 digit ke email → `.../verify`.
 - Sesi = cookie `HttpOnly; Secure; SameSite=Lax` berisi token bertanda tangan dengan klaim `{ sub: boothId, eventId, role: "booth" }`. Karena `eventId` ada di klaim dan `UNIQUE(event_id, email)` di database, **akun tidak bisa dipakai di event lain**.
+- *(Tahap 6) Sesi pengunjung diimplementasikan sebagai cookie `visitor_session` bertanda tangan HMAC (`{sub, eid, exp}`); identitas Google dan OTP sama-sama `HMAC(email terverifikasi)` (bukan `sub`) agar satu orang satu identitas lintas penyedia dan bisa dicocokkan dengan email booth. Sesi booth (portal) baru di Tahap 8.*
 - Tidak ada password → tidak perlu hashing password, tidak ada reset password.
 - Tindakan sensitif memeriksa status booth di D1 (mis. `suspended` langsung ditolak walau token masih berlaku).
 - **Booth tanpa pemilik tidak punya login sama sekali**: OTP booth hanya dikirim ke email yang tercatat pada booth event aktif (`booths.email`); booth dengan `email NULL` tidak bisa dicapai lewat jalur ini. Admin mengelolanya lewat Cloudflare Access (di bawah).
@@ -1500,6 +1501,8 @@ Sinyal risiko (contoh, dijumlah jadi `risk_score`; ambang di `config.ts`):
 - Akun visitor baru (< beberapa detik sejak dibuat) langsung memberi bintang 5 tanpa komentar.
 - Pola sabotase: bintang 1 ke satu booth dan bintang 5 ke booth tertentu secara konsisten dari identitas yang sama.
 - Komentar mengandung kata terlarang: ditangani **filter kata** terpisah (A15, B25) yang menahan **teks komentar** saja (`comment_status`), tanpa membuang bintang. Hasil filter hanya menambah sedikit skor risiko; tidak menahan seluruh review.
+
+*(Status Tahap 6: terimplementasi Turnstile, identitas, `UNIQUE(booth_id, visitor_id)`, cek booth menilai diri, rate limit per visitor (memori), skor risiko (lonjakan, IP sama, akun baru bintang 5, pola sabotase, filter) → `held`. **Belum**: tautan `?k=` (`qr_required`), Workers Rate Limiting binding/DO yang tegas, QR dinamis.)*
 
 Review `held` **tidak muncul di feed dan tidak dihitung** sampai admin menyetujui; reviewer tetap melihat "review kamu terkirim" (tanpa memberi tahu bahwa ia ditahan, supaya pelaku tidak mudah mengakali).
 
@@ -2467,6 +2470,8 @@ Aturan ada di A15; di sini cara membangunnya. Prinsip: **penegakan di server** (
 4. Bintang tetap terhitung di `booth_stats` untuk komentar `held`/`masked`; ulasan pilihan tidak pernah memuat komentar non-`visible`; komentar `held` tidak ada di respons publik, snapshot, maupun LiveHub.
 5. Batas laju dan penanda pelaporan mencurigakan.
 6. Uji kinerja: waktu pemeriksaan satu komentar dan ukuran bundle di Workers.
+
+*(Status Tahap 6: mesin pencocok **buatan sendiri** di `shared/moderation.ts` (cadangan yang disebut di atas; paket pihak ketiga tidak dipakai), daftar **awal** `shared/moderation-seed.ts` (belum dari sumber A15 dan belum ditinjau panitia; `build-terms` dan `THIRD_PARTY_NOTICES` belum ada). Terukur: < 2 ms per komentar 280 huruf di Node; ukuran bundle di Workers belum diukur. Laporan oleh booth menunggu sesi booth (Tahap 8).)*
 
 **Catatan jujur:** filter kata mengurangi, bukan menghilangkan, komentar kasar. Lapisan antreannya (laporan dan admin) dibuat supaya yang lolos tetap bisa ditangani cepat selama event berlangsung.
 

@@ -46,9 +46,7 @@ export async function assertHuman(
     if (isLocalDev(c)) return; // dev lokal tanpa kunci: lolos
     throw new ApiError("internal_error", "turnstile_not_configured");
   }
-  const ok = token
-    ? await verify({ token, secret, ip: c.req.header("cf-connecting-ip") })
-    : false;
+  const ok = token ? await verify({ token, secret, ip: c.req.header("cf-connecting-ip") }) : false;
   if (!ok) {
     logEvent(c, {
       eventId: c.get("event")?.id ?? "-",

@@ -23,6 +23,7 @@ import {
 } from "../db/schema";
 import type { Db } from "../lib/db";
 import { eventState } from "../lib/event";
+import { topCategories } from "./public-reviews";
 
 /** Rating tampil: `visible`, atau `on_results` setelah hasil diumumkan. */
 export const ratingsVisible = (e: Pick<EventRow, "ratingsMode" | "resultsPublishedAt">): boolean =>
@@ -178,6 +179,7 @@ export async function getBoothDetail(
           : null,
     // Nomornya sendiri TIDAK pernah dikirim; setelah event selesai tombol hilang (A14).
     hasWhatsapp: b.whatsappE164 !== null && !frozen,
+    topCategories: await topCategories(db, event.id, stat?.categoryCountsJson ?? null),
   };
 }
 

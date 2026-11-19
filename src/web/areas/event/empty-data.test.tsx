@@ -4,15 +4,18 @@ import type { PublicEvent } from "@shared/api-types";
 import { getEventState } from "@shared/event-state";
 import { act, cleanup } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { BOOTH_NAMES, BOOTHS, PRODUCTS } from "../../dev/fixtures";
+import { BOOTH_NAMES, BOOTHS, PRODUCTS, REVIEWS } from "../../dev/fixtures";
 import { assertNoBrokenUI, failAllImages } from "../../test/assertions";
 import { isEmpty, makeEvent, renderEvent, SCHEDULE } from "../../test/render";
 import { AboutText } from "./components/booth-parts";
 import { SiteFooter } from "./components/chrome";
 import { Hero } from "./components/Hero";
 import { PhotoSlideshow } from "./components/PhotoSlideshow";
+import { ReviewForm } from "./components/ReviewForm";
+import { ReviewItem } from "./components/ReviewItem";
 import { Showcase } from "./components/Showcase";
 import { SpotlightSection } from "./components/SpotlightSection";
+import { ThankYou } from "./components/ThankYou";
 
 afterEach(cleanup);
 
@@ -150,5 +153,59 @@ describe("AboutText × teks aneh", () => {
       expect(isEmpty(renderEvent(<AboutText text={t} />).container)).toBe(true);
       cleanup();
     }
+  });
+});
+
+describe("ReviewItem × setiap fixture ulasan", () => {
+  for (const name of Object.keys(REVIEWS) as (keyof typeof REVIEWS)[]) {
+    it(`ulasan · ${name}`, async () => {
+      const { container } = renderEvent(<ReviewItem review={REVIEWS[name]} onReport={() => {}} />);
+      await assertCleanThroughFailure(container, `ulasan/${name}`);
+      expect(container.querySelector("img")).toBeNull();
+    });
+  }
+
+  it("rating disembunyikan: tidak ada bintang di ulasan", () => {
+    const { container } = renderEvent(<ReviewItem review={REVIEWS.ratingDisembunyikan} />);
+    expect(container.querySelector("[role='img']")).toBeNull();
+  });
+});
+
+describe("ReviewForm dan ThankYou × data kosong", () => {
+  const noop = async () => {};
+  it("form tanpa kategori, tanpa isian awal: tidak ada bagian kosong", () => {
+    const { container } = renderEvent(<ReviewForm categories={[]} submit={noop} />);
+    assertNoBrokenUI(container, "form/kosong");
+    expect(container.querySelector("fieldset")).toBeNull();
+  });
+
+  it("form mengedit dengan komentar null dan kategori kosong", () => {
+    const { container } = renderEvent(
+      <ReviewForm
+        categories={[{ id: "c1", label: "Seru" }]}
+        initial={{ boothId: "b", stars: 3, comment: null, categoryIds: [] }}
+        submit={noop}
+      />,
+    );
+    assertNoBrokenUI(container, "form/edit-null");
+    expect((container.querySelector("textarea") as HTMLTextAreaElement).value).toBe("");
+  });
+
+  it("terima kasih tanpa saran booth dan tanpa total: tidak ada daftar/kalimat kosong", () => {
+    const { container } = renderEvent(
+      <ThankYou
+        result={{
+          review: { boothId: "b", stars: 5, comment: null, categoryIds: [] },
+          created: true,
+          commentHeld: false,
+          progress: { reviewed: 0, total: 0 },
+          suggestions: [],
+        }}
+        onEdit={() => {}}
+      />,
+    );
+    assertNoBrokenUI(container, "terimakasih/kosong");
+    expect(container.querySelector("ul")).toBeNull();
+    expect(container.textContent).not.toMatch(/0 dari 0/);
   });
 });

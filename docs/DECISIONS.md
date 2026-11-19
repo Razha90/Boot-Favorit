@@ -115,6 +115,24 @@
 | TanStack Query dipakai juga di area event (QueryClient di `areas/event/layout.tsx`), tetap di luar bundle awal | Polling berjitter ±20% dan cache booth/produk; bundle awal ±69 KB gzip |
 | Area event selalu **seru/kertas**; skrip kontras hanya mengukur bagian "Event ·" pada kombinasi itu | Tema lain tidak pernah dipakai area ini |
 
+### Keputusan teknis dari pengerjaan (Tahap 6)
+
+| Keputusan | Alasan |
+|---|---|
+| **Identitas pengunjung = HMAC(email terverifikasi)** untuk Google **dan** OTP (B7 menyebut HMAC(`sub`) untuk Google) | Satu orang satu identitas lintas penyedia: tidak bisa menilai dua kali dengan berganti Google/OTP, dan bisa dicocokkan dengan email booth untuk tolak "menilai diri sendiri" (B9). Email asli tidak disimpan. Tiket = HMAC(kode), anonim = HMAC(id acak) |
+| `booth_stats` **dihitung ulang dari tabel review** (satu pernyataan SQL dalam `batch()` yang sama), bukan selisih (`statsDelta`) | Selalu konsisten dengan data; aman diulang (B21); tidak bergeser oleh permintaan serentak; sama untuk submit/edit/sembunyikan/pulihkan/hapus. `statsDelta` tetap ada sebagai fungsi murni teruji |
+| Statistik ditulis sebagai `update().set()` dengan sub-kueri `sql`, **bukan `db.run(sql…)`** | `db.run` tidak bisa masuk `batch()` Drizzle D1 (ketahuan oleh tes) |
+| Filter kata hanya **menahan/menyamarkan teks komentar**; bintang selalu terhitung; skor risiko hanya **menahan review (`held`) diam-diam**, tidak pernah menolak | A15, B9: pengirim tidak diberi tahu kata mana yang tertangkap dan tidak diberi tahu review ditahan karena risiko (komentar ditahan filter boleh diberi tahu netral) |
+| Review/komentar yang sudah `held` atau `hidden` **tetap begitu walau pengirim mengirim ulang** | Pengirim tidak bisa melepas tahanan/penyembunyian admin dengan mengedit |
+| Mencocokkan istilah: kata utuh, `contains` hanya untuk istilah ≥ 4 huruf; huruf berulang dilebur pada kedua sisi; imbuhan konservatif (tanpa `pe-/se-/ke-`: salah tangkap "petai"); pencocokan fuzzy mati | A15/B25; pengecualian (`allow`) menang atas blokir; korpus salah-tangkap diuji |
+| Daftar istilah **per event**, dimuat dari daftar awal saat pemakaian pertama; `filter_version` = waktu perubahan terbaru; dikompilasi per versi di memori isolat | Admin mengubah tanpa deploy; tidak perlu kolom/migrasi baru |
+| Masuk pengunjung: cookie `visitor_session` HttpOnly bertanda tangan (HMAC) berisi `{sub, eid, exp}`; keberadaan, event, dan status blokir **selalu dicek ulang di D1** | B7; sesi event lain tidak berlaku |
+| Produksi **gagal tertutup**: tanpa `SESSION_SECRET`, `TURNSTILE_SECRET`, atau penyedia email, permintaan gagal; bypass hanya `APP_ENV=development` + `localhost` | Sama pola admin; `devCode` OTP tidak pernah di produksi |
+| Moderasi admin: alasan wajib (≥ 5 huruf), `original_*` disimpan **sekali** dan tidak ditimpa, `stats_version` naik, keputusan laporan berlaku untuk **semua laporan terbuka** pada komentar itu, komentar yang dipulihkan **dikunci** (keluar dari antrean) | A15, B25 |
+| Skema masukan review/laporan/login **strict** (kolom asing ditolak 400) | B25 pengujian 1: tidak ada jalur klien untuk mengubah status moderasi; dijaga tes inventaris rute |
+| Token `--star` diganti amber turunan `#cc7700` | Oranye murni hanya 1,9:1 pada permukaan terang (WCAG 1.4.11); bintang kosong sudah diperbaiki di Tahap 4 |
+| Widget Turnstile dan Google dimuat dinamis hanya di kotak penilaian | Tidak membebani bundle awal (B16) |
+
 ## Gaya kode (disetujui)
 
 Lihat bagian "Gaya kode" di `AGENTS.md`. Ringkas: kode berbahasa Inggris, teks pengguna Indonesia; TypeScript strict tanpa `any`; tipe dari Zod; logika bisnis murni; server berlapis route → service → query; Biome untuk format dan lint; tes bersama fitur; commit `feat:`/`fix:`/`docs:`.

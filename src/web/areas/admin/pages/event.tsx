@@ -6,7 +6,7 @@ import { Link, useParams } from "react-router";
 import { ActionButton } from "../../../components/ui/ActionButton";
 import { Button } from "../../../components/ui/Button";
 import { Card } from "../../../components/ui/Card";
-import { Field, Input } from "../../../components/ui/Form";
+import { Field, Input, Select } from "../../../components/ui/Form";
 import { copy } from "../../../lib/copy";
 import { adminApi, adminKeys } from "../api";
 import { EventBadges, QueryState } from "../components/bits";
@@ -36,6 +36,7 @@ function EventEditor({ event }: { event: AdminEventView }) {
   const [highlight, setHighlight] = useState(event.titleHighlight ?? "");
   const [maxProducts, setMaxProducts] = useState(String(event.settings.maxProducts ?? ""));
   const [allowLate, setAllowLate] = useState(event.settings.allowLateRegistration ?? true);
+  const [authMode, setAuthMode] = useState(event.settings.reviewerAuthMode ?? "google_or_email");
   const [schedule, setSchedule] = useState<ScheduleValues>({
     open: event.schedule.registrationOpenAt
       ? epochToZonedLocal(event.schedule.registrationOpenAt, event.timezone)
@@ -66,6 +67,12 @@ function EventEditor({ event }: { event: AdminEventView }) {
             className="rounded-chip border-(length:--border-w) border-line px-4 py-2 text-sm font-bold"
           >
             {copy.admin.events.booths}
+          </Link>
+          <Link
+            to={`/admin/e/${event.id}/moderation`}
+            className="rounded-chip border-(length:--border-w) border-line px-4 py-2 text-sm font-bold"
+          >
+            {copy.admin.moderation.open}
           </Link>
           {!publicVisible && (
             <ActionButton
@@ -198,13 +205,35 @@ function EventEditor({ event }: { event: AdminEventView }) {
             />
             {copy.admin.event.allowLate}
           </label>
+          <Field
+            label={copy.admin.event.authMode}
+            hint={copy.admin.event.authModeHint}
+            className="sm:col-span-2"
+          >
+            {(fid) => (
+              <Select
+                id={fid}
+                value={authMode}
+                onChange={(e) => setAuthMode(e.target.value as typeof authMode)}
+              >
+                {(["google_or_email", "ticket_code", "open_turnstile"] as const).map((m) => (
+                  <option key={m} value={m}>
+                    {copy.admin.event.authModes[m]}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
         </div>
         <div>
           <ActionButton
             variant="primary"
-            resetOn={`${maxProducts}|${allowLate}`}
+            resetOn={`${maxProducts}|${allowLate}|${authMode}`}
             action={async () => {
-              const settings: Record<string, unknown> = { allowLateRegistration: allowLate };
+              const settings: Record<string, unknown> = {
+                allowLateRegistration: allowLate,
+                reviewerAuthMode: authMode,
+              };
               if (maxProducts !== "") settings.maxProducts = Number(maxProducts);
               await adminApi.updateEvent(event.id, { settings });
               await refresh();

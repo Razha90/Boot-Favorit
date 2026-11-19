@@ -180,6 +180,8 @@ export interface PublicBoothDetail extends PublicBooth {
   distribution: [number, number, number, number, number] | null;
   /** Ada nomor WhatsApp? (nomornya sendiri TIDAK pernah dikirim; B24). False setelah event selesai. */
   hasWhatsapp: boolean;
+  /** "Sering disebut" (A5): kategori ulasan terbanyak; kosong bila belum ada */
+  topCategories: TopCategory[];
 }
 
 export interface PublicProducts {

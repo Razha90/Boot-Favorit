@@ -212,8 +212,8 @@ export function findTermHits(text: string, c: CompiledTerms): TermHit[] {
 // ---------- Data kontak / iklan ----------
 
 const CONTACT_PATTERNS: readonly RegExp[] = [
-  /(?:\+?62|\b0)[\s.\-]?8\d(?:[\s.\-]?\d){6,11}/u, // ponsel Indonesia
-  /(?:\d[\s.\-]?){9,}/u, // deretan angka panjang
+  /(?:\+?62|\b0)[\s.-]?8\d(?:[\s.-]?\d){6,11}/u, // ponsel Indonesia
+  /(?:\d[\s.-]?){9,}/u, // deretan angka panjang
   /(?:https?:\/\/|www\.)\S+/iu,
   /\b[a-z0-9-]+\.(?:com|id|co\.id|net|org|me|link|ly|xyz|shop|store|app|io)\b/iu,
   /[\w.+-]+@[\w-]+\.[\w.]+/u, // email

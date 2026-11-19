@@ -4,8 +4,8 @@ import {
   compileTerms,
   findTermHits,
   hasContactInfo,
-  maskRange,
   type ModerationPolicy,
+  maskRange,
   moderateComment,
   normalizeWord,
 } from "./moderation";
@@ -85,7 +85,20 @@ describe("tertangkap: variasi penulisan dari kata berat dan ringan", () => {
     });
   }
 
-  const mild = ["anjir", "sialan", "brengsek", "kampret", "tolol", "goblok", "bego", "bodoh", "asu", "shit", "damn", "bitch"];
+  const mild = [
+    "anjir",
+    "sialan",
+    "brengsek",
+    "kampret",
+    "tolol",
+    "goblok",
+    "bego",
+    "bodoh",
+    "asu",
+    "shit",
+    "damn",
+    "bitch",
+  ];
   for (const s of mild) {
     it(`ringan: ${JSON.stringify(s)} → disamarkan`, () => {
       const r = check(`booth ini ${s} banget`);
@@ -112,18 +125,80 @@ describe("tertangkap: variasi penulisan dari kata berat dan ringan", () => {
 describe("TIDAK tertangkap: korpus salah-tangkap (kata wajar)", () => {
   const innocent = [
     // nama tempat dan orang
-    "Scunthorpe", "Bekasi", "Pasuruan", "Sukabumi", "Cikampek", "Dickens", "Medan", "Unimed", "Deli Serdang",
+    "Scunthorpe",
+    "Bekasi",
+    "Pasuruan",
+    "Sukabumi",
+    "Cikampek",
+    "Dickens",
+    "Medan",
+    "Unimed",
+    "Deli Serdang",
     // makanan dan minuman (expo)
-    "mie ayam", "sate padang", "kopi susu", "bakso urat", "es teh", "petai", "mentai rice", "mentaiko", "shiitake",
-    "nasi goreng", "roti bakar", "kue lapis", "cokelat", "keripik", "es krim", "jus alpukat", "martabak", "sambal",
+    "mie ayam",
+    "sate padang",
+    "kopi susu",
+    "bakso urat",
+    "es teh",
+    "petai",
+    "mentai rice",
+    "mentaiko",
+    "shiitake",
+    "nasi goreng",
+    "roti bakar",
+    "kue lapis",
+    "cokelat",
+    "keripik",
+    "es krim",
+    "jus alpukat",
+    "martabak",
+    "sambal",
     // kata berimbuhan dan umum
-    "asuransi", "asuhan", "mengasuh", "asumsi", "kasur", "pasukan", "tolong", "tolonglah", "bagus sekali",
-    "memang", "pembahasan", "analisis", "kelas", "bangsa", "bangsawan", "kampus", "kampung", "anjungan", "anjuran",
-    "ngantuk", "menteri", "kontrol", "konsol", "mekanik", "pemekaran", "memoar",
+    "asuransi",
+    "asuhan",
+    "mengasuh",
+    "asumsi",
+    "kasur",
+    "pasukan",
+    "tolong",
+    "tolonglah",
+    "bagus sekali",
+    "memang",
+    "pembahasan",
+    "analisis",
+    "kelas",
+    "bangsa",
+    "bangsawan",
+    "kampus",
+    "kampung",
+    "anjungan",
+    "anjuran",
+    "ngantuk",
+    "menteri",
+    "kontrol",
+    "konsol",
+    "mekanik",
+    "pemekaran",
+    "memoar",
     "babi", // sengaja tidak ada di daftar awal (booth makanan)
     // istilah teknik/medis/biologi
-    "anal retentive".split(" ")[1] ?? "", "class", "assassin", "classic", "glass", "passion", "bass", "analysis",
-    "cockpit", "peacock", "titanium", "assume", "document", "documentary", "shitake", "therapist", "arsenal",
+    "anal retentive".split(" ")[1] ?? "",
+    "class",
+    "assassin",
+    "classic",
+    "glass",
+    "passion",
+    "bass",
+    "analysis",
+    "cockpit",
+    "peacock",
+    "titanium",
+    "assume",
+    "document",
+    "documentary",
+    "shitake",
+    "therapist",
+    "arsenal",
     // kalimat lengkap
     "Boothnya keren banget, ramah dan rapi!",
     "Kopi rempahnya enak, harganya Rp 25.000 saja.",
@@ -259,10 +334,11 @@ describe("putusan dan penyamaran", () => {
 
 describe("kinerja: pemeriksaan satu komentar harus murah", () => {
   it("1.000 komentar 280 huruf dalam waktu singkat", () => {
-    const text = `Boothnya keren, kopi rempahnya enak dan pelayanannya ramah sekali. ${"lorem ipsum dolor ".repeat(14)}`.slice(
-      0,
-      280,
-    );
+    const text =
+      `Boothnya keren, kopi rempahnya enak dan pelayanannya ramah sekali. ${"lorem ipsum dolor ".repeat(14)}`.slice(
+        0,
+        280,
+      );
     const t0 = performance.now();
     for (let i = 0; i < 1000; i++) check(text);
     const perCheckMs = (performance.now() - t0) / 1000;

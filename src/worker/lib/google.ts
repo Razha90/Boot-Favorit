@@ -2,7 +2,7 @@
 // Google). Memakai ulang verifikator JWT Access. Hanya email yang TERVERIFIKASI Google yang diterima.
 
 import { ApiError } from "@shared/errors";
-import { type AccessJwk, AccessAuthError, verifyAccessJwt } from "./access-jwt";
+import { AccessAuthError, type AccessJwk, verifyAccessJwt } from "./access-jwt";
 
 const JWKS_URL = "https://www.googleapis.com/oauth2/v3/certs";
 const ISSUERS = ["https://accounts.google.com", "accounts.google.com"] as const;
@@ -34,7 +34,12 @@ export async function verifyGoogleCredential(
     let last: unknown = new AccessAuthError("jwt_issuer");
     for (const issuer of ISSUERS) {
       try {
-        return await verifyAccessJwt(credential, { keys, audience: o.clientId, issuer, now: o.now });
+        return await verifyAccessJwt(credential, {
+          keys,
+          audience: o.clientId,
+          issuer,
+          now: o.now,
+        });
       } catch (e) {
         last = e;
         if (!(e instanceof AccessAuthError) || e.message !== "jwt_issuer") throw e;
@@ -49,7 +54,8 @@ export async function verifyGoogleCredential(
       payload = await attempt(false);
     } catch (e) {
       // Kunci Google berganti (rotasi): ambil ulang sekali.
-      if (e instanceof AccessAuthError && e.message === "jwt_unknown_kid") payload = await attempt(true);
+      if (e instanceof AccessAuthError && e.message === "jwt_unknown_kid")
+        payload = await attempt(true);
       else throw e;
     }
   } catch {

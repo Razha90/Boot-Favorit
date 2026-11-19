@@ -24,7 +24,10 @@ const b64url = (s: string) =>
     .replace(/=+$/, "");
 
 const unb64url = (s: string) => {
-  const padded = s.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(s.length / 4) * 4, "=");
+  const padded = s
+    .replace(/-/g, "+")
+    .replace(/_/g, "/")
+    .padEnd(Math.ceil(s.length / 4) * 4, "=");
   return new TextDecoder().decode(Uint8Array.from(atob(padded), (c) => c.charCodeAt(0)));
 };
 

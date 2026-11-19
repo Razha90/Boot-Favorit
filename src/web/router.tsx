@@ -31,6 +31,7 @@ export const router = createBrowserRouter([
       { index: true, lazy: () => import("./areas/admin/pages/events") },
       { path: "e/:id", lazy: () => import("./areas/admin/pages/event") },
       { path: "e/:id/booths", lazy: () => import("./areas/admin/pages/booths") },
+      { path: "e/:id/moderation", lazy: () => import("./areas/admin/pages/moderation") },
       { path: "e/:id/booths/import", lazy: () => import("./areas/admin/pages/import") },
       { path: "e/:id/booths/:bid", lazy: () => import("./areas/admin/pages/booth") },
       { path: "*", lazy: () => import("./not-found") },

@@ -1,5 +1,5 @@
 // Aplikasi lengkap + DB uji + klien admin (lewat jalur dev localhost) untuk tes rute /api/admin/*.
-import { createApp } from "../index";
+import { type AppDeps, createApp } from "../index";
 import { clock, testEnv } from "./app";
 import { createTestDb } from "./d1";
 import { FakeR2 } from "./r2";
@@ -16,10 +16,10 @@ export interface CallOptions {
   extraEnv?: Partial<Env>;
 }
 
-export function adminHarness(start = 1500, extraEnv: Partial<Env> = {}) {
+export function adminHarness(start = 1500, extraEnv: Partial<Env> = {}, deps: AppDeps = {}) {
   const t = createTestDb();
   const clk = clock(start);
-  const app = createApp({ now: clk.now });
+  const app = createApp({ now: clk.now, ...deps });
   const r2 = new FakeR2();
   const env = () =>
     testEnv(t, {
