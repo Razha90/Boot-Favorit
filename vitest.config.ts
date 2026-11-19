@@ -9,6 +9,8 @@ export default defineConfig({
     alias: {
       "@web": fromSrc("web"),
       "@shared": fromSrc("shared"),
+      // Modul runtime Workers tidak ada di Node: pakai pengganti sederhana.
+      "cloudflare:workers": fromSrc("worker/test/cloudflare-workers-stub.ts"),
     },
   },
   test: {

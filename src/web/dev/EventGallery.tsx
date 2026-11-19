@@ -14,7 +14,7 @@ import { PhotoSlideshow } from "../areas/event/components/PhotoSlideshow";
 import { Showcase } from "../areas/event/components/Showcase";
 import { SpotlightSection } from "../areas/event/components/SpotlightSection";
 import { SaveButton, ShareButton, WishlistFab } from "../areas/event/components/share-wishlist";
-import { EventDataProvider } from "../areas/event/data";
+import { EventDataProvider } from "../features/event-data";
 import { EventStateProvider } from "../lib/event-state";
 import type { SafeStorage } from "../lib/safe-storage";
 import { WishlistProvider } from "../lib/wishlist";

@@ -137,6 +137,26 @@
   }
 }
 
+/* Animasi pemenang: masuk dengan sedikit membesar (tanpa confetti, A8). Dimatikan bila gerak dikurangi. */
+@keyframes reveal-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.reveal-pop {
+  animation: reveal-pop 420ms var(--ease-pop, cubic-bezier(0.34, 1.4, 0.64, 1)) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal-pop {
+    animation: none;
+  }
+}
+
 /* Kanvas halaman pengunjung: grid grafik tipis (A12). Memakai `background` (bukan background-image). */
 .event-canvas {
   background:

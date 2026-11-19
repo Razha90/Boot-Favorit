@@ -11,6 +11,14 @@ export const CONFIG = {
     snapshotTtlSec: 5, // s-maxage cache edge saat event berlangsung
     snapshotTtlSecAfterEnd: 60, // setelah event selesai data beku
     spotlightMs: 8000, // ganti spotlight
+    screenPanelMs: 14_000, // lama tiap panel di Mode Layar Besar sebelum berganti
+  },
+  reveal: {
+    // Animasi pemenang (A8, B20): 3-2-1 → juara 3 → 2 → 1 → daftar hasil; total ±13,5 detik.
+    countdownStepMs: 1000,
+    placeMs: 3500,
+    /** Pemutaran langsung oleh admin hanya diputar bila baru terjadi (pengunjung terlambat tidak memutar ulang) */
+    liveWindowMs: 90_000,
   },
   booth: {
     aboutMaxLength: 2000,

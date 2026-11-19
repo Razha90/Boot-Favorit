@@ -6,6 +6,7 @@ import { SafeImage } from "../../../components/shared/SafeImage";
 import { Button } from "../../../components/ui/Button";
 import { Modal } from "../../../components/ui/Modal";
 import { useToast } from "../../../components/ui/Toast";
+import { eventKeys, useEventData } from "../../../features/event-data";
 import { api } from "../../../lib/api";
 import { cn } from "../../../lib/cn";
 import { copy } from "../../../lib/copy";
@@ -19,7 +20,6 @@ import {
   whatsappShareLink,
 } from "../../../lib/share";
 import { compareBoothNo, useWishlist } from "../../../lib/wishlist";
-import { eventKeys, useEventData } from "../data";
 
 // ---------- Bagikan ----------
 

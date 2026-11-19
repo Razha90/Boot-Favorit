@@ -39,3 +39,9 @@ export const formatAverage = (avg: number) =>
   new Intl.NumberFormat("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(
     avg,
   );
+
+/** Skor peringkat dua desimal, koma Indonesia: 4,52 */
+export const formatScore = (score: number) =>
+  new Intl.NumberFormat("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
+    score,
+  );

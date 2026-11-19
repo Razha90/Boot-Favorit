@@ -2,7 +2,7 @@
 // `hidden` TIDAK pernah dikirim; komentar `masked` hanya dalam bentuk tersamar; review yang ditahan/disembunyikan
 // tidak tampil; bintang tidak dikirim bila rating disembunyikan admin; yang tampil hanya nama depan/alias.
 
-import type { PublicReview, PublicReviews, TopCategory } from "@shared/api-types";
+import type { LatestReview, PublicReview, PublicReviews, TopCategory } from "@shared/api-types";
 import { ApiError } from "@shared/errors";
 import { and, desc, eq, inArray, isNotNull, lt, or } from "drizzle-orm";
 import { booths, type EventRow, reviewCategories, reviews, visitors } from "../db/schema";
@@ -98,6 +98,64 @@ export async function listPublicReviews(
     reviews: out,
     next: rows.length > REVIEWS_PAGE_SIZE && last ? `${last.createdAt}:${last.id}` : null,
   };
+}
+
+const FEED_TEXT_MAX = 140;
+const clip = (s: string) =>
+  s.length > FEED_TEXT_MAX ? `${s.slice(0, FEED_TEXT_MAX - 1).trimEnd()}…` : s;
+
+/**
+ * Ulasan terbaru lintas booth (bagian 03, A8). Aturan yang sama dengan daftar per booth: hanya review `visible` dengan
+ * komentar `visible`/`masked`, hanya booth yang tayang, tanpa email; komentar dipotong ±140 karakter.
+ */
+export async function latestReviews(
+  db: Db,
+  event: EventRow,
+  showStars: boolean,
+  limit: number,
+): Promise<LatestReview[]> {
+  const rows = await db
+    .select({
+      id: reviews.id,
+      boothId: reviews.boothId,
+      boothName: booths.name,
+      stars: reviews.stars,
+      comment: reviews.comment,
+      commentMasked: reviews.commentMasked,
+      commentStatus: reviews.commentStatus,
+      createdAt: reviews.createdAt,
+      displayName: visitors.displayName,
+    })
+    .from(reviews)
+    .innerJoin(booths, eq(booths.id, reviews.boothId))
+    .innerJoin(visitors, eq(visitors.id, reviews.visitorId))
+    .where(
+      and(
+        eq(reviews.eventId, event.id),
+        eq(booths.status, "approved"),
+        eq(reviews.status, "visible"),
+        isNotNull(reviews.comment),
+        inArray(reviews.commentStatus, ["visible", "masked"]),
+      ),
+    )
+    .orderBy(desc(reviews.createdAt), desc(reviews.id))
+    .limit(limit);
+
+  return rows.flatMap((r) => {
+    const text = r.commentStatus === "masked" ? r.commentMasked : r.comment;
+    if (!text || text.trim() === "") return [];
+    return [
+      {
+        id: r.id,
+        boothId: r.boothId,
+        boothName: r.boothName,
+        stars: showStars ? r.stars : null,
+        text: clip(text),
+        displayName: publicName({ displayName: r.displayName }),
+        createdAt: r.createdAt,
+      },
+    ];
+  });
 }
 
 /** "Sering disebut: Seru (12) · Ramah (9)": tiga kategori terbanyak. */

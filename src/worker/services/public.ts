@@ -10,8 +10,10 @@ import type {
   PublicProducts,
   PublicSnapshot,
 } from "@shared/api-types";
+import { CONFIG } from "@shared/config";
 import { ApiError } from "@shared/errors";
-import { globalMean } from "@shared/scoring";
+import { visibility } from "@shared/results";
+import { globalMean, rankBooths } from "@shared/scoring";
 import { and, asc, eq } from "drizzle-orm";
 import {
   type BoothRow,
@@ -23,11 +25,15 @@ import {
 } from "../db/schema";
 import type { Db } from "../lib/db";
 import { eventState } from "../lib/event";
-import { topCategories } from "./public-reviews";
+import { latestReviews, topCategories } from "./public-reviews";
 
 /** Rating tampil: `visible`, atau `on_results` setelah hasil diumumkan. */
 export const ratingsVisible = (e: Pick<EventRow, "ratingsMode" | "resultsPublishedAt">): boolean =>
-  e.ratingsMode === "visible" || (e.ratingsMode === "on_results" && e.resultsPublishedAt !== null);
+  visibility({
+    ratingsMode: e.ratingsMode,
+    rankingMode: "visible",
+    resultsPublishedAt: e.resultsPublishedAt,
+  }).ratings;
 
 export function eventMedia(
   e: Pick<EventRow, "logoKey" | "ogImageKey" | "heroKeysJson">,
@@ -85,18 +91,48 @@ async function approvedBooths(db: Db, eventId: string) {
     .where(and(eq(booths.eventId, eventId), eq(booths.status, "approved")));
 }
 
+/** Foto sampul (posisi 0) per booth di event ini. */
+export function coverRows(db: Db, eventId: string) {
+  return db
+    .select({
+      boothId: boothPhotos.boothId,
+      keyFull: boothPhotos.keyFull,
+      keyThumb: boothPhotos.keyThumb,
+    })
+    .from(boothPhotos)
+    .where(and(eq(boothPhotos.eventId, eventId), eq(boothPhotos.position, 0)));
+}
+
+/** Peringkat langsung dari statistik booth yang tayang (fungsi murni `rankBooths`, A7). */
+export function liveRanking(
+  stats: readonly (typeof boothStats.$inferSelect)[],
+): PublicSnapshot["ranking"] {
+  return rankBooths(
+    stats.map((s) => ({
+      boothId: s.boothId,
+      reviewCount: s.reviewCount,
+      starSum: s.starSum,
+      lastReviewAt: s.lastReviewAt,
+    })),
+    {
+      priorWeight: CONFIG.ranking.bayesPriorWeight,
+      minReviewsToRank: CONFIG.ranking.minReviewsToRank,
+    },
+  ).map((r) => ({
+    boothId: r.boothId,
+    rank: r.rank,
+    score: r.score,
+    average: r.average,
+    reviewCount: r.reviewCount,
+  }));
+}
+
 export async function getSnapshot(db: Db, event: EventRow): Promise<PublicSnapshot> {
-  const showRatings = ratingsVisible(event);
-  const [rows, covers, stats, featured] = await Promise.all([
+  const vis = visibility(event);
+  const showRatings = vis.ratings;
+  const [rows, covers, stats, featured, feed] = await Promise.all([
     approvedBooths(db, event.id),
-    db
-      .select({
-        boothId: boothPhotos.boothId,
-        keyFull: boothPhotos.keyFull,
-        keyThumb: boothPhotos.keyThumb,
-      })
-      .from(boothPhotos)
-      .where(and(eq(boothPhotos.eventId, event.id), eq(boothPhotos.position, 0))),
+    coverRows(db, event.id),
     db.select().from(boothStats).where(eq(boothStats.eventId, event.id)),
     db
       .select()
@@ -108,6 +144,7 @@ export async function getSnapshot(db: Db, event: EventRow): Promise<PublicSnapsh
           eq(products.status, "active"),
         ),
       ),
+    latestReviews(db, event, showRatings, FEED_SIZE),
   ]);
   const cover = new Map(covers.map((c) => [c.boothId, c]));
   const stat = new Map(stats.map((s) => [s.boothId, s]));
@@ -127,8 +164,19 @@ export async function getSnapshot(db: Db, event: EventRow): Promise<PublicSnapsh
       reviewCount: showRatings ? counted.reduce((n, s) => n + s.reviewCount, 0) : 0,
       average: showRatings && counted.some((s) => s.reviewCount > 0) ? globalMean(counted) : null,
     },
+    // DITEGAKKAN DI SINI: peringkat yang tidak boleh tampil tidak dikirim sama sekali (B20).
+    ranking: vis.ranking ? liveRanking(counted) : null,
+    feed,
+    reveal:
+      event.revealSeq > 0 && event.revealStartedAt !== null
+        ? { seq: event.revealSeq, startedAt: event.revealStartedAt, target: event.revealTarget }
+        : null,
+    resultsPublished: event.resultsPublishedAt !== null,
+    resultsVersion: event.resultsVersion,
   };
 }
+
+const FEED_SIZE = 5;
 
 async function getApprovedBooth(db: Db, event: EventRow, boothId: string): Promise<BoothRow> {
   const b = await db

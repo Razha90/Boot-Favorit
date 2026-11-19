@@ -10,6 +10,7 @@ import type { EventRow, VisitorRow } from "../db/schema";
 import { getDb } from "../lib/db";
 import { parseBody, serviceDeps } from "../lib/http";
 import { sessionSecret, signalHash } from "../lib/identity";
+import { notifyLive } from "../lib/live-notify";
 import { logEvent } from "../lib/logger";
 import { assertHuman, type TurnstileVerifier } from "../lib/turnstile";
 import { requireEvent, requireVotingOpen } from "../middleware/event-gate";
@@ -93,6 +94,7 @@ export function createReviewRoutes(deps: { turnstile?: TurnstileVerifier } = {})
         target: { type: "booth", id: result.review.boothId },
         meta: { stars: result.review.stars, commentHeld: result.commentHeld },
       });
+      notifyLive(c, "review"); // LiveHub menyiarkan SATU delta per tick, bukan satu pesan per review
       return c.json(result, result.created ? 201 : 200);
     },
   );

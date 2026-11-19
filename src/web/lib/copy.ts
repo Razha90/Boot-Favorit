@@ -44,6 +44,8 @@ export const copy = {
       register: "Daftar Toko",
       registerCloses: (t: string) => `ditutup dalam ${t}`,
       votingOpensIn: (t: string) => `Voting dibuka dalam ${t}`,
+      stats: (reviews: number, booths: number, avg: number | null) =>
+        `${reviews} ulasan · ${booths} booth${avg === null ? "" : ` · rata-rata ${avg.toFixed(2).replace(".", ",")}`}`,
     },
     sections: {
       spotlight: { before: "Booth ", word: "Sorotan" },
@@ -193,6 +195,55 @@ export const copy = {
       explain: "Laporan nggak langsung menyembunyikan ulasan. Admin yang memutuskan.",
     },
   },
+  // Bagian 03 halaman event: peringkat dan ulasan terbaru (A8); selalu paling bawah.
+  standings: {
+    heading: { before: "Peringkat & ", word: "ulasan" },
+    ranking: "Peringkat saat ini",
+    rankingNote: "Peringkat memperhitungkan jumlah ulasan agar adil.",
+    score: (s: string) => `skor ${s}`,
+    latest: "Ulasan terbaru",
+    newReviews: (n: number) => `+${n} ulasan baru`,
+    showNew: "Lihat ulasan baru",
+    leaderUp: (name: string) => `${name} naik ke peringkat 1`,
+    waiting: "Hasil segera diumumkan.",
+  },
+  // Hasil akhir (diumumkan admin) dan animasi pemenang (A8, B20).
+  results: {
+    title: "Hasil akhir",
+    heading: { before: "Hasil ", word: "akhir" },
+    place: (n: number) => `Juara ${n}`,
+    unranked: "Belum cukup ulasan untuk diperingkat",
+    reviews: (n: number) => `${n} ulasan`,
+    score: (s: string) => `skor ${s}`,
+    tags: "Sering disebut",
+    empty: "Belum ada booth yang tayang.",
+    notYet: "Hasil segera diumumkan.",
+    replay: "Putar ulang animasi pemenang",
+    autoplayOn: "Putar otomatis saat dibuka: Nyala",
+    autoplayOff: "Putar otomatis saat dibuka: Mati",
+    ended: "Event telah berakhir. Makasih udah ikut meramaikan!",
+  },
+  reveal: {
+    label: "Animasi pemenang",
+    skip: "Lewati",
+    jump: "Lompat ke daftar hasil",
+    viewPage: "Lihat halaman (hanya-baca)",
+    dontReplay: "Jangan putar otomatis lagi di perangkat ini",
+    countdown: (n: number) => `${n}`,
+    place: (n: number) => `Juara ${n}`,
+    drumroll: "Dan pemenangnya…",
+  },
+  // Mode Layar Besar untuk proyektor (A8): tanpa interaksi, huruf besar.
+  screen: {
+    waiting: "Menunggu data booth…",
+    spotlight: "Booth Sorotan",
+    booths: "Semua booth",
+    feed: "Ulasan terbaru",
+    ranking: "Peringkat saat ini",
+    results: "Hasil akhir",
+    visit: "Mampir ke booth ini!",
+    live: "LIVE",
+  },
   // Kelengkapan profil: hanya untuk admin dan portal booth (A16).
   completeness: {
     label: { name_only: "Hanya nama", partial: "Sebagian", full: "Lengkap" },
@@ -301,6 +352,37 @@ export const copy = {
       highlightHint: 'Opsional, mis. "Terfavorit".',
       timezone: "Zona waktu",
       createButton: "Buat event",
+    },
+    // Hasil dan tampilan: mode rating/peringkat, umumkan hasil, animasi pemenang (A3, B20).
+    results: {
+      title: "Hasil dan tampilan",
+      hint: "Mengatur apa yang boleh dilihat pengunjung. Yang disembunyikan tidak dikirim server sama sekali.",
+      ratingsMode: "Rating booth",
+      rankingMode: "Peringkat",
+      modes: {
+        visible: "Tampil",
+        hidden: "Sembunyikan",
+        on_results: "Tampil setelah hasil diumumkan",
+      },
+      rankingNeedsRatings: "Peringkat butuh rating tampil: pilih rating ‘Tampil’ dulu.",
+      publish: "Umumkan hasil",
+      publishHint:
+        "Membekukan hasil akhir, menampilkan rating dan peringkat, dan membuka animasi pemenang untuk pengunjung. Hanya setelah event selesai.",
+      publishConfirm: "Umumkan hasil sekarang? Hasil dibekukan dan terlihat semua orang.",
+      notEnded: "Event belum selesai: hasil belum bisa diumumkan.",
+      published: (when: string) => `Hasil sudah diumumkan (${when}).`,
+      differs:
+        "Peringkat terkini berbeda dari hasil yang diumumkan (mungkin karena review disunting). Tekan ‘Perbarui hasil’ bila hasil perlu disesuaikan.",
+      refresh: "Perbarui hasil",
+      refreshConfirm: "Bekukan ulang hasil dari peringkat terkini?",
+      reveal: "Putar animasi pemenang",
+      revealTarget: "Diputar di",
+      targets: { screen: "Layar Besar saja", everyone: "Layar Besar dan semua pengunjung" },
+      revealConfirm: "Putar animasi pemenang sekarang?",
+      revealNeedsPublish: "Animasi butuh hasil yang sudah diumumkan.",
+      live: "Peringkat terkini",
+      frozen: "Hasil yang diumumkan",
+      none: "Belum ada booth.",
     },
     // Moderasi ulasan (A15, B25): antrean laporan, komentar ditahan, semua ulasan, daftar kata.
     moderation: {

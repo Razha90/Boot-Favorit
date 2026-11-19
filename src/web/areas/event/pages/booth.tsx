@@ -8,6 +8,7 @@ import { RatingSummary } from "../../../components/shared/RatingSummary";
 import { ReadOnlyBanner } from "../../../components/shared/WriteAction";
 import { Card } from "../../../components/ui/Card";
 import { EmptyState, ErrorState, Skeleton } from "../../../components/ui/states";
+import { useBoothQuery, useEventData, useProductsQuery } from "../../../features/event-data";
 import { copy } from "../../../lib/copy";
 import { useEventState } from "../../../lib/event-state";
 import { formatRupiahShort } from "../../../lib/format";
@@ -23,7 +24,6 @@ import { ReviewFlow } from "../components/ReviewFlow";
 import { ReviewsSection, TopCategories } from "../components/ReviewsSection";
 import { Showcase } from "../components/Showcase";
 import { SaveButton, ShareButton } from "../components/share-wishlist";
-import { useBoothQuery, useEventData, useProductsQuery } from "../data";
 
 // Chunk terpisah dari halaman event (B16 butir 4): QR membuka halaman ini tanpa memuat dashboard.
 export function Component() {

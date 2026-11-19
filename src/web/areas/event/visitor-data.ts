@@ -10,8 +10,8 @@ import type {
 } from "@shared/api-types";
 import type { REPORT_REASONS } from "@shared/schemas";
 import { type QueryClient, useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { eventKeys } from "../../features/event-data";
 import { api } from "../../lib/api";
-import { eventKeys } from "./data";
 
 export const visitorKeys = {
   me: ["visitor", "me"] as const,

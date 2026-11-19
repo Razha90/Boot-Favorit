@@ -60,6 +60,11 @@ const snapshotOf = (
   ratingsHidden: false,
   booths,
   stats: { boothCount: booths.length, reviewCount: 0, average: null },
+  ranking: null,
+  feed: [],
+  reveal: null,
+  resultsPublished: false,
+  resultsVersion: 0,
   ...over,
 });
 

@@ -1409,6 +1409,18 @@ Pembagian mode per halaman:
 
 Kode klien realtime (`features/live`) hanya diimpor oleh area `event` dan `screen`, tidak ikut terkirim ke area booth/admin (B16).
 
+### Status implementasi (Tahap 7, menyimpang dari sketsa di bawah)
+
+Hal-hal berikut berbeda dari rancangan awal dan **berlaku** (alasan di `docs/DECISIONS.md`):
+
+- **Snapshot dilayani dari cache edge + D1, bukan dari memori DO.** Semua rute publik lewat `edgeJson` (Cache API; kunci memuat `activeVersion/statsVersion/resultsVersion`; ETag/304; TTL 5 dtk saat live, 60 dtk setelah selesai). DO hanya menyiarkan delta.
+- **`hello` tanpa snapshot**: klien mengambil snapshot lewat HTTP (cache), lalu WebSocket hanya membawa tick delta. Tidak ada pesan `leader_changed` terpisah: pergantian pemimpin ikut di dalam tick.
+- **Satu pembacaan D1 per tick** (`services/live.ts: loadLiveInput`) untuk seluruh penonton; `LiveCore` (murni) menghitung delta.
+- **Refresh langsung**: aksi admin (jadwal, mode, hasil, reveal) memanggil `notifyLive(…, fresh)`; DO membaca ulang segera dengan throttle 1 dtk (bukan menunggu tick).
+- **Setelah event selesai**: soket `viewer` ditutup (alarm akhir event) dan penonton biasa ditolak `event_ended`; **soket `screen` tetap tersambung** agar Layar Besar menerima animasi pemenang yang diputar admin.
+- **Animasi pemenang** membaca hasil beku (`results_json`, `results_version`), bukan `reveal_json`; pemicu = `reveal_seq`/`reveal_started_at` + target `screen|everyone`.
+- `GET /spotlight` (ulasan pilihan) **belum dibuat**; Layar Besar memakai Sorotan dari snapshot.
+
 ### Data spotlight (foto & ulasan pilihan)
 
 Snapshot yang di-poll tetap **kecil**: per booth hanya `id`, nama, rating, jumlah ulasan, peringkat, dan **kunci foto sampul (thumb)**. Detail spotlight (semua foto `full` + 1–2 ulasan pilihan) diambil lewat `GET /api/booths/:id/spotlight`, di-cache edge (±30 detik, kunci memuat `stats_version`) dan di-**prefetch untuk giliran berikutnya**, jadi tidak membebani snapshot dan tidak mengunduh foto booth yang tak sedang disorot. Ulasan pilihan dihitung dari aturan `CONFIG.spotlight` (hanya ★4–5, komentar ≥ 30 karakter, `visible`, `pinned` dulu); fotonya dimuat dari `MEDIA_BASE_URL` (CDN, B15) dengan `loading="lazy"`.

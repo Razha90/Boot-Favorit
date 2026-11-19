@@ -18,6 +18,7 @@ import { MediaUrlProvider } from "../lib/media-url";
 import { applyTheme, type ThemeMode, type Vibe } from "../lib/theme-loader";
 import { EventGallery } from "./EventGallery";
 import { BOOTH_NAMES, BOOTHS, PRODUCTS, sampleResolver } from "./fixtures";
+import { ResultsGallery } from "./ResultsGallery";
 import { ReviewGallery } from "./ReviewGallery";
 
 const LABEL: Record<string, string> = {
@@ -295,6 +296,7 @@ export function Component() {
 
           <EventGallery Section={Section} />
           <ReviewGallery Section={Section} />
+          <ResultsGallery Section={Section} />
 
           <UiSection />
         </main>

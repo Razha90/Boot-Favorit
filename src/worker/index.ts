@@ -9,6 +9,7 @@ import { eventWriteGate, loadActiveEvent } from "./middleware/event-gate";
 import { createAdminRoutes } from "./routes/admin";
 import { eventRoutes } from "./routes/event";
 import { goRoutes } from "./routes/go";
+import { liveRoutes } from "./routes/live";
 import { mediaRoutes } from "./routes/media";
 import { pageRoutes } from "./routes/pages";
 import { publicRoutes } from "./routes/public";
@@ -37,12 +38,14 @@ export function createApp(deps: AppDeps = {}) {
 
   // Semua rute API lain: muat event aktif, lalu pintu pembekuan (B17). /api/admin/* dikecualikan di gate.
   app.use("/api/*", loadActiveEvent, eventWriteGate);
+  app.use("/ws", loadActiveEvent); // WebSocket bukan /api/*, tetapi tetap butuh event aktif
 
   app.route("/", mediaRoutes);
   app.route("/", goRoutes);
   app.route("/", pageRoutes);
   app.route("/", eventRoutes);
   app.route("/", publicRoutes);
+  app.route("/", liveRoutes);
   app.route(
     "/",
     createVisitorRoutes({
@@ -62,3 +65,6 @@ export function createApp(deps: AppDeps = {}) {
 
 export const app = createApp();
 export default app;
+
+// Kelas Durable Object harus diekspor dari entri Worker.
+export { LiveHub } from "./live/hub";

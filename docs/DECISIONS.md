@@ -133,6 +133,24 @@
 | Token `--star` diganti amber turunan `#cc7700` | Oranye murni hanya 1,9:1 pada permukaan terang (WCAG 1.4.11); bintang kosong sudah diperbaiki di Tahap 4 |
 | Widget Turnstile dan Google dimuat dinamis hanya di kotak penilaian | Tidak membebani bundle awal (B16) |
 
+### Keputusan teknis dari pengerjaan (Tahap 7)
+
+| Keputusan | Alasan |
+|---|---|
+| Snapshot dari **Cache API + D1** (bukan memori DO); DO hanya menyiarkan delta; **satu bacaan D1 per tick** untuk semua penonton | Sederhana dan tahan restart; beban D1 tidak dikalikan jumlah penonton (terukur di uji beban lokal: 301 koneksi = 1 tick per penonton) |
+| Kunci cache memuat `activeVersion/statsVersion/resultsVersion`; TTL 5 dtk live, 60 dtk setelah selesai; ETag/304 | Perubahan admin/review terlihat tanpa menunggu TTL; murah |
+| Peringkat bergantung pada rating (`visibility()`): peringkat `visible` ditolak bila rating `hidden` (`ratings_hidden`); yang tersembunyi **tidak dikirim** server | A7/B9: penyembunyian harus ditegakkan server, bukan CSS |
+| **Hasil dibekukan** saat "Umumkan hasil" (`results_json`, `results_version`); "Perbarui hasil" membuat versi baru; hanya bisa setelah event selesai (`event_not_ended`) | Hasil akhir tidak berubah diam-diam; bisa diputar ulang identik |
+| Animasi pemenang: `live` (sekali per `reveal_seq`, hanya bila < 90 dtk sejak mulai, sesuai target `screen|everyone`) dan `replay` (setelah diumumkan; opt-out per pengunjung di localStorage per `resultsVersion`) | Tidak mengganggu pengunjung yang datang belakangan; tetap bisa diputar ulang manual |
+| Soket **`screen` tetap tersambung** setelah event selesai; soket `viewer` ditutup dan ditolak `event_ended` | Layar Besar harus menerima animasi pemenang yang diputar admin sesudah event |
+| Batas `maxLiveViewers` 400 dan `reservedScreenSlots` 5; bila penuh/gagal klien memakai polling | Degradasi halus, biaya terbatas (B8) |
+| `notifyLive(c, kind, fresh)`: aksi admin membuat DO membaca ulang segera (throttle 1 dtk) | DO tidak tahu jadwal yang baru diubah; jangan menunggu tick |
+| Layar Besar: urutan panel Sorotan → Semua booth → Ulasan terbaru → Peringkat/Hasil; panel dipilih dari **jam server** (`panelAt`) | Semua layar serempak tanpa pesan server; peringkat tetap terakhir (keadilan) |
+| Kode bersama antar-area (`event`, `screen`, `admin`) dipindah ke `src/web/features/` (`event-data`, `live`, `reveal`, `EventBoundary`) | Penjaga `lint-boundaries` melarang impor antar-area |
+| Tombol transparan "Lompat ke daftar hasil" di lapisan animasi (bukan handler klik pada elemen statis) | Aksesibel dan lolos Biome |
+| Pil nomor booth `PhotoFrame` memakai `text-text` | Di tema panggung teks mewarisi warna gelap bingkai di atas pil gelap (tak terbaca) |
+| Suara animasi tidak diimplementasikan | Di luar lingkup; bukan kebutuhan acara |
+
 ## Gaya kode (disetujui)
 
 Lihat bagian "Gaya kode" di `AGENTS.md`. Ringkas: kode berbahasa Inggris, teks pengguna Indonesia; TypeScript strict tanpa `any`; tipe dari Zod; logika bisnis murni; server berlapis route → service → query; Biome untuk format dan lint; tes bersama fitur; commit `feat:`/`fix:`/`docs:`.

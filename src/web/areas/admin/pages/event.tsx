@@ -11,6 +11,7 @@ import { copy } from "../../../lib/copy";
 import { adminApi, adminKeys } from "../api";
 import { EventBadges, QueryState } from "../components/bits";
 import { EventMediaCard } from "../components/EventMediaCard";
+import { ResultsCard } from "../components/ResultsCard";
 import { parseSchedule, ScheduleFields, type ScheduleValues } from "../components/ScheduleFields";
 
 const DAY = 86_400_000;
@@ -243,6 +244,8 @@ function EventEditor({ event }: { event: AdminEventView }) {
           </ActionButton>
         </div>
       </Card>
+
+      <ResultsCard event={event} />
 
       <EventMediaCard event={event} refresh={refresh} />
 

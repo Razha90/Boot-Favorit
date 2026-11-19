@@ -73,7 +73,7 @@ export function PhotoFrame({
         {initials(name, boothNo)}
       </span>
       {large && hasText(boothNo) && (
-        <span className="absolute bottom-2 left-2 max-w-[70%] truncate rounded-chip border-(length:--border-w) border-line bg-surface-raised px-2 py-0.5 text-xs font-bold">
+        <span className="absolute bottom-2 left-2 max-w-[70%] truncate rounded-chip border-(length:--border-w) border-line bg-surface-raised px-2 py-0.5 text-xs font-bold text-text">
           {boothNo}
         </span>
       )}

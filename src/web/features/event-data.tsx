@@ -6,13 +6,16 @@ import type {
   PublicEvent,
   PublicEventResponse,
   PublicProducts,
+  PublicResults,
   PublicSnapshot,
 } from "@shared/api-types";
 import { CONFIG } from "@shared/config";
 import { getEventState } from "@shared/event-state";
 import { useQuery } from "@tanstack/react-query";
 import { createContext, type ReactNode, useCallback, useContext, useMemo } from "react";
-import { api } from "../../lib/api";
+import { api } from "../lib/api";
+import { useEventState } from "../lib/event-state";
+import { useLiveStatus } from "./live/live-context";
 
 /** Interval polling dengan jitter; `ended` = data beku, polling jarang. */
 export function pollInterval(ended: boolean, random: () => number = Math.random): number {
@@ -39,12 +42,29 @@ export function useEventQuery() {
   });
 }
 
-export function useSnapshotQuery(event: PublicEvent | null) {
+/**
+ * `live` = WebSocket tersambung: polling berhenti (siaran + `refresh` yang menggantikannya).
+ * `frozen` = event selesai: data beku, polling jarang (B8).
+ */
+export function useSnapshotQuery(event: PublicEvent | null, o: { poll?: boolean } = {}) {
+  const live = useLiveStatus().connected;
+  const frozen = useEventState().frozen;
   return useQuery({
     queryKey: eventKeys.snapshot(event?.id ?? "-", event?.versions.active ?? 0),
     queryFn: () => api<PublicSnapshot>("GET", "/api/snapshot"),
     enabled: !!event,
-    refetchInterval: pollInterval(false),
+    // `poll: false` = hanya membaca data (mis. tombol incaran); yang memutuskan polling adalah halaman yang tampil.
+    refetchInterval: o.poll === false || live ? false : pollInterval(frozen),
+  });
+}
+
+/** Hasil akhir yang dibekukan; kunci memuat versi hasil sehingga "Perbarui hasil" langsung terlihat. */
+export function useResultsQuery(event: PublicEvent | null, enabled: boolean, version: number) {
+  return useQuery({
+    queryKey: ["public", "results", event?.id ?? "-", version] as const,
+    queryFn: () => api<PublicResults>("GET", "/api/results"),
+    enabled: !!event && enabled,
+    staleTime: 60_000,
   });
 }
 

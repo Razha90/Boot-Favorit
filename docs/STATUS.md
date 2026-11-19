@@ -7,9 +7,9 @@
 ## Posisi sekarang
 
 - **Fase:** pengerjaan (pemilik proyek menyetujui masuk tahap pengerjaan, 2026-11-19).
-- **Tahap 0 sampai 6: SELESAI** (Tahap 6 dengan batasan jujur di bawah). `npm run check` lulus (exit 0): Biome, tiga penjaga, `tsc -b` (4 proyek), **951 tes**. Build produksi berhasil; bundle awal **±69 KB gzip**; galeri tidak ikut produksi. Chrome sungguhan (dev server, viewport HP 390×844 + desktop): alur admin (`admin-flow.mjs`), halaman pengunjung (`visitor-flow.mjs`), **alur penilaian** (`review-flow.mjs`, ±32 pemeriksaan), galeri **9/9** (`gallery-visual.mjs`), **0 teks di bawah kontras AA** di tiga kombinasi (`gallery-contrast.mjs`).
-- **Tahap berikutnya:** **Tahap 7: Realtime, peringkat, hasil** (lihat `BUILD-PLAN.md`). Belum dimulai.
-- **Git:** satu commit awal `9556f9c` (Tahap 0–5). **Tahap 6 belum di-commit**; commit hanya atas permintaan pemilik proyek.
+- **Tahap 0 sampai 7: SELESAI** (Tahap 6 dan 7 dengan batasan jujur di bawah). `npm run check` lulus (exit 0): Biome, tiga penjaga, `tsc -b` (4 proyek), **1091 tes** (57 file). Build produksi berhasil; chunk awal **±72 KB gzip**; galeri tidak ikut produksi. Chrome sungguhan (dev server, viewport HP 390×844 + desktop): alur admin (`admin-flow.mjs`), halaman pengunjung (`visitor-flow.mjs`), alur penilaian (`review-flow.mjs`), **alur peringkat/hasil/Layar Besar/animasi** (`standings-flow.mjs`, 31 pemeriksaan), galeri **9/9** (`gallery-visual.mjs`), **0 teks di bawah kontras AA** di tiga kombinasi (`gallery-contrast.mjs`).
+- **Tahap berikutnya:** **Tahap 8: portal booth** (lihat `BUILD-PLAN.md`). Belum dimulai.
+- **Git:** `9556f9c` (Tahap 0–5), `b9ff2ce` (Tahap 6). **Tahap 7 belum di-commit**; commit hanya atas permintaan pemilik proyek.
 
 ## Sudah ada
 
@@ -115,12 +115,38 @@
 - **E2E penilaian**: `node scripts/e2e/review-flow.mjs` (dev server hidup). Tiap pengunjung diberi `cf-connecting-ip` sendiri karena pembatas login per-IP di dev memakai satu kunci "unknown" bila header tak ada. Kode OTP dibaca dari `devCode`.
 - **Pola tes Worker pengunjung**: `liveHarness()` (event berlangsung dengan jendela panjang), `loginWithOtp()`, `directVisitor()` (pengunjung langsung di DB + cookie sah, untuk skenario berskala), `visitorClient()` (cookie jar), `PROD_ENV` per panggilan (`{ env }`) agar penyemaian admin tetap lewat jalur dev.
 
-## Langkah berikutnya (Tahap 7: Realtime, peringkat, hasil, A8, B8, B20)
+## Tahap 7 (realtime, peringkat, hasil): ringkasan
 
-1. Snapshot dengan cache edge (Cache API, kunci memuat `eventId` + `stats_version`) menggantikan pembacaan D1 langsung; `LiveHub` (Durable Object) hemat; polling klien sudah berjitter.
-2. Bagian 03 halaman event: peringkat (selalu di bawah, tanpa lencana di kartu) + ulasan terbaru; **item 58** (ambang peringkat) perlu dijawab pemilik proyek (default sementara 3 review, `m` = 5).
-3. Layar besar `/screen`; mode peringkat/rating (`ranking_mode`/`ratings_mode` sudah ditegakkan server pada snapshot/ulasan; kontrol admin belum ada); "Umumkan hasil", `WinnerReveal`, `ResultsList`.
-4. Bila sempat: ulasan pilihan (`/spotlight`) dan pembatas laju tegas (Rate Limiting binding) yang tertunda dari Tahap 6.
+- **Fungsi murni** (`src/shared/`): `results.ts` (`visibility`: peringkat bergantung pada rating; `buildResults`, `resultsDiffer`), `live-core.ts` (`LiveCore.tick`: delta booth/feed/peringkat per tick, tanpa I/O), `reveal.ts` (`revealSteps` 3-2-1 → juara 3 → 2 → 1 → daftar ±13,5 dtk, `shouldPlayLive`, `shouldAutoReplay`, `screenPanels`, `panelAt`). Angka di `config.ts` (`live.screenPanelMs`, blok `reveal`).
+- **Worker**: semua rute publik lewat `edgeJson` (`lib/edge-cache.ts`: Cache API, kunci memuat `activeVersion/statsVersion/resultsVersion`, ETag/304, TTL 5 dtk saat live, 60 dtk setelah selesai). `services/results.ts` + `routes/admin/results.ts`: mode rating/peringkat, **Umumkan hasil** (hanya setelah event selesai; hasil dibekukan di `results_json`), **Perbarui hasil**, **Putar animasi** (`reveal_seq`, target `screen|everyone`). Peringkat/rating yang disembunyikan **tidak dikirim server sama sekali**. `GET /ws` → Durable Object `LiveHub` (WebSocket Hibernation, satu bacaan D1 per tick 2,5 dtk untuk semua penonton, soket `viewer` vs `screen`, batas 400 penonton + 5 slot Layar Besar, alarm akhir event menutup soket `viewer`). `notifyLive` dari review dan aksi admin membuat tick/refresh segera (throttle 1 dtk).
+- **Frontend**: `features/event-data.tsx` (dipindah dari `areas/event/data.tsx`; snapshot sadar live/beku), `features/live/` (`LiveProvider`, `useLive`, `applyTick`), `features/reveal/` (`useReveal`, `RevealLayer`), `features/EventBoundary.tsx`. Beranda: chip LIVE, `ResultsBanner`, `StandingsSection` (peringkat + ulasan terbaru, **paling bawah**), halaman `/results`. `components/shared/ResultsList` + `WinnerReveal` (`<dialog>`, chunk lazy, tombol "Lompat ke daftar hasil", Esc menutup). Layar Besar `/screen` (Sorotan → Semua booth → Ulasan terbaru → Peringkat/Hasil, ganti panel deterministik dari jam server). Admin: `ResultsCard` di halaman event.
+- **Tes**: shared (results 11, live-core 10, reveal 13, edge-cache), Worker (hasil admin 19, live/`/ws` 12), web (live 17, hasil/ResultsList 24 termasuk matriks fixture, standings 15, layar, admin hasil). Galeri `ResultsGallery`.
+- **Uji beban lokal** (`scripts/e2e/live-load.mjs`, `VIEWERS=300 REVIEWS=120 BOOTHS=10`): 301 koneksi + 120 review = **satu tick per penonton**, tidak ada pembacaan D1 per penonton; batas penonton umum bekerja (95 diterima, 55 ditolak pada batas uji).
+- **Hasil uji yang mengubah desain/kode**: (1) DO tidak tahu jadwal berubah (notifikasi admin membawa event lama) → `notifyLive(…, fresh)`; (2) `refresh` baru sampai setelah tick berikutnya → refresh langsung dengan throttle; (3) soket ditutup setelah event selesai padahal animasi pemenang diputar sesudahnya → soket **screen** tetap tersambung; (4) opt-out animasi sempat menutup lapisan reveal → status `autoActive` terkunci sampai `close`; (5) pil nomor booth di `PhotoFrame` tak terbaca di tema panggung (teks gelap di pil gelap) → `text-text`; (6) handler klik pada elemen statis ditolak Biome → tombol transparan.
+
+### Batasan jujur Tahap 7
+
+- **Cache API, Durable Object, dan WebSocket hanya diuji di dev lokal (workerd)**, belum di Cloudflare produksi. Uji beban hanya lokal, **bukan** k6 terhadap produksi; angka kapasitas (400 penonton) belum terbukti di edge.
+- **Item 58** (ambang peringkat) masih default sementara: 3 review, `m` = 5. Belum keputusan pemilik.
+- **Suara animasi tidak diimplementasikan.** Ulasan pilihan / `GET /spotlight` belum ada. Pembatas laju tegas (Rate Limiting binding) belum.
+- Penonton biasa **setelah event selesai** menerima animasi `everyone` lewat polling jarang (60 dtk) atau saat membuka/menyegarkan halaman, bukan WebSocket (soketnya ditutup; hanya Layar Besar yang tetap).
+- Penutupan soket dari sisi server tidak terlihat di klien lewat proxy dev Vite (diverifikasi lewat ping tak dijawab); klien nyata menutup sendiri saat menerima `event_status`.
+- `GET /api/event` belum lewat Cache API.
+- **Alat ukur**: tes dijalankan lewat PowerShell; di shell Bash lingkungan ini Vitest gagal memuat (`reading 'config'`) padahal kodenya sama. Jalankan `npm run check` dari PowerShell.
+
+## Kriteria selesai Tahap 7 (BUILD-PLAN): terpenuhi (dengan batasan di atas)
+
+| Kriteria | Bukti |
+|---|---|
+| Peringkat konsisten dengan review, selalu di bagian paling bawah, tanpa lencana di kartu | `standings.test.tsx`, `standings-flow.mjs` |
+| Rating/peringkat tersembunyi tidak dikirim server | `results.test.ts`, tes snapshot, E2E (JSON publik) |
+| Hasil dibekukan saat diumumkan; animasi pemenang dapat diputar ulang | `results.test.ts` (Worker), `reveal.test.ts`, `WinnerReveal` tes, E2E |
+| Layar Besar berganti panel dan tersinkron | `screen.test.tsx`, `standings-flow.mjs` |
+| Realtime hemat: satu bacaan D1 per tick | `live-core.test.ts`, `live-load.mjs` |
+
+## Langkah berikutnya (Tahap 8: portal booth & pendaftaran mandiri)
+
+Baca `BUILD-PLAN.md` Tahap 8. Termasuk yang tertunda: laporan oleh **booth** (tabel dan antrean sudah siap), "Kirim undangan" ke pemilik (butuh penyedia email), `ProductEditor`/`BoothProfileForm` dipindah ke `shared/` untuk dipakai portal booth. Opsional dari Tahap 6/7: ulasan pilihan (`/spotlight`) dan pembatas laju tegas.
 
 ## Keputusan sementara (default dipakai sampai pemilik proyek memutuskan)
 
@@ -134,5 +160,5 @@
 
 ## Blokir / pertanyaan terbuka
 
-- Tidak ada yang memblokir Tahap 7. **Item 58** (ambang peringkat) dan perkiraan skala (item 1) perlu dijawab pemilik proyek sebelum peringkat tampil; **penyedia email (item 5)** sebelum OTP bisa dipakai di produksi (dan Tahap 8).
+- Tidak ada yang memblokir Tahap 8. **Item 58** (ambang peringkat) dan perkiraan skala (item 1) perlu dijawab pemilik proyek sebelum peringkat tampil; **penyedia email (item 5)** sebelum OTP bisa dipakai di produksi (dan Tahap 8).
 - `demo-event.html` belum menampilkan booth tanpa foto/hanya nama (A16); opsional diperbarui.

@@ -3,11 +3,11 @@ import { hasText } from "@shared/visual";
 import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { Present } from "../../../components/shared/Present";
 import { Card } from "../../../components/ui/Card";
+import { useEventData } from "../../../features/event-data";
 import { cn } from "../../../lib/cn";
 import { copy } from "../../../lib/copy";
 import { useEventState } from "../../../lib/event-state";
 import { countdownText } from "../../../lib/hero-copy";
-import { useEventData } from "../data";
 
 /**
  * Teks "Kenalan" yang panjang: dipotong 4 baris (`CONFIG.booth.aboutCollapsedLines`) dan tombol

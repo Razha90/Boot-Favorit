@@ -3,9 +3,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ActionButton } from "../../../components/ui/ActionButton";
 import { ErrorState, Skeleton } from "../../../components/ui/states";
+import { useEventData } from "../../../features/event-data";
 import { copy } from "../../../lib/copy";
 import { useTurnstile } from "../../../lib/turnstile";
-import { useEventData } from "../data";
 import {
   invalidateAfterReview,
   invalidateAfterSession,

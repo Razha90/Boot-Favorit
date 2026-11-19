@@ -8,8 +8,11 @@
     "not_found_handling": "single-page-application",
     // Worker berjalan lebih dulu untuk API, WebSocket, gambar cadangan, pengalihan WhatsApp, serta halaman
     // yang sering dibagikan (/ dan /b/*) agar pratinjau tautan berisi nama event/booth.
-    "run_worker_first": ["/api/*", "/ws/*", "/media/*", "/go/*", "/", "/b/*"]
+    "run_worker_first": ["/api/*", "/ws", "/ws/*", "/media/*", "/go/*", "/", "/b/*"]
   },
+  // LiveHub (B8): satu DO per event untuk siaran WebSocket berbatch. Hanya klien yang butuh live yang menyambung.
+  "durable_objects": { "bindings": [{ "name": "LIVE_HUB", "class_name": "LiveHub" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["LiveHub"] }],
   "vars": { "APP_ENV": "development" },
   // Database utama (B6). Migrasi SQL dihasilkan drizzle-kit ke ./drizzle:
   //   lokal:  npx wrangler d1 migrations apply booth-favorit --local

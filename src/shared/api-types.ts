@@ -3,6 +3,7 @@
 
 import type { OwnerState } from "./booth";
 import type { EventSchedule, EventState, ScheduleWarning } from "./event-state";
+import type { ResultEntry } from "./results";
 import type { EventSettings } from "./schemas";
 import type { Completeness } from "./visual";
 
@@ -169,6 +170,52 @@ export interface PublicSnapshot {
   ratingsHidden: boolean;
   booths: PublicBooth[];
   stats: { boothCount: number; reviewCount: number; average: number | null };
+  /**
+   * Peringkat langsung. `null` = tidak boleh tampil (mode peringkat/rating): datanya TIDAK dikirim sama sekali (B20).
+   * Nama dan foto booth diambil dari `booths` (tanpa diulang di sini).
+   */
+  ranking: RankingEntry[] | null;
+  /** Ulasan terbaru (maks. 5) yang boleh tampil; komentar ditahan/disembunyikan tidak pernah ada di sini */
+  feed: LatestReview[];
+  /** Pemutaran animasi pemenang oleh admin; null = belum pernah diputar */
+  reveal: RevealInfo | null;
+  /** Hasil akhir sudah diumumkan? (`resultsVersion` berubah = hasil diperbarui) */
+  resultsPublished: boolean;
+  resultsVersion: number;
+}
+
+export interface RankingEntry {
+  boothId: string;
+  rank: number;
+  score: number;
+  average: number;
+  reviewCount: number;
+}
+
+export interface LatestReview {
+  id: string;
+  boothId: string;
+  boothName: string;
+  /** null bila rating disembunyikan */
+  stars: number | null;
+  /** Komentar dipotong ±140 karakter */
+  text: string;
+  displayName: string;
+  createdAt: number;
+}
+
+export interface RevealInfo {
+  seq: number;
+  startedAt: number;
+  target: "screen" | "everyone";
+}
+
+/** Hasil akhir yang dibekukan saat diumumkan (`GET /api/results`). */
+export interface PublicResults {
+  published: boolean;
+  version: number;
+  publishedAt: number | null;
+  results: ResultEntry[] | null;
 }
 
 export interface PublicBoothDetail extends PublicBooth {
@@ -343,4 +390,18 @@ export interface ModerationTestResult {
   contact: boolean;
   /** Istilah yang tertangkap (hanya untuk admin) */
   matched: string[];
+}
+
+/** Panel admin "Hasil dan tampilan" (`GET /api/admin/e/:id/results`). */
+export interface AdminResultsView {
+  published: boolean;
+  publishedAt: number | null;
+  version: number;
+  revealSeq: number;
+  /** Peringkat terkini (belum dibekukan) */
+  live: ResultEntry[];
+  /** Hasil yang dibekukan saat diumumkan; null bila belum */
+  frozen: ResultEntry[] | null;
+  /** Peringkat terkini berbeda dari hasil beku → admin dapat menekan "Perbarui hasil" */
+  differs: boolean;
 }

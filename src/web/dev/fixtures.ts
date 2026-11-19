@@ -1,6 +1,7 @@
 // Fixture data booth/produk untuk galeri komponen dan matriks uji "data kosong" (explore.md A16, B26).
 // Kunci gambar: "ok:N" → gambar contoh; "broken:N" → URL yang 404 (menguji gambar gagal dimuat).
 import type { PublicBooth, PublicProduct, PublicReview } from "@shared/api-types";
+import type { ResultEntry } from "@shared/results";
 import type { MediaUrlResolver } from "../lib/media-url";
 
 /** Gambar contoh sebagai data URI SVG. Nama warna CSS (bukan hex) agar lolos lint-tokens. */
@@ -186,3 +187,56 @@ export const REVIEWS = {
   },
   multibaris: { ...rbase, id: "rv-multi", text: "Baris pertama.\n\nBaris ketiga setelah jeda." },
 } satisfies Record<string, PublicReview>;
+
+// ---------- Hasil akhir (Tahap 7) ----------
+
+const rentry = (id: string, rank: number | null, over: Partial<ResultEntry> = {}): ResultEntry => ({
+  boothId: id,
+  rank,
+  name: `Booth ${id.toUpperCase()}`,
+  boothNo: null,
+  coverThumbKey: null,
+  average: rank ? 5 - rank * 0.25 : null,
+  reviewCount: rank ? 30 - rank * 3 : 0,
+  score: rank ? 4.6 - rank * 0.1 : null,
+  topCategories: [],
+  ...over,
+});
+
+export const RESULT_ENTRIES = {
+  lengkap: [
+    rentry("a", 1, {
+      name: "Kopi Rempah Nusantara",
+      boothNo: "A12",
+      coverThumbKey: "ok:1",
+      topCategories: [
+        { label: "Seru", count: 12 },
+        { label: "Ramah", count: 8 },
+        { label: "Bermanfaat", count: 2 },
+      ],
+    }),
+    rentry("b", 2, {
+      name: "Mie Ayam Bu Tini",
+      boothNo: "B7",
+      coverThumbKey: "ok:2",
+      topCategories: [{ label: "Kreatif", count: 9 }],
+    }),
+    rentry("c", 3, { name: "Workshop Daur Ulang", coverThumbKey: "ok:3" }),
+    rentry("d", 4, { name: "Roti Bakar Mas Agus", coverThumbKey: "broken:1" }),
+    rentry("e", 5, { name: "Es Teh Pak Budi" }),
+    rentry("x", null, { name: "Warung Baru", reviewCount: 1, average: 4 }),
+    rentry("y", null, { name: "Booth tanpa ulasan" }),
+  ],
+  hanyaDuaDiperingkat: [
+    rentry("a", 1, { coverThumbKey: "ok:1" }),
+    rentry("b", 2),
+    rentry("x", null),
+  ],
+  tanpaPeringkat: [rentry("x", null), rentry("y", null)],
+  namaAneh: [
+    rentry("a", 1, { name: "Warung".repeat(15) }),
+    rentry("b", 2, { name: "🍜 Mie Ayam 🔥" }),
+    rentry("c", 3, { name: " Warung Spasi ", boothNo: "   " }),
+  ],
+  kosong: [] as ResultEntry[],
+} satisfies Record<string, ResultEntry[]>;
