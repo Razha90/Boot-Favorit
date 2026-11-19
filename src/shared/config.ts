@@ -64,6 +64,16 @@ export const CONFIG = {
   spam: {
     maxReviewsPerVisitorPerMinute: 4,
     burstThresholdPerBoothPerMin: 12,
+    /** Skor risiko ≥ ini → review ditahan (`held`) diam-diam untuk dicek admin (B9). */
+    holdRiskThreshold: 60,
+    /** Beberapa review dari ip_hash yang sama ke booth yang sama (WiFi kampus berbagi IP: hanya sinyal) */
+    sameIpBoothThreshold: 4,
+    /** Akun yang baru dibuat langsung memberi bintang 5 tanpa komentar (ms) */
+    freshVisitorMs: 8_000,
+    /** Pola sabotase: minimal jumlah review dari identitas yang sama agar pola dihitung */
+    sabotageMinReviews: 3,
+    /** Batas laju laporan komentar per pengunjung per jam */
+    maxReportsPerVisitorPerHour: 10,
   },
   registration: {
     allowLateRegistrationDefault: true,

@@ -14,4 +14,12 @@ interface Env {
    * DAN permintaan datang ke localhost/127.0.0.1 (pertahanan berlapis agar tidak terbawa ke produksi).
    */
   DEV_ADMIN_EMAIL?: string;
+  /** Rahasia HMAC untuk sesi pengunjung dan hash identitas. Wajib di produksi; di dev ada nilai bawaan. */
+  SESSION_SECRET?: string;
+  /** Kunci rahasia Cloudflare Turnstile (siteverify). Wajib di produksi; kosong di dev = lolos. */
+  TURNSTILE_SECRET?: string;
+  /** Kunci situs Turnstile (publik, dikirim ke browser lewat /api/visitor/me). */
+  TURNSTILE_SITE_KEY?: string;
+  /** OAuth client id Google Identity Services (publik). Kosong = tombol Google tidak tampil. */
+  GOOGLE_CLIENT_ID?: string;
 }

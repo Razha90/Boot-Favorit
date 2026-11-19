@@ -206,3 +206,139 @@ export interface PublicEventResponse {
   event: PublicEvent | null;
   serverNow: number;
 }
+
+// ---------- Review dan pengunjung (Tahap 6) ----------
+
+export type VisitorProvider = "google" | "email" | "ticket" | "anon";
+export type ReviewerAuthMode = "google_or_email" | "ticket_code" | "open_turnstile";
+
+/** Satu ulasan sebagaimana dilihat pengunjung lain. Komentar `held`/`hidden` TIDAK pernah ada di sini (B25). */
+export interface PublicReview {
+  id: string;
+  /** null bila rating disembunyikan admin */
+  stars: number | null;
+  /** Teks komentar yang boleh tampil (disamarkan bila perlu) */
+  text: string;
+  displayName: string;
+  categories: { id: string; label: string }[];
+  createdAt: number;
+}
+
+export interface PublicReviews {
+  reviews: PublicReview[];
+  /** Kursor halaman berikutnya; null = habis */
+  next: string | null;
+}
+
+/** "Sering disebut" (A5): kategori ulasan yang paling banyak dipilih untuk booth ini. */
+export interface TopCategory {
+  id: string;
+  label: string;
+  count: number;
+}
+
+/** Sesi pengunjung dan konfigurasi login (nilai publik; tidak ada rahasia). */
+export interface VisitorMe {
+  visitor: { id: string; displayName: string | null; provider: VisitorProvider } | null;
+  authMode: ReviewerAuthMode;
+  googleClientId: string | null;
+  turnstileSiteKey: string | null;
+  /** Booth yang sudah dinilai pengunjung ini (hanya bila masuk). Bintang null bila rating disembunyikan. */
+  reviewed: { boothId: string; stars: number | null }[];
+}
+
+export interface MyReview {
+  boothId: string;
+  stars: number;
+  comment: string | null;
+  categoryIds: string[];
+}
+
+/** Hasil kirim review. Pesan netral: tidak pernah memberi tahu bahwa review ditahan atau kata mana yang tertangkap. */
+export interface ReviewSubmitResult {
+  review: MyReview;
+  created: boolean;
+  /** true bila komentar ditahan filter; boleh diberi tahu (A15), tidak menyebut kata */
+  commentHeld: boolean;
+  /** Ringkasan untuk layar terima kasih (A5) */
+  progress: { reviewed: number; total: number };
+  /** Booth lain yang belum dinilai (urutan acak dari server dengan seed pengunjung) */
+  suggestions: { id: string; name: string }[];
+}
+
+export interface OtpRequestResult {
+  ok: true;
+  /** Hanya di pengembangan lokal (APP_ENV=development + localhost); tidak pernah di produksi. */
+  devCode?: string;
+}
+
+// ---------- Moderasi (admin) ----------
+
+export type CommentStatus = "visible" | "masked" | "held" | "hidden";
+export type ReviewStatus = "visible" | "held" | "hidden";
+
+export interface AdminReview {
+  id: string;
+  boothId: string;
+  boothName: string;
+  visitorId: string;
+  displayName: string | null;
+  stars: number;
+  comment: string | null;
+  commentStatus: CommentStatus;
+  commentMasked: string | null;
+  status: ReviewStatus;
+  filterHits: number;
+  commentLocked: boolean;
+  riskScore: number | null;
+  flags: string[];
+  originalStars: number | null;
+  originalComment: string | null;
+  moderationReason: string | null;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface AdminReport {
+  id: string;
+  reviewId: string;
+  reporterRole: "booth" | "visitor";
+  reason: "profanity" | "hate" | "personal_data" | "spam" | "other";
+  note: string | null;
+  status: "open" | "upheld" | "dismissed";
+  createdAt: number;
+}
+
+/** Satu entri antrean: komentar + semua laporannya. `suspicious` = pelapor (booth) cenderung melaporkan ulasan rendah. */
+export interface AdminReportGroup {
+  review: AdminReview;
+  reports: AdminReport[];
+  /** Urutan prioritas: SARA/data pribadi di atas */
+  priority: number;
+  suspiciousReporter: boolean;
+}
+
+export interface AdminModerationQueue {
+  reports: AdminReportGroup[];
+  /** Komentar ditahan filter/risiko yang menunggu keputusan (tanpa laporan) */
+  held: AdminReview[];
+}
+
+export interface AdminTerm {
+  id: string;
+  term: string;
+  lang: "id" | "en" | "regional";
+  severity: "severe" | "mild";
+  kind: "block" | "allow";
+  match: "word" | "contains";
+  enabled: boolean;
+  source: string | null;
+}
+
+export interface ModerationTestResult {
+  status: "visible" | "masked" | "held";
+  masked: string | null;
+  contact: boolean;
+  /** Istilah yang tertangkap (hanya untuk admin) */
+  matched: string[];
+}

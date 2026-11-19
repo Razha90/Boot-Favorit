@@ -23,6 +23,14 @@ export const ERROR_STATUS = {
   event_ended: 403,
   // Aksi tulis ganda / bersamaan (B21)
   request_in_progress: 409,
+  // Reviewer (A5, A6)
+  turnstile_failed: 403,
+  visitor_blocked: 403,
+  own_booth: 403,
+  otp_invalid: 400,
+  otp_expired: 400,
+  otp_cooldown: 429,
+  login_failed: 401,
   // Domain
   email_in_use: 409,
   product_limit: 409,

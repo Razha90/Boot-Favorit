@@ -206,7 +206,8 @@ export const visitors = sqliteTable(
     eventId: text("event_id")
       .notNull()
       .references(() => events.id),
-    provider: text("provider", { enum: ["google", "email", "ticket"] }).notNull(),
+    // "anon" = mode open_turnstile (identitas = id perangkat acak, bukan orang): paling santai (A6).
+    provider: text("provider", { enum: ["google", "email", "ticket", "anon"] }).notNull(),
     identityHash: text("identity_hash").notNull(), // HMAC(email/sub/kode); email asli tidak disimpan
     displayName: text("display_name"),
     blocked: flag("blocked"),
@@ -417,3 +418,5 @@ export const idempotencyKeys = sqliteTable(
 export type EventRow = typeof events.$inferSelect;
 export type BoothRow = typeof booths.$inferSelect;
 export type ReviewRow = typeof reviews.$inferSelect;
+export type VisitorRow = typeof visitors.$inferSelect;
+export type ModerationTermRow = typeof moderationTerms.$inferSelect;

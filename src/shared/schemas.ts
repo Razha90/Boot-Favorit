@@ -285,6 +285,96 @@ export const reviewInputSchema = z.object({
 });
 export type ReviewInput = z.infer<typeof reviewInputSchema>;
 
+/**
+ * Badan `POST /api/booths/:id/review`. STRICT: kolom lain (mis. `status`, `commentStatus`) ditolak, bukan diabaikan,
+ * sehingga tidak ada jalur bagi klien (termasuk booth) untuk mengubah status moderasi (B25 pengujian 1).
+ */
+export const reviewRequestSchema = reviewInputSchema
+  .extend({ turnstileToken: z.string().max(2048).optional() })
+  .strict();
+export type ReviewRequest = z.infer<typeof reviewRequestSchema>;
+
+// ---------- Login reviewer (A6, B7) ----------
+
+const turnstileToken = z.string().max(2048).optional();
+const displayName = z
+  .string()
+  .trim()
+  .max(30)
+  .nullish()
+  .transform((v) => (v ? v : null));
+
+export const googleLoginSchema = z
+  .object({ credential: z.string().min(20).max(4096), turnstileToken })
+  .strict();
+export const otpRequestSchema = z.object({ email: emailSchema, turnstileToken }).strict();
+export const otpVerifySchema = z
+  .object({ email: emailSchema, code: z.string().regex(/^\d{6}$/), displayName })
+  .strict();
+export const ticketLoginSchema = z
+  .object({ code: z.string().trim().min(4).max(64), displayName })
+  .strict();
+export const anonymousLoginSchema = z.object({ turnstileToken, displayName }).strict();
+
+// ---------- Laporan dan moderasi (A15, B25) ----------
+
+export const REPORT_REASONS = ["profanity", "hate", "personal_data", "spam", "other"] as const;
+export const reportReasonSchema = z.enum(REPORT_REASONS);
+export const reportRequestSchema = z
+  .object({ reason: reportReasonSchema, note: optionalText(200), turnstileToken })
+  .strict();
+
+export const COMMENT_STATUS_VALUES = ["visible", "masked", "held", "hidden"] as const;
+const adminReason = z.string().trim().min(CONFIG.registration.adminReasonMinLength).max(500);
+
+export const adminCommentStatusSchema = z
+  .object({
+    commentStatus: z.enum(COMMENT_STATUS_VALUES),
+    /** Kunci komentar yang dipulihkan agar laporan berikutnya tidak memunculkannya lagi di antrean */
+    lock: z.boolean().optional(),
+    reason: adminReason,
+  })
+  .strict();
+
+export const adminReviewPatchSchema = z
+  .object({
+    stars: z.int().min(1).max(5).optional(),
+    comment: optionalText(CONFIG.review.maxCommentLength).optional(),
+    status: z.enum(["visible", "held", "hidden"]).optional(),
+    reason: adminReason,
+  })
+  .strict();
+
+export const adminReasonOnlySchema = z.object({ reason: adminReason }).strict();
+
+export const reportDecisionSchema = z
+  .object({
+    decision: z.enum(["upheld", "dismissed"]),
+    action: z.enum(["none", "hide_comment", "hide_review", "restore"]).default("none"),
+    lock: z.boolean().optional(),
+    reason: adminReason,
+  })
+  .strict();
+
+export const moderationTermSchema = z
+  .object({
+    term: z.string().trim().min(2).max(40),
+    lang: z.enum(["id", "en", "regional"]).default("id"),
+    severity: z.enum(["severe", "mild"]),
+    kind: z.enum(["block", "allow"]).default("block"),
+    match: z.enum(["word", "contains"]).default("word"),
+    enabled: z.boolean().default(true),
+  })
+  .strict();
+export const moderationTermsPutSchema = z
+  .object({ terms: z.array(moderationTermSchema).max(2000), reason: adminReason })
+  .strict();
+export const moderationTestSchema = z
+  .object({ text: z.string().max(CONFIG.review.maxCommentLength * 2) })
+  .strict();
+
+export const visitorBlockSchema = z.object({ blocked: z.boolean(), reason: adminReason }).strict();
+
 // ---------- Pengaturan event ----------
 
 export const eventSettingsSchema = z.object({

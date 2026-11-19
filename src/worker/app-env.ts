@@ -1,5 +1,5 @@
 import type { Context } from "hono";
-import type { EventRow } from "./db/schema";
+import type { EventRow, VisitorRow } from "./db/schema";
 
 export type AppEnv = {
   Bindings: Env;
@@ -11,6 +11,8 @@ export type AppEnv = {
     event: EventRow | null;
     /** Admin yang sudah lolos requireAdmin (hanya ada di /api/admin/*). */
     admin: { email: string };
+    /** Pengunjung dari cookie sesi (null = belum masuk). Diisi oleh loadVisitor di rute pengunjung. */
+    visitor: VisitorRow | null;
   };
 };
 
