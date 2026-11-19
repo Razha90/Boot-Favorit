@@ -40,7 +40,7 @@ export function Component() {
         {snapshot.data && !published && (
           <EmptyState
             title={copy.results.notYet}
-            body={state.frozen ? copy.results.ended : copy.event.rate.liveSoon}
+            body={state.frozen ? copy.results.ended : copy.results.votingOpen}
           />
         )}
         {published && results.isLoading && <Skeleton className="h-64 w-full" />}

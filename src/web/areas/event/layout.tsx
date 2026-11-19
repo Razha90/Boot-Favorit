@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Outlet } from "react-router";
+import { Outlet, useLocation } from "react-router";
 import { EventBoundary } from "../../features/EventBoundary";
 import { useEventData, useSnapshotQuery } from "../../features/event-data";
 import { ClickFx } from "../../features/fx/ClickFx";
@@ -32,11 +32,12 @@ export function Component() {
 
 function Page() {
   const { event } = useEventData();
+  const { pathname } = useLocation();
   const snapshot = useSnapshotQuery(event, { poll: false });
-  // Judul tab = nama resmi acara (cadangan di sisi klien; Worker menyisipkan meta untuk pratinjau tautan).
+  // Judul tab = nama resmi acara saat di beranda/hasil (halaman booth mengisinya sendiri).
   useEffect(() => {
-    document.title = event.name;
-  }, [event.name]);
+    if (!pathname.startsWith("/b/")) document.title = event.name;
+  }, [event.name, pathname]);
   return (
     <SoundProvider>
       <ClickFx />

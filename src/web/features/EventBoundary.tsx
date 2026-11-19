@@ -37,7 +37,7 @@ function Gate({
     if (q.error || !q.data) {
       content = <ErrorState onRetry={() => void q.refetch()} />;
     } else if (!q.data.event) {
-      content = <>{comingSoon}</>; // A0: belum ada event aktif / disembunyikan
+      content = comingSoon; // A0: belum ada event aktif / disembunyikan
     } else {
       const event = q.data.event;
       const inner = (

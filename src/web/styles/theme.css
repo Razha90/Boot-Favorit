@@ -861,16 +861,14 @@
 @keyframes content-enter {
   from {
     opacity: 0;
-    transform: translate3d(0, 8px, 0);
   }
   to {
     opacity: 1;
-    transform: translate3d(0, 0, 0);
   }
 }
 .content-enter {
   @media (prefers-reduced-motion: no-preference) {
-    animation: content-enter 320ms var(--ease-glide) both;
+    animation: content-enter 280ms var(--ease-glide);
   }
 }
 

@@ -3,7 +3,12 @@
   "main": "src/worker/index.ts",
   "compatibility_date": "2026-11-01",
   // Domain utama produksi di Cloudflare Workers Custom Domains (explore.md A0).
-  "routes": [{ "pattern": "eventunimed.id", "custom_domain": true }],
+  "routes": [
+    {
+      "pattern": "eventunimed.id",
+      "custom_domain": true
+    }
+  ],
   "assets": {
     // Binding agar Worker bisa mengambil index.html dan menyisipkan meta tag pratinjau tautan (B20).
     "binding": "ASSETS",
@@ -30,22 +35,60 @@
     ]
   },
   // LiveHub (B8): satu DO per event untuk siaran WebSocket berbatch. Hanya klien yang butuh live yang menyambung.
-  "durable_objects": { "bindings": [{ "name": "LIVE_HUB", "class_name": "LiveHub" }] },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["LiveHub"] }],
-  "vars": { "APP_ENV": "development" },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "LIVE_HUB",
+        "class_name": "LiveHub"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["LiveHub"]
+    }
+  ],
+  "vars": {
+    "APP_ENV": "production",
+    "MEDIA_BASE_URL": "https://media.eventunimed.id",
+    "EMAIL_FROM": "LPPM Expo UNIMED <noreply@mail.eventunimed.id>"
+  },
   // Database utama (B6). Migrasi SQL dihasilkan drizzle-kit ke ./drizzle:
   //   lokal:  npx wrangler d1 migrations apply booth-favorit --local
   //   produksi: database_id diisi saat database dibuat (npx wrangler d1 create booth-favorit)
   "d1_databases": [
-    { "binding": "DB", "database_name": "booth-favorit", "migrations_dir": "drizzle" }
+    {
+      "binding": "DB",
+      "database_name": "booth-favorit",
+      "database_id": "92019fa4-61ed-4222-9c28-a90c6520864b",
+      "migrations_dir": "drizzle"
+    }
   ],
   // Gambar booth/produk/event (WebP hasil konversi di client, B15). Disajikan dari media.eventunimed.id.
-  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "booth-media" }],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "booth-media"
+    }
+  ],
   // Log aktivitas yang tampil di admin (B13): tanpa tabel D1.
-  "analytics_engine_datasets": [{ "binding": "LOG", "dataset": "booth_favorit_logs" }],
+  "analytics_engine_datasets": [
+    {
+      "binding": "LOG",
+      "dataset": "booth_favorit_logs"
+    }
+  ],
   // Pengiriman email native via Cloudflare Email Sending (tab Workers). Alamat pengirim memakai EMAIL_FROM.
-  "send_email": [{ "name": "EMAIL" }],
-  "observability": { "enabled": true, "head_sampling_rate": 1 }
+  "send_email": [
+    {
+      "name": "EMAIL"
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
   // Durable Object LIVE_HUB ditambahkan di Tahap 7 (B8); cron dan rahasia (kunci Turnstile, email, HMAC)
   // lewat `wrangler secret`, tidak di berkas ini.
 }

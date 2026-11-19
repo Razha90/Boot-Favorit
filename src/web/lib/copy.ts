@@ -297,6 +297,7 @@ export const copy = {
     tags: "Sering disebut",
     empty: "Belum ada booth yang tayang.",
     notYet: "Hasil segera diumumkan.",
+    votingOpen: "Voting masih berlangsung. Hasil akhir diumumkan panitia setelah acara selesai.",
     replay: "Putar ulang animasi pemenang",
     autoplayOn: "Putar otomatis saat dibuka: Nyala",
     autoplayOff: "Putar otomatis saat dibuka: Mati",

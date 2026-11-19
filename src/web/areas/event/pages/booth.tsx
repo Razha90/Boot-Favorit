@@ -180,7 +180,7 @@ function BoothView({ booth }: { booth: PublicBoothDetail }) {
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-start">
-        <div className="grid gap-6">
+        <div className="order-2 grid gap-6 lg:order-1 lg:col-start-1">
           <Present when={featured}>
             {featured && (
               <div id="andalan" className="scroll-mt-24">
@@ -245,7 +245,7 @@ function BoothView({ booth }: { booth: PublicBoothDetail }) {
           </Card>
         </div>
 
-        <aside className="lg:sticky lg:top-6">
+        <aside className="order-1 lg:order-2 lg:col-start-2 lg:sticky lg:top-6">
           <RatePanel id="nilai">
             <ReviewFlow booth={booth} />
           </RatePanel>

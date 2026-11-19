@@ -45,7 +45,7 @@ export function BackButton({ children }: { children: ReactNode }) {
   return (
     <Link
       to="/"
-      className="group inline-flex items-center gap-2 rounded-chip border-(length:--border-w) border-line bg-surface-raised px-4 py-2 text-sm font-bold shadow-card transition-transform active:translate-y-px active:shadow-press"
+      className="group inline-flex w-fit items-center gap-2 rounded-chip border-(length:--border-w) border-line bg-surface-raised px-4 py-2 text-sm font-bold shadow-card transition-transform active:translate-y-px active:shadow-press"
     >
       <span
         aria-hidden="true"

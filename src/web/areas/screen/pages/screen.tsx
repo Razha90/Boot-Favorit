@@ -261,7 +261,7 @@ function ScreenView() {
             aria-hidden="true"
             className="grid size-9 shrink-0 place-items-center rounded-full border-2 border-line bg-primary text-primary-fg"
           >
-            <svg viewBox="0 0 24 24" className="size-5 fill-current">
+            <svg viewBox="0 0 24 24" aria-hidden="true" className="size-5 fill-current">
               <path d="m12 2 2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l7.1-1.01z" />
             </svg>
           </span>

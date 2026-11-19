@@ -1,4 +1,5 @@
 # Salin ke .dev.vars untuk pengembangan lokal (tidak di-commit)
+APP_ENV=development
 DEV_ADMIN_EMAIL=admin@localhost.test
 
 # Penilaian pengunjung (Tahap 6). Semua OPSIONAL di dev lokal:

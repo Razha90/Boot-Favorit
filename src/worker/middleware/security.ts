@@ -39,11 +39,11 @@ export function buildCsp(env: Pick<Env, "APP_ENV" | "MEDIA_BASE_URL">): string {
   const wsProto = env.APP_ENV === "development" ? " ws: wss:" : " wss:";
   return [
     "default-src 'self'",
-    `script-src 'self'${devScript} https://challenges.cloudflare.com https://accounts.google.com/gsi/client`,
+    `script-src 'self'${devScript} https://challenges.cloudflare.com https://accounts.google.com/gsi/client https://static.cloudflareinsights.com`,
     "style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style",
     `img-src ${imgSrc}`,
     "font-src 'self'",
-    `connect-src 'self'${wsProto} https://challenges.cloudflare.com https://accounts.google.com`,
+    `connect-src 'self'${wsProto} https://challenges.cloudflare.com https://accounts.google.com https://cloudflareinsights.com`,
     "frame-src https://challenges.cloudflare.com https://accounts.google.com",
     "object-src 'none'",
     "base-uri 'self'",
