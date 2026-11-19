@@ -481,17 +481,6 @@
     animation: fx-star-pop 360ms var(--ease-pop) both;
   }
 }
-.fx-marquee-track {
-  display: flex;
-  width: max-content;
-  @media (prefers-reduced-motion: no-preference) {
-    animation: fx-marquee 32s linear infinite;
-  }
-}
-.fx-marquee-paused .fx-marquee-track,
-.fx-marquee:hover .fx-marquee-track {
-  animation-play-state: paused;
-}
 .animate-feed-in {
   @media (prefers-reduced-motion: no-preference) {
     animation: fx-feed-in var(--motion-base) var(--ease-glide) both;
@@ -763,6 +752,128 @@
   background: var(--surface);
 }
 
+/* Kanvas Layar Besar (proyektor panggung): bidang gelap bersih bergaris arsitektural tipis tanpa kabut AI. */
+@keyframes screen-panel-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+@keyframes screen-card-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+@keyframes screen-flare-in {
+  0% {
+    opacity: 0;
+    transform: translate3d(18px, 0, 0) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+@keyframes screen-bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes screen-live-ring {
+  0% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.2);
+  }
+}
+.screen-stage {
+  background:
+    linear-gradient(color-mix(in oklab, var(--text) 6%, transparent) 1px, transparent 1px) 0 0 /
+    36px 36px,
+    linear-gradient(90deg, color-mix(in oklab, var(--text) 6%, transparent) 1px, transparent 1px) 0
+    0 / 36px 36px,
+    var(--surface);
+}
+.screen-panel-in {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: screen-panel-in 380ms var(--ease-glide) both;
+  }
+}
+.screen-card-in {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: screen-card-in 420ms var(--ease-glide) both;
+  }
+}
+.screen-flare-in {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: screen-flare-in 360ms var(--ease-pop) both;
+  }
+}
+.screen-bar-grow {
+  transform-origin: left center;
+  @media (prefers-reduced-motion: no-preference) {
+    animation: screen-bar-grow 640ms var(--ease-glide) both;
+  }
+}
+.screen-live-ring {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: screen-live-ring 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+.skeleton-shimmer {
+  background: var(--surface-tint);
+  @media (prefers-reduced-motion: no-preference) {
+    background: linear-gradient(
+      110deg,
+      var(--surface-tint) 25%,
+      color-mix(in oklab, var(--surface-raised) 78%, var(--surface-tint)) 45%,
+      var(--surface-tint) 65%
+    );
+    background-size: 220% 100%;
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  }
+}
+
+@keyframes content-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+.content-enter {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: content-enter 320ms var(--ease-glide) both;
+  }
+}
+
 /* 6) DASAR HALAMAN */
 @layer base {
   html {
@@ -787,5 +898,18 @@
     *::after {
       transition-duration: 0.01ms !important;
     }
+  }
+}
+
+/* ---- Lapisan cetak poster QR (B29): hanya poster yang tercetak, bukan seluruh halaman ---- */
+.poster-print-root {
+  display: none;
+}
+@media print {
+  body.poster-printing > #root {
+    display: none !important;
+  }
+  body.poster-printing > .poster-print-root {
+    display: block;
   }
 }

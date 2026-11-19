@@ -22,9 +22,9 @@ interface Env {
   TURNSTILE_SITE_KEY?: string;
   /** OAuth client id Google Identity Services (publik). Kosong = tombol Google tidak tampil. */
   GOOGLE_CLIENT_ID?: string;
-  /** Kunci API penyedia email (Resend). Bersama EMAIL_FROM mengaktifkan pengiriman OTP dan notifikasi booth. */
+  /** Kunci API penyedia cadangan (Resend). Opsional bila memakai binding native Cloudflare Email Sending (`EMAIL`). */
   RESEND_API_KEY?: string;
-  /** Alamat pengirim yang sudah diverifikasi di penyedia email, mis. "Booth Favorit <no-reply@eventunimed.id>". */
+  /** Alamat pengirim terverifikasi di Email Sending / penyedia email, mis. "LPPM Expo UNIMED <noreply@mail.eventunimed.id>". */
   EMAIL_FROM?: string;
   /** Account id Cloudflare untuk membaca log aktivitas (Analytics Engine SQL API). Opsional: tanpanya halaman Log kosong. */
   CF_ACCOUNT_ID?: string;

@@ -6,19 +6,21 @@ import { useAreaTheme } from "../../lib/use-area-theme";
 
 function Waiting() {
   return (
-    <main className="grid min-h-dvh place-items-center p-8 text-center">
-      <p className="text-4xl text-muted">{copy.screen.waiting}</p>
+    <main className="screen-stage grid min-h-dvh place-items-center p-8 text-center">
+      <div className="screen-panel-in grid gap-3 border-l-4 border-primary pl-6 text-left">
+        <p className="font-display text-4xl font-extrabold text-text">{copy.screen.waiting}</p>
+      </div>
     </main>
   );
 }
 
-// Layar besar untuk proyektor: tanpa navigasi, tema gelap "panggung" (A8).
+// Layar besar untuk proyektor/monitor besar: tanpa navigasi, tema cerah "kertas" gaya seru UNIMED.
 export function Component() {
-  useAreaTheme("pro", "panggung");
+  useAreaTheme("seru", "kertas");
   return (
     <SoundProvider>
       <EventBoundary comingSoon={<Waiting />}>
-        <div className="min-h-dvh">
+        <div className="screen-stage min-h-dvh">
           <Outlet />
         </div>
       </EventBoundary>

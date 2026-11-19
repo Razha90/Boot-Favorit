@@ -24,6 +24,7 @@ const REVIEW = (over: Partial<AdminReview> = {}): AdminReview => ({
   id: "r1",
   boothId: "b1",
   boothName: "Kopi Rempah",
+  anonymous: false,
   visitorId: "v1",
   displayName: "Budi",
   stars: 1,

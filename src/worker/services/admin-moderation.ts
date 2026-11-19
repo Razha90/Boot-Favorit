@@ -47,6 +47,7 @@ const toAdminReview = ({ r, boothName, displayName }: ReviewJoin): AdminReview =
   boothName: boothName ?? "",
   visitorId: r.visitorId,
   displayName,
+  anonymous: r.anonymous === 1,
   stars: r.stars,
   comment: r.comment,
   commentStatus: r.commentStatus,

@@ -6,7 +6,7 @@ import { act, cleanup } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { BOOTH_NAMES, BOOTHS, PRODUCTS, REVIEWS } from "../../dev/fixtures";
 import { assertNoBrokenUI, failAllImages } from "../../test/assertions";
-import { isEmpty, makeEvent, renderEvent, SCHEDULE } from "../../test/render";
+import { isEmpty, makeEvent, photoImgs, renderEvent, SCHEDULE } from "../../test/render";
 import { AboutText } from "./components/booth-parts";
 import { SiteFooter } from "./components/chrome";
 import { Hero } from "./components/Hero";
@@ -161,7 +161,7 @@ describe("ReviewItem × setiap fixture ulasan", () => {
     it(`ulasan · ${name}`, async () => {
       const { container } = renderEvent(<ReviewItem review={REVIEWS[name]} onReport={() => {}} />);
       await assertCleanThroughFailure(container, `ulasan/${name}`);
-      expect(container.querySelector("img")).toBeNull();
+      expect(photoImgs(container)).toHaveLength(0);
     });
   }
 
@@ -183,7 +183,7 @@ describe("ReviewForm dan ThankYou × data kosong", () => {
     const { container } = renderEvent(
       <ReviewForm
         categories={[{ id: "c1", label: "Seru" }]}
-        initial={{ boothId: "b", stars: 3, comment: null, categoryIds: [] }}
+        initial={{ boothId: "b", stars: 3, comment: null, categoryIds: [], anonymous: false }}
         submit={noop}
       />,
     );
@@ -195,7 +195,7 @@ describe("ReviewForm dan ThankYou × data kosong", () => {
     const { container } = renderEvent(
       <ThankYou
         result={{
-          review: { boothId: "b", stars: 5, comment: null, categoryIds: [] },
+          review: { boothId: "b", stars: 5, comment: null, categoryIds: [], anonymous: false },
           created: true,
           commentHeld: false,
           progress: { reviewed: 0, total: 0 },

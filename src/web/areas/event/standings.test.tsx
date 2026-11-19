@@ -9,7 +9,7 @@ import type {
 } from "@shared/api-types";
 import type { EventSchedule } from "@shared/event-state";
 import type { ResultEntry } from "@shared/results";
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BOOTHS, sampleResolver } from "../../dev/fixtures";
@@ -223,10 +223,14 @@ describe("Bagian 03: peringkat dan ulasan terbaru (selama event)", () => {
     expect(container.querySelector("section[aria-labelledby='peringkat']")).toBeNull();
   });
 
-  it("masthead: 'N ulasan · M booth · rata-rata X'", async () => {
+  it("pita statistik di bawah hero: booth, ulasan, dan rata-rata", async () => {
     serve({ schedule: sched("live"), snapshot: {} });
     mount();
-    expect(await screen.findByText("24 ulasan · 2 booth · rata-rata 4,43")).toBeTruthy();
+    const region = await screen.findByRole("region", { name: copy.event.statsBand.label });
+    const band = within(region);
+    expect(band.getByText("24")).toBeTruthy();
+    expect(band.getByText("2")).toBeTruthy();
+    expect(band.getByText("4,43")).toBeTruthy();
   });
 });
 
@@ -250,7 +254,10 @@ describe("setelah event selesai", () => {
     expect(container.querySelector("section[aria-labelledby='peringkat']")?.textContent).toContain(
       "Juara 1",
     );
-    expect(screen.getByText(copy.event.hero.stats(24, 2, 4.43))).toBeTruthy();
+    const band = within(screen.getByRole("region", { name: copy.event.statsBand.label }));
+    expect(band.getByText("24")).toBeTruthy(); // ulasan masuk
+    expect(band.getByText("2")).toBeTruthy(); // booth ikut serta
+    expect(band.getByText("4,43")).toBeTruthy(); // rata-rata bintang
   });
 
   it("muat ulang memutar lagi (tidak ada 'sudah dilihat'); 'Putar ulang animasi pemenang' memutar manual", async () => {

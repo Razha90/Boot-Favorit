@@ -6,7 +6,7 @@ import { Link, useParams, useSearchParams } from "react-router";
 import { ActionButton } from "../../../components/ui/ActionButton";
 import { Button } from "../../../components/ui/Button";
 import { Card } from "../../../components/ui/Card";
-import { Field, Input, Select } from "../../../components/ui/Form";
+import { Field, Input } from "../../../components/ui/Form";
 import { Icon, type IconName } from "../../../components/ui/Icon";
 import { QueryState } from "../../../components/ui/states";
 import { cn } from "../../../lib/cn";
@@ -70,7 +70,6 @@ function EventEditor({ event }: { event: AdminEventView }) {
   const [highlight, setHighlight] = useState(event.titleHighlight ?? "");
   const [maxProducts, setMaxProducts] = useState(String(event.settings.maxProducts ?? ""));
   const [allowLate, setAllowLate] = useState(event.settings.allowLateRegistration ?? true);
-  const [authMode, setAuthMode] = useState(event.settings.reviewerAuthMode ?? "google_or_email");
   const [schedule, setSchedule] = useState<ScheduleValues>({
     open: event.schedule.registrationOpenAt
       ? epochToZonedLocal(event.schedule.registrationOpenAt, event.timezone)
@@ -371,30 +370,14 @@ function EventEditor({ event }: { event: AdminEventView }) {
                 />
                 {E.allowLate}
               </label>
-              <Field label={E.authMode} hint={E.authModeHint}>
-                {(fid) => (
-                  <Select
-                    id={fid}
-                    value={authMode}
-                    onChange={(e) => setAuthMode(e.target.value as typeof authMode)}
-                  >
-                    {(["google_or_email", "ticket_code", "open_turnstile"] as const).map((m) => (
-                      <option key={m} value={m}>
-                        {E.authModes[m]}
-                      </option>
-                    ))}
-                  </Select>
-                )}
-              </Field>
             </div>
             <div>
               <ActionButton
                 variant="primary"
-                resetOn={`${maxProducts}|${allowLate}|${authMode}`}
+                resetOn={`${maxProducts}|${allowLate}`}
                 action={async () => {
                   const settings: Record<string, unknown> = {
                     allowLateRegistration: allowLate,
-                    reviewerAuthMode: authMode,
                   };
                   if (maxProducts !== "") settings.maxProducts = Number(maxProducts);
                   await adminApi.updateEvent(event.id, { settings });

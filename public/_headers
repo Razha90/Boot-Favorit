@@ -4,3 +4,21 @@
   X-Frame-Options: DENY
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style; img-src 'self' data: blob: https://media.eventunimed.id; font-src 'self'; connect-src 'self' wss: https://challenges.cloudflare.com https://accounts.google.com; frame-src https://challenges.cloudflare.com https://accounts.google.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'
+
+# Area pengelola dan layar tampilan tidak untuk hasil pencarian (B27)
+/admin
+  X-Robots-Tag: noindex, nofollow
+/admin/*
+  X-Robots-Tag: noindex, nofollow
+/booth
+  X-Robots-Tag: noindex, nofollow
+/booth/*
+  X-Robots-Tag: noindex, nofollow
+/screen
+  X-Robots-Tag: noindex, nofollow
+
+# Aset statis bernama tetap (tanpa hash): cache sehari agar perubahan desain cepat terlihat
+/art/*
+  Cache-Control: public, max-age=86400
+/og/*
+  Cache-Control: public, max-age=86400

@@ -54,12 +54,18 @@ export function ReviewsCard({ timezone }: { timezone: string }) {
                     {formatDateTime(r.createdAt, timezone)}
                   </span>
                 </div>
-                <p className="text-sm [overflow-wrap:anywhere]">{r.text}</p>
-                <div>
-                  <Button size="sm" onClick={() => setReporting(r)}>
-                    {t.report}
-                  </Button>
-                </div>
+                {r.text ? (
+                  <p className="text-sm [overflow-wrap:anywhere]">{r.text}</p>
+                ) : (
+                  <p className="text-sm text-muted">{copy.event.reviews.starsOnly}</p>
+                )}
+                {r.text && (
+                  <div>
+                    <Button size="sm" onClick={() => setReporting(r)}>
+                      {t.report}
+                    </Button>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -96,7 +102,7 @@ function ReportDialog({
   const [busy, setBusy] = useState(false);
   return (
     <Modal open={review !== null} onClose={onClose} title={t.reportTitle} locked={busy}>
-      {review && <p className="text-sm [overflow-wrap:anywhere]">“{review.text}”</p>}
+      {review?.text && <p className="text-sm [overflow-wrap:anywhere]">“{review.text}”</p>}
       <Field label={t.reportReason}>
         {(id) => (
           <Select id={id} value={reason} onChange={(e) => setReason(e.target.value)}>

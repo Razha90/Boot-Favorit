@@ -39,6 +39,8 @@ export const CONFIG = {
     maxPriceIdr: 99_999_999, // rupiah bulat, 0 = Gratis
     productBadges: ["limited", "new"], // sengaja tanpa "terlaris"/"favorit" karena menggiring
     wishlistMax: 50,
+    /** Booth yang boleh disematkan satu pengunjung (lokal di peramban) */
+    pinsMax: 30,
   },
   gallery: {
     intervalMs: 3500,

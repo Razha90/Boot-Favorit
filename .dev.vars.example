@@ -11,10 +11,11 @@ DEV_ADMIN_EMAIL=admin@localhost.test
 # TURNSTILE_SITE_KEY=
 # GOOGLE_CLIENT_ID=
 
-# Email (Tahap 8): OTP booth/pengunjung dan notifikasi persetujuan. Tanpa keduanya, di dev kode OTP dikembalikan
-# sebagai `devCode` dan notifikasi dilewati; di produksi permintaan GAGAL (tidak diam-diam "terkirim").
-# RESEND_API_KEY=
-# EMAIL_FROM=
+# Email (Tahap 8): OTP booth/pengunjung dan notifikasi persetujuan.
+# Jalur utama memakai binding Cloudflare Email Sending (`EMAIL` di wrangler.jsonc) + EMAIL_FROM (mis. noreply@mail.eventunimed.id).
+# Tanpa EMAIL_FROM, di dev kode OTP dikembalikan sebagai `devCode` dan notifikasi dilewati; di produksi permintaan GAGAL.
+# RESEND_API_KEY= # Opsional hanya bila memakai Resend sebagai cadangan
+# EMAIL_FROM=LPPM Expo UNIMED <noreply@mail.eventunimed.id>
 
 # Log aktivitas di admin (Tahap 9): baca dari Analytics Engine lewat SQL API. Tanpa keduanya halaman Log menampilkan
 # penjelasan (AE tidak tersedia di dev lokal). Token HARUS read-only (Account Analytics: Read).

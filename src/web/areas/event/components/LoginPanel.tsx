@@ -1,7 +1,6 @@
 import type { VisitorMe } from "@shared/api-types";
-import { useRef, useState } from "react";
-import { ActionButton, describeError } from "../../../components/ui/ActionButton";
-import { Field, Input } from "../../../components/ui/Form";
+import { useRef } from "react";
+import { describeError } from "../../../components/ui/ActionButton";
 import { copy } from "../../../lib/copy";
 import { GoogleButton } from "../../../lib/google-signin";
 import type { TurnstileState } from "../../../lib/turnstile";
@@ -45,55 +44,7 @@ function GoogleLogin({
   );
 }
 
-function SimpleLogin({
-  mode,
-  turnstile,
-  onLoggedIn,
-}: {
-  mode: "ticket_code" | "open_turnstile";
-  turnstile: TurnstileState;
-  onLoggedIn: () => void;
-}) {
-  const [code, setCode] = useState("");
-  const [name, setName] = useState("");
-  const humanReady = !turnstile.required || !!turnstile.token;
-  const ticket = mode === "ticket_code";
-  return (
-    <div className="grid gap-3">
-      {ticket && (
-        <Field label={copy.event.login.ticket} hint={copy.event.login.ticketHint}>
-          {(id) => <Input id={id} value={code} onChange={(e) => setCode(e.target.value)} />}
-        </Field>
-      )}
-      <Field label={copy.event.login.name} info={copy.event.login.nameInfo}>
-        {(id) => (
-          <Input
-            id={id}
-            maxLength={30}
-            placeholder={copy.event.login.anonymousName}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-        )}
-      </Field>
-      <ActionButton
-        variant="primary"
-        disabled={ticket ? code.trim().length < 4 : !humanReady}
-        resetOn={`${code}|${name}`}
-        action={async () => {
-          if (ticket) await visitorApi.ticket(code.trim(), name.trim());
-          else await visitorApi.anonymous(name.trim(), turnstile.token);
-          turnstile.reset();
-          onLoggedIn();
-        }}
-      >
-        {ticket ? copy.event.login.verify : copy.event.login.anonymous}
-      </ActionButton>
-    </div>
-  );
-}
-
-/** Masuk sekali per event; bentuknya mengikuti `reviewerAuthMode` event (A6). */
+/** Masuk dengan email terverifikasi (kode OTP) atau Google. Tidak ada login anonim dan tidak ada keluar (A6). */
 export function LoginPanel({
   me,
   turnstile,
@@ -107,28 +58,15 @@ export function LoginPanel({
     <div className="grid gap-4">
       <div className="grid gap-1 rounded-card bg-surface-tint px-3.5 py-2.5">
         <h3 className="font-display text-base font-extrabold">{copy.event.login.title}</h3>
-        <p className="text-xs leading-relaxed text-muted">
-          {copy.event.login.why}
-          {me.authMode === "open_turnstile" ? ` ${copy.event.login.anonymousHint}` : ""}
-        </p>
+        <p className="text-xs leading-relaxed text-muted">{copy.event.login.why}</p>
       </div>
-      {me.authMode === "google_or_email" ? (
+      {me.googleClientId && (
         <>
-          {me.googleClientId && (
-            <>
-              <GoogleLogin
-                clientId={me.googleClientId}
-                turnstile={turnstile}
-                onLoggedIn={onLoggedIn}
-              />
-              <p className="text-center text-xs text-muted">{copy.event.login.or}</p>
-            </>
-          )}
-          <EmailLogin turnstile={turnstile} onLoggedIn={onLoggedIn} />
+          <GoogleLogin clientId={me.googleClientId} turnstile={turnstile} onLoggedIn={onLoggedIn} />
+          <p className="text-center text-xs text-muted">{copy.event.login.or}</p>
         </>
-      ) : (
-        <SimpleLogin mode={me.authMode} turnstile={turnstile} onLoggedIn={onLoggedIn} />
       )}
+      <EmailLogin turnstile={turnstile} onLoggedIn={onLoggedIn} />
     </div>
   );
 }

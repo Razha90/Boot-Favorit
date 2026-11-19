@@ -3,6 +3,7 @@ import { gridVisualMode } from "@shared/visual";
 import { copy } from "../../lib/copy";
 import { EmptyState } from "../ui/states";
 import { BoothCard } from "./BoothCard";
+import { PinButton } from "./PinButton";
 
 /**
  * Grid "Semua booth". Mode tampilan diputuskan SEKALI untuk seluruh daftar (explore.md A16):
@@ -26,8 +27,13 @@ export function BoothGrid({
   return (
     <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-visual-mode={mode}>
       {booths.map((b) => (
-        <li key={b.id} className="grid">
+        <li key={b.id} className="relative grid">
           <BoothCard booth={b} variant="card" visualMode={mode} ratingsHidden={ratingsHidden} />
+          <PinButton
+            boothId={b.id}
+            boothName={b.name}
+            className="absolute right-2.5 bottom-2.5 z-20"
+          />
         </li>
       ))}
     </ul>

@@ -14,7 +14,11 @@ export function ReviewItem({ review, onReport }: { review: PublicReview; onRepor
         <strong className="[overflow-wrap:anywhere]">{review.displayName}</strong>
         {review.stars !== null && <RatingStars mode="display" value={review.stars} size="sm" />}
       </header>
-      <p className="whitespace-pre-line text-sm [overflow-wrap:anywhere]">{review.text}</p>
+      {review.text ? (
+        <p className="whitespace-pre-line text-sm [overflow-wrap:anywhere]">{review.text}</p>
+      ) : (
+        <p className="text-sm text-muted">{copy.event.reviews.starsOnly}</p>
+      )}
       {review.categories.length > 0 && (
         <ul className="flex flex-wrap gap-1.5">
           {review.categories.map((c) => (
@@ -24,7 +28,7 @@ export function ReviewItem({ review, onReport }: { review: PublicReview; onRepor
           ))}
         </ul>
       )}
-      {onReport && (
+      {onReport && review.text && (
         <Button size="sm" variant="ghost" className="w-fit" onClick={onReport}>
           {copy.event.reviews.report}
         </Button>

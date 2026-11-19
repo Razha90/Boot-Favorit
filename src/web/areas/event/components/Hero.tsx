@@ -10,6 +10,8 @@ import { cn } from "../../../lib/cn";
 import { copy } from "../../../lib/copy";
 import { countdownText, heroCopy, splitHighlight } from "../../../lib/hero-copy";
 import { useMediaUrl } from "../../../lib/media-url";
+import { HeroArt } from "./HeroArt";
+import { ShareButton } from "./share-wishlist";
 
 const TILTS = ["-rotate-3", "rotate-2", "-rotate-1"] as const;
 
@@ -114,24 +116,10 @@ export function Hero({ event, state, boothCount, serverNow, registrationVisible 
       id="top"
       data-hero-layout={hasCollage ? "collage" : "text"}
       className={cn(
-        "relative mx-auto grid max-w-6xl gap-8 overflow-x-clip px-4 pb-10 pt-8",
-        hasCollage && "lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-center",
+        "relative mx-auto grid max-w-7xl gap-8 overflow-x-clip px-4 pb-10 pt-8",
+        "lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] lg:items-center",
       )}
     >
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 48 48"
-        className="reveal-twinkle pointer-events-none absolute right-4 top-6 size-10 text-accent in-data-[vibe=pro]:hidden"
-      >
-        <path
-          d="M24 4 C25 16 32 23 44 24 C32 25 25 32 24 44 C23 32 16 25 4 24 C16 23 23 16 24 4Z"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
       <div className="grid content-center gap-5">
         <span className="flex flex-wrap items-center gap-3">
           <StatusPill live={c.live}>{c.badge}</StatusPill>
@@ -144,7 +132,7 @@ export function Hero({ event, state, boothCount, serverNow, registrationVisible 
           )}
         </span>
 
-        <h1 className="font-display text-5xl font-extrabold leading-[0.95] tracking-tight [overflow-wrap:anywhere] sm:text-6xl lg:text-7xl">
+        <h1 className="font-display text-5xl font-extrabold leading-[0.95] tracking-tight [overflow-wrap:anywhere] sm:text-6xl xl:text-7xl">
           {parts.map((p) =>
             p.hl ? (
               <mark key={p.text} className="rounded-card bg-primary px-2 text-primary-fg">
@@ -191,6 +179,7 @@ export function Hero({ event, state, boothCount, serverNow, registrationVisible 
               <Icon name="arrow-right" className="size-4" />
             </span>
           </a>
+          <ShareButton size="md" />
           {registrationVisible && (
             <span className="grid gap-0.5">
               <Link to="/register" className="text-sm font-bold underline underline-offset-4">
@@ -202,8 +191,11 @@ export function Hero({ event, state, boothCount, serverNow, registrationVisible 
         </div>
       </div>
 
-      {hasCollage && (
+      {hasCollage ? (
         <PolaroidCollage heroKeys={event.media.heroKeys} onEmpty={() => setCollageEmpty(true)} />
+      ) : (
+        // Tanpa foto suasana: kolase ilustrasi kartun makanan agar hero tidak kosong di sisi kanan.
+        <HeroArt seed={event.id} />
       )}
     </header>
   );

@@ -129,6 +129,8 @@ export interface PublicBooth {
   boothNo: string | null;
   tagline: string | null;
   description: string | null;
+  /** Institusi, fakultas, atau prodi asal booth; null bila kosong */
+  teamName: string | null;
   /** Kunci foto sampul ukuran kecil (kartu) dan penuh (sorotan); null = tanpa foto */
   coverThumbKey: string | null;
   coverKey: string | null;
@@ -259,15 +261,15 @@ export interface PublicEventResponse {
 // ---------- Review dan pengunjung (Tahap 6) ----------
 
 export type VisitorProvider = "google" | "email" | "ticket" | "anon";
-export type ReviewerAuthMode = "google_or_email" | "ticket_code" | "open_turnstile";
+export type ReviewerAuthMode = "google_or_email";
 
 /** Satu ulasan sebagaimana dilihat pengunjung lain. Komentar `held`/`hidden` TIDAK pernah ada di sini (B25). */
 export interface PublicReview {
   id: string;
   /** null bila rating disembunyikan admin */
   stars: number | null;
-  /** Teks komentar yang boleh tampil (disamarkan bila perlu) */
-  text: string;
+  /** Teks komentar yang boleh tampil (disamarkan bila perlu); null = hanya memberi bintang atau komentar tidak tampil */
+  text: string | null;
   displayName: string;
   categories: { id: string; label: string }[];
   createdAt: number;
@@ -301,6 +303,8 @@ export interface MyReview {
   stars: number;
   comment: string | null;
   categoryIds: string[];
+  /** Tampil anonim di ulasan publik */
+  anonymous: boolean;
 }
 
 /** Hasil kirim review. Pesan netral: tidak pernah memberi tahu bahwa review ditahan atau kata mana yang tertangkap. */
@@ -332,6 +336,8 @@ export interface AdminReview {
   boothName: string;
   visitorId: string;
   displayName: string | null;
+  /** Reviewer memilih anonim: admin tetap melihat akun; publik hanya melihat "Anonim" */
+  anonymous: boolean;
   stars: number;
   comment: string | null;
   commentStatus: CommentStatus;

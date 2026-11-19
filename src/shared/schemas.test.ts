@@ -17,7 +17,17 @@ describe("createBoothSchema (A16)", () => {
       email: null,
       tagline: null,
       description: null,
+      teamName: null,
     });
+  });
+
+  it("institusi/fakultas opsional: dirapikan, kosong menjadi null, dibatasi panjangnya", () => {
+    expect(createBoothSchema.parse({ name: "A", teamName: "  Fakultas Teknik " }).teamName).toBe(
+      "Fakultas Teknik",
+    );
+    expect(createBoothSchema.parse({ name: "A", teamName: "  " }).teamName).toBeNull();
+    const tooLong = "x".repeat(CONFIG.profile.teamNameMaxLength + 1);
+    expect(createBoothSchema.safeParse({ name: "A", teamName: tooLong }).success).toBe(false);
   });
 
   it("menolak nama kosong, spasi saja, atau terlalu panjang", () => {
@@ -105,20 +115,23 @@ describe("scheduleSchema (B17)", () => {
 });
 
 describe("reviewInputSchema (A5)", () => {
-  it("bintang wajib 1–5 bilangan bulat; komentar dan kategori opsional", () => {
+  it("hanya bintang yang wajib: komentar dan kategori opsional; bawaan tidak anonim", () => {
     expect(reviewInputSchema.parse({ stars: 5 })).toEqual({
       stars: 5,
       comment: null,
       categoryIds: [],
+      anonymous: false,
     });
     for (const stars of [0, 6, 3.5, "4"]) {
       expect(reviewInputSchema.safeParse({ stars }).success).toBe(false);
     }
   });
 
-  it("komentar: di-trim, kosong = null, maksimal 280 karakter", () => {
+  it("komentar opsional: di-trim, kosong/spasi/null = null, maksimal 280 karakter", () => {
     expect(reviewInputSchema.parse({ stars: 4, comment: "  bagus  " }).comment).toBe("bagus");
-    expect(reviewInputSchema.parse({ stars: 4, comment: "   " }).comment).toBeNull();
+    for (const comment of ["", "   ", null, undefined]) {
+      expect(reviewInputSchema.parse({ stars: 4, comment }).comment, String(comment)).toBeNull();
+    }
     const max = CONFIG.review.maxCommentLength;
     expect(reviewInputSchema.safeParse({ stars: 4, comment: "a".repeat(max) }).success).toBe(true);
     expect(reviewInputSchema.safeParse({ stars: 4, comment: "a".repeat(max + 1) }).success).toBe(
@@ -127,13 +140,14 @@ describe("reviewInputSchema (A5)", () => {
   });
 
   it("kategori: maksimal 3 dan tanpa duplikat", () => {
-    expect(reviewInputSchema.safeParse({ stars: 4, categoryIds: ["a", "b", "c"] }).success).toBe(
+    const base = { stars: 4 };
+    expect(reviewInputSchema.safeParse({ ...base, categoryIds: ["a", "b", "c"] }).success).toBe(
       true,
     );
     expect(
-      reviewInputSchema.safeParse({ stars: 4, categoryIds: ["a", "b", "c", "d"] }).success,
+      reviewInputSchema.safeParse({ ...base, categoryIds: ["a", "b", "c", "d"] }).success,
     ).toBe(false);
-    expect(reviewInputSchema.safeParse({ stars: 4, categoryIds: ["a", "a"] }).success).toBe(false);
+    expect(reviewInputSchema.safeParse({ ...base, categoryIds: ["a", "a"] }).success).toBe(false);
   });
 });
 

@@ -57,6 +57,10 @@ export async function upsertVisitor(
   return created;
 }
 
-/** Nama yang tampil di ulasan: nama depan/alias, tidak pernah email (A5). */
-export const publicName = (v: Pick<VisitorRow, "displayName">): string =>
-  v.displayName?.trim() || "Pengunjung";
+/** Nama pengganti bila reviewer memilih tampil anonim (nama dan akun tidak ditampilkan ke siapa pun selain admin). */
+export const ANONYMOUS_NAME = "Anonim";
+
+/** Nama yang tampil di ulasan: nama depan/alias, tidak pernah email (A5); `anonymous` → "Anonim". */
+export const publicName = (
+  v: Pick<VisitorRow, "displayName"> & { anonymous?: number | boolean | null },
+): string => (v.anonymous ? ANONYMOUS_NAME : v.displayName?.trim() || "Pengunjung");

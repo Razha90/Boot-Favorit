@@ -10,6 +10,22 @@ async function setup() {
 }
 
 describe("GET /api/snapshot", () => {
+  it("institusi/fakultas dari impor CSV tampil di snapshot publik; spasi/kosong menjadi null", async () => {
+    const { h, s } = await setup();
+    const imp = await h.call("POST", `${s.base}/import`, {
+      rows: [
+        { name: "Bakso Teknik", teamName: "  Fakultas Teknik " },
+        { name: "Teh Kosong", teamName: "   " },
+      ],
+    });
+    expect(imp.json).toMatchObject({ created: 2, errors: 0 });
+    const booths = (await h.call("GET", "/api/snapshot")).json.booths as Booth[];
+    expect(booths.find((b) => b.name === "Bakso Teknik")?.teamName).toBe("Fakultas Teknik");
+    expect(booths.find((b) => b.name === "Teh Kosong")?.teamName).toBeNull();
+    // booth lama yang diisi lewat profil juga ikut tampil di daftar
+    expect(booths.find((b) => b.name === "Kopi Rempah")?.teamName).toBe("Prodi Gizi");
+  });
+
   it("hanya booth tayang (approved); booth hanya-nama membawa null, bukan nilai pengganti", async () => {
     const { h } = await setup();
     const r = await h.call("GET", "/api/snapshot");
@@ -21,6 +37,7 @@ describe("GET /api/snapshot", () => {
       boothNo: null,
       tagline: null,
       description: null,
+      teamName: null,
       coverThumbKey: null,
       coverKey: null,
       ratingAverage: null,

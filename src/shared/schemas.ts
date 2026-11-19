@@ -35,7 +35,8 @@ export const idempotencyKeySchema = z.uuid();
 
 export const ratingsModeSchema = z.enum(["visible", "hidden", "on_results"]);
 export const rankingModeSchema = z.enum(["visible", "hidden", "on_results"]);
-export const reviewerAuthModeSchema = z.enum(["google_or_email", "ticket_code", "open_turnstile"]);
+// Hanya email terverifikasi. Nilai lama ("ticket_code", "open_turnstile") pada event yang sudah ada dibaca sebagai ini.
+export const reviewerAuthModeSchema = z.literal("google_or_email").catch("google_or_email");
 
 // ---------- Jadwal event (B17) ----------
 
@@ -162,7 +163,11 @@ const boothFields = {
 };
 
 /** Admin membuat booth: HANYA nama yang wajib. Booth langsung tayang. */
-export const createBoothSchema = z.object(boothFields);
+export const createBoothSchema = z.object({
+  ...boothFields,
+  /** Institusi, fakultas, atau prodi asal booth (opsional). Disimpan di kolom `team_name`. */
+  teamName: optionalText(CONFIG.profile.teamNameMaxLength),
+});
 export type CreateBoothInput = z.infer<typeof createBoothSchema>;
 
 /** Satu baris impor CSV: sama dengan membuat booth. */
@@ -277,12 +282,15 @@ export const orderedIdsSchema = z.object({ ids: z.array(z.string().min(1)).max(2
 
 export const reviewInputSchema = z.object({
   stars: z.int().min(1).max(5),
+  // Hanya bintang yang wajib; komentar opsional (kosong = null). Review tanpa komentar tetap tampil di daftar ulasan.
   comment: optionalText(CONFIG.review.maxCommentLength),
   categoryIds: z
     .array(z.string().min(1))
     .max(CONFIG.review.maxCategoriesPerReview)
     .refine((ids) => new Set(ids).size === ids.length, { message: "duplicate_category" })
     .default([]),
+  /** Tampil sebagai "Anonim" di ulasan publik; dapat diubah kapan saja selama voting (kirim ulang = edit) */
+  anonymous: z.boolean().default(false),
 });
 export type ReviewInput = z.infer<typeof reviewInputSchema>;
 
@@ -312,10 +320,6 @@ export const otpRequestSchema = z.object({ email: emailSchema, turnstileToken })
 export const otpVerifySchema = z
   .object({ email: emailSchema, code: z.string().regex(/^\d{6}$/), displayName })
   .strict();
-export const ticketLoginSchema = z
-  .object({ code: z.string().trim().min(4).max(64), displayName })
-  .strict();
-export const anonymousLoginSchema = z.object({ turnstileToken, displayName }).strict();
 
 // ---------- Laporan dan moderasi (A15, B25) ----------
 

@@ -1,22 +1,16 @@
-// Login dan sesi pengunjung (explore.md A6, B7, B9). Mode login diatur per event (`reviewerAuthMode`); rute yang tidak
-// sesuai mode ditolak 403. Turnstile pada tiap login. Sesi = cookie HttpOnly bertanda tangan, terikat ke event.
+// Login dan sesi pengunjung (explore.md A6, B7, B9). Pengunjung WAJIB memverifikasi email (kode OTP lewat email,
+// atau Google); tidak ada login anonim/kode tiket dan TIDAK ADA logout pengunjung (anti kecurangan: identitas =
+// HMAC email terverifikasi, jadi ganti akun berarti memerlukan email lain yang juga terverifikasi).
+// Turnstile pada tiap login. Sesi = cookie HttpOnly bertanda tangan, terikat ke event.
 
 import type { OtpRequestResult, ReviewerAuthMode, VisitorMe } from "@shared/api-types";
 import { ApiError } from "@shared/errors";
-import {
-  anonymousLoginSchema,
-  googleLoginSchema,
-  otpRequestSchema,
-  otpVerifySchema,
-  ticketLoginSchema,
-} from "@shared/schemas";
-import { and, eq } from "drizzle-orm";
+import { googleLoginSchema, otpRequestSchema, otpVerifySchema } from "@shared/schemas";
 import { Hono } from "hono";
 import type { AppContext, AppEnv } from "../app-env";
-import { type EventRow, ticketCodes } from "../db/schema";
+import type { EventRow } from "../db/schema";
 import { getDb } from "../lib/db";
 import { deliver, type EmailSender } from "../lib/email";
-import { readEventSettings } from "../lib/event";
 import {
   fetchGoogleKeys,
   firstName,
@@ -24,9 +18,9 @@ import {
   verifyGoogleCredential,
 } from "../lib/google";
 import { parseBody, serviceDeps } from "../lib/http";
-import { anonIdentity, emailIdentity, sessionSecret, ticketIdentity } from "../lib/identity";
+import { emailIdentity, sessionSecret } from "../lib/identity";
 import { logEvent } from "../lib/logger";
-import { clearVisitorCookie, setVisitorCookie, signVisitorToken } from "../lib/session";
+import { setVisitorCookie, signVisitorToken } from "../lib/session";
 import { assertHuman, isLocalDev, type TurnstileVerifier } from "../lib/turnstile";
 import { requireEvent } from "../middleware/event-gate";
 import { rateLimit } from "../middleware/rate-limit";
@@ -42,13 +36,12 @@ export interface VisitorDeps {
   googleKeys?: GoogleKeyFetcher;
 }
 
-export const authModeOf = (e: EventRow): ReviewerAuthMode =>
-  readEventSettings(e).reviewerAuthMode ?? "google_or_email";
+/** Satu-satunya mode: email terverifikasi (OTP atau Google). Nilai lama di pengaturan event diabaikan. */
+export const authModeOf = (_e: EventRow): ReviewerAuthMode => "google_or_email";
 
-function requireMode(c: AppContext, ...allowed: ReviewerAuthMode[]): EventRow {
+function requireActiveEvent(c: AppContext): EventRow {
   const event = c.get("event");
   if (!event) throw new ApiError("no_active_event");
-  if (!allowed.includes(authModeOf(event))) throw new ApiError("forbidden", "auth_mode");
   return event;
 }
 
@@ -120,7 +113,7 @@ export function createVisitorRoutes(deps: VisitorDeps = {}) {
   });
 
   base.post("/api/visitor/google", loginLimit, async (c) => {
-    requireMode(c, "google_or_email");
+    requireActiveEvent(c);
     const body = await parseBody(c, googleLoginSchema);
     await assertHuman(c, body.turnstileToken, deps.turnstile);
     const clientId = c.env.GOOGLE_CLIENT_ID;
@@ -141,7 +134,7 @@ export function createVisitorRoutes(deps: VisitorDeps = {}) {
   });
 
   base.post("/api/visitor/otp/request", otpLimit, async (c) => {
-    const event = requireMode(c, "google_or_email");
+    const event = requireActiveEvent(c);
     const body = await parseBody(c, otpRequestSchema);
     await assertHuman(c, body.turnstileToken, deps.turnstile);
     const secret = sessionSecret(c.env);
@@ -162,7 +155,7 @@ export function createVisitorRoutes(deps: VisitorDeps = {}) {
   });
 
   base.post("/api/visitor/otp/verify", otpLimit, async (c) => {
-    const event = requireMode(c, "google_or_email");
+    const event = requireActiveEvent(c);
     const body = await parseBody(c, otpVerifySchema);
     const secret = sessionSecret(c.env);
     const emailHash = await emailIdentity(secret, body.email);
@@ -188,52 +181,6 @@ export function createVisitorRoutes(deps: VisitorDeps = {}) {
       displayName: body.displayName,
     });
     return c.json({ visitor: me(v) });
-  });
-
-  base.post("/api/visitor/ticket", loginLimit, async (c) => {
-    const event = requireMode(c, "ticket_code");
-    const body = await parseBody(c, ticketLoginSchema);
-    const secret = sessionSecret(c.env);
-    const db = getDb(c.env);
-    const codeHash = await ticketIdentity(secret, body.code);
-    const t = await db
-      .select()
-      .from(ticketCodes)
-      .where(and(eq(ticketCodes.eventId, event.id), eq(ticketCodes.codeHash, codeHash)))
-      .get();
-    if (!t) throw new ApiError("login_failed");
-    const v = await startSession(c, {
-      provider: "ticket",
-      identityHash: codeHash,
-      displayName: body.displayName,
-    });
-    // Identitas = HMAC(kode), jadi satu kode selalu satu pengunjung (boleh masuk lagi dari perangkat lain).
-    if (!t.visitorId) {
-      await db
-        .update(ticketCodes)
-        .set({ visitorId: v.id, usedAt: c.get("now")() })
-        .where(and(eq(ticketCodes.eventId, event.id), eq(ticketCodes.codeHash, codeHash)));
-    }
-    return c.json({ visitor: me(v) });
-  });
-
-  base.post("/api/visitor/anonymous", loginLimit, async (c) => {
-    requireMode(c, "open_turnstile");
-    const body = await parseBody(c, anonymousLoginSchema);
-    await assertHuman(c, body.turnstileToken, deps.turnstile);
-    // Identitas = id perangkat acak; paling santai dan paling mudah diakali (A6): sebabnya mode ini opsional.
-    const identityHash = await anonIdentity(sessionSecret(c.env), crypto.randomUUID());
-    const v = await startSession(c, {
-      provider: "anon",
-      identityHash,
-      displayName: body.displayName,
-    });
-    return c.json({ visitor: me(v) });
-  });
-
-  base.post("/api/visitor/logout", (c) => {
-    clearVisitorCookie(c);
-    return c.json({ ok: true });
   });
 
   return base;

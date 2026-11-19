@@ -1,10 +1,12 @@
 import type { PublicProduct } from "@shared/api-types";
+import { hash32 } from "@shared/fair-order";
 import { gridVisualMode } from "@shared/visual";
 import { type ReactNode, useEffect, useState } from "react";
 import { cn } from "../../lib/cn";
 import { copy } from "../../lib/copy";
 import { useMediaUrl } from "../../lib/media-url";
 import { Badge } from "../ui/Card";
+import { FoodSticker } from "./FoodSticker";
 import { Present } from "./Present";
 import { PriceTag } from "./PriceTag";
 import { SafeImage } from "./SafeImage";
@@ -14,6 +16,13 @@ export const productGridMode = (products: readonly Pick<PublicProduct, "thumbKey
   gridVisualMode(products.map((p) => ({ coverThumbKey: p.thumbKey })));
 
 const BADGE = { limited: "accent", new: "primary" } as const;
+const ART_TONES = [
+  "bg-sticker-1",
+  "bg-sticker-2",
+  "bg-sticker-3",
+  "bg-sticker-4",
+  "bg-sticker-5",
+] as const;
 
 /** Kartu produk di etalase. `actions` = slot (mis. "Simpan ke incaran"). */
 export function ProductCard({
@@ -30,23 +39,42 @@ export function ProductCard({
   const [failed, setFailed] = useState(false);
   // biome-ignore lint/correctness/useExhaustiveDependencies: foto baru = coba lagi
   useEffect(() => setFailed(false), [src]);
-  const photo = visualMode === "photo" && !!src && !failed;
+  // Mode "photo" (sebagian produk berfoto): SEMUA kartu punya slot 1:1 yang sama; produk tanpa foto (atau foto gagal)
+  // mengisinya dengan ubin ilustrasi, jadi etalase tidak pincang saat booth mengunggah foto di tengah event.
+  const slot = visualMode === "photo";
+  const photo = slot && !!src && !failed;
   return (
     <article
       className={cn(
-        "grid content-start gap-2 rounded-card border-(length:--border-w) border-line bg-surface-raised p-3",
-        !photo && "grid-cols-[1fr_auto] items-start",
+        "grid min-w-0 content-start gap-2 rounded-card border-(length:--border-w) border-line bg-surface-raised p-3",
+        !slot && "grid-cols-[minmax(0,1fr)_auto] items-start",
       )}
     >
-      {photo && (
-        <div className="relative" data-product-visual="" style={{ aspectRatio: "1/1" }}>
-          <SafeImage
-            src={src}
-            aspect="1/1"
-            className="w-full rounded-card"
-            onFail={() => setFailed(true)}
-            fallback={null}
-          />
+      {slot && (
+        <div
+          className="relative overflow-hidden rounded-card"
+          data-product-visual=""
+          style={{ aspectRatio: "1/1" }}
+        >
+          {photo ? (
+            <SafeImage
+              src={src}
+              aspect="1/1"
+              className="size-full rounded-card"
+              onFail={() => setFailed(true)}
+              fallback={null}
+            />
+          ) : (
+            <div
+              data-product-art=""
+              className={cn(
+                "grid size-full place-items-center rounded-card border-(length:--border-w) border-line",
+                ART_TONES[hash32(p.id) % ART_TONES.length],
+              )}
+            >
+              <FoodSticker seed={p.id} className="h-3/4 w-auto" />
+            </div>
+          )}
           <PriceTag
             priceIdr={p.priceIdr}
             compareIdr={p.comparePriceIdr}
@@ -72,7 +100,7 @@ export function ProductCard({
         </Present>
         {actions}
       </div>
-      {!photo && <PriceTag priceIdr={p.priceIdr} compareIdr={p.comparePriceIdr} size="sticker" />}
+      {!slot && <PriceTag priceIdr={p.priceIdr} compareIdr={p.comparePriceIdr} size="sticker" />}
     </article>
   );
 }
@@ -90,7 +118,7 @@ export function ProductGrid({ products }: { products: readonly PublicProduct[] }
       data-visual-mode={mode}
     >
       {products.map((p) => (
-        <li key={p.id} className="grid">
+        <li key={p.id} className="grid min-w-0">
           <ProductCard product={p} visualMode={mode} />
         </li>
       ))}
@@ -108,16 +136,31 @@ export function FeaturedProduct({
 }) {
   const resolve = useMediaUrl();
   const src = resolve(p.fullKey);
+  const [failed, setFailed] = useState(false);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: foto baru = coba lagi
+  useEffect(() => setFailed(false), [src]);
+  // Tanpa foto ATAU foto gagal dimuat → tata letak hanya-teks (tanpa kolom kosong).
+  const hasPhoto = !!src && !failed;
   return (
     <section
-      data-layout={src ? "photo" : "text"}
+      data-layout={hasPhoto ? "photo" : "text"}
       className={cn(
-        "grid gap-4 rounded-card border-(length:--border-w) border-line bg-accent p-4 text-accent-fg shadow-card",
-        src && "sm:grid-cols-2",
+        "grid min-w-0 gap-4 rounded-card border-(length:--border-w) border-line bg-accent p-4 text-accent-fg shadow-card",
+        hasPhoto && "sm:grid-cols-2",
       )}
     >
-      <SafeImage src={src} aspect="1/1" className="w-full rounded-card" fallback={null} />
-      <div className="grid content-center gap-2">
+      {hasPhoto && (
+        <div className="overflow-hidden rounded-card" style={{ aspectRatio: "1/1" }}>
+          <SafeImage
+            src={src}
+            aspect="1/1"
+            className="size-full rounded-card"
+            onFail={() => setFailed(true)}
+            fallback={null}
+          />
+        </div>
+      )}
+      <div className="grid min-w-0 content-center gap-2">
         <h3 className="font-display text-3xl font-extrabold leading-none [overflow-wrap:anywhere]">
           {p.name}
         </h3>

@@ -161,6 +161,7 @@ function newBoothStatements(
       boothNo: input.boothNo,
       tagline: input.tagline,
       description: input.description,
+      teamName: input.teamName,
       status: "approved", // admin sendiri verifikatornya; tidak ada opsi draf (A16)
       approvedBy: adminEmail,
       approvedAt: d.now,

@@ -95,7 +95,7 @@ const BOOTH: PublicBoothDetail = {
 };
 
 const RESULT: ReviewSubmitResult = {
-  review: { boothId: BOOTH.id, stars: 5, comment: null, categoryIds: [] },
+  review: { boothId: BOOTH.id, stars: 5, comment: null, categoryIds: [], anonymous: false },
   created: true,
   commentHeld: false,
   progress: { reviewed: 1, total: 4 },
@@ -124,18 +124,19 @@ describe("ReviewForm", () => {
   };
   const star = (n: number) =>
     fireEvent.click(screen.getByRole("radio", { name: copy.visitor.stars(n) }));
+  const story = (text = "Seru banget") =>
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: text } });
   const send = () => fireEvent.click(screen.getByRole("button", { name: copy.event.form.submit }));
 
-  it("tombol kirim mati sampai bintang dipilih; petunjuk 'pilih bintang dulu'", () => {
+  const submitBtn = () =>
+    screen.getByRole("button", { name: copy.event.form.submit }) as HTMLButtonElement;
+
+  it("tombol kirim mati HANYA sampai bintang dipilih; komentar opsional", () => {
     setup();
-    expect(
-      (screen.getByRole("button", { name: copy.event.form.submit }) as HTMLButtonElement).disabled,
-    ).toBe(true);
+    expect(submitBtn().disabled).toBe(true);
     expect(screen.getByText(copy.event.form.starsRequired)).toBeTruthy();
     star(4);
-    expect(
-      (screen.getByRole("button", { name: copy.event.form.submit }) as HTMLButtonElement).disabled,
-    ).toBe(false);
+    expect(submitBtn().disabled).toBe(false); // tanpa komentar pun boleh
     expect(screen.queryByText(copy.event.form.starsRequired)).toBeNull();
   });
 
@@ -145,7 +146,7 @@ describe("ReviewForm", () => {
     send();
     await waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
     const [values, ctx] = submit.mock.calls[0] as unknown as [unknown, { key: string }];
-    expect(values).toEqual({ stars: 5, comment: null, categoryIds: [] });
+    expect(values).toEqual({ stars: 5, comment: null, categoryIds: [], anonymous: false });
     expect(ctx.key).toMatch(/^[0-9a-f-]{36}$/);
   });
 
@@ -176,6 +177,7 @@ describe("ReviewForm", () => {
       stars: 3,
       comment: "Mantap!",
       categoryIds: ["c3"],
+      anonymous: false,
     });
   });
 
@@ -184,8 +186,29 @@ describe("ReviewForm", () => {
     expect(screen.queryByText(copy.event.form.categories)).toBeNull();
   });
 
+  it("pilihan anonim: tidak dicentang secara bawaan, ikut terkirim, dan terisi saat mengedit", async () => {
+    const { submit } = setup();
+    const box = screen.getByLabelText(copy.event.form.anonymous) as HTMLInputElement;
+    expect(box.checked).toBe(false);
+    star(5);
+    story();
+    fireEvent.click(box);
+    send();
+    await waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
+    expect(submit.mock.calls[0]?.[0].anonymous).toBe(true);
+    cleanup();
+    setup({
+      initial: { boothId: "b", stars: 4, comment: "Oke", categoryIds: [], anonymous: true },
+    });
+    expect((screen.getByLabelText(copy.event.form.anonymous) as HTMLInputElement).checked).toBe(
+      true,
+    );
+  });
+
   it("mengedit: isian terisi, label 'Perbarui', catatan boleh diubah", () => {
-    setup({ initial: { boothId: "b", stars: 4, comment: "Oke", categoryIds: ["c2"] } });
+    setup({
+      initial: { boothId: "b", stars: 4, comment: "Oke", categoryIds: ["c2"], anonymous: false },
+    });
     expect(screen.getByText(copy.event.form.editing)).toBeTruthy();
     expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe("Oke");
     expect(screen.getByRole("button", { name: "Ramah" }).getAttribute("aria-pressed")).toBe("true");
@@ -206,6 +229,7 @@ describe("ReviewForm", () => {
     });
     renderEvent(<ReviewForm categories={CATS} submit={submit} />, live);
     star(5);
+    story();
     send();
     expect(await screen.findByRole("alert")).toHaveProperty("textContent", copy.errors.own_booth);
     expect(screen.getByRole("button", { name: copy.action.retry })).toBeTruthy();
@@ -220,6 +244,19 @@ describe("ReviewItem", () => {
     expect(container.textContent).toContain("Kopinya enak");
     expect(container.querySelector("[role='img']")).not.toBeNull();
     expect(screen.queryByRole("button", { name: copy.event.reviews.report })).toBeNull();
+  });
+
+  it("review hanya berbintang: nama + bintang + keterangan 'Hanya memberi bintang', tanpa tombol lapor", () => {
+    const onReport = vi.fn();
+    const { container } = renderEvent(
+      <ReviewItem review={REVIEW({ text: null, categories: [] })} onReport={onReport} />,
+      live,
+    );
+    expect(container.textContent).toContain("Budi");
+    expect(container.textContent).toContain(copy.event.reviews.starsOnly);
+    expect(container.querySelector("[role='img']")).not.toBeNull();
+    expect(screen.queryByRole("button", { name: copy.event.reviews.report })).toBeNull();
+    expect(container.querySelectorAll("p:empty")).toHaveLength(0);
   });
 
   it("rating disembunyikan: tanpa bintang", () => {
@@ -317,39 +354,6 @@ describe("LoginPanel", () => {
     );
     expect(screen.getByText(copy.event.login.or)).toBeTruthy();
   });
-
-  it("ticket_code: kolom kode tiket + nama; tombol mati sampai kode cukup panjang", () => {
-    renderEvent(
-      <LoginPanel
-        me={ME({ authMode: "ticket_code" })}
-        turnstile={turnstile()}
-        onLoggedIn={() => {}}
-      />,
-      live,
-    );
-    expect(screen.getByText(copy.event.login.ticket)).toBeTruthy();
-    const btn = screen.getByRole("button", { name: copy.event.login.verify }) as HTMLButtonElement;
-    expect(btn.disabled).toBe(true);
-    fireEvent.change(screen.getByLabelText(copy.event.login.ticket), {
-      target: { value: "KODE-1234" },
-    });
-    expect(btn.disabled).toBe(false);
-  });
-
-  it("open_turnstile: tombol Lanjut; mati selama Turnstile belum memberi token", () => {
-    renderEvent(
-      <LoginPanel
-        me={ME({ authMode: "open_turnstile" })}
-        turnstile={turnstile({ required: true })}
-        onLoggedIn={() => {}}
-      />,
-      live,
-    );
-    expect(
-      (screen.getByRole("button", { name: copy.event.login.anonymous }) as HTMLButtonElement)
-        .disabled,
-    ).toBe(true);
-  });
 });
 
 describe("EmailLogin (dua langkah)", () => {
@@ -435,10 +439,6 @@ describe("ReviewFlow", () => {
         loggedIn = true;
         return { body: { visitor: VISITOR } };
       }
-      if (c.path === "/api/visitor/logout") {
-        loggedIn = false;
-        return { body: { ok: true } };
-      }
       if (c.path === `/api/booths/${BOOTH.id}/review`)
         return opts.submit ?? { status: 201, body: RESULT };
       return undefined;
@@ -474,6 +474,7 @@ describe("ReviewFlow", () => {
       stars: 5,
       comment: "Mantap!",
       categoryIds: ["c1"],
+      anonymous: false,
       turnstileToken: undefined,
     });
     expect(post?.headers["Idempotency-Key"]).toMatch(/^[0-9a-f-]{36}$/);
@@ -486,7 +487,9 @@ describe("ReviewFlow", () => {
   it("pernah menilai: form terisi dari /api/me/reviews dan berlabel 'Perbarui'", async () => {
     server({
       loggedIn: true,
-      mine: [{ boothId: BOOTH.id, stars: 4, comment: "Oke", categoryIds: ["c2"] }],
+      mine: [
+        { boothId: BOOTH.id, stars: 4, comment: "Oke", categoryIds: ["c2"], anonymous: false },
+      ],
     });
     renderEvent(<ReviewFlow booth={BOOTH} />, live);
     expect(await screen.findByRole("button", { name: copy.event.form.update })).toBeTruthy();
@@ -498,16 +501,19 @@ describe("ReviewFlow", () => {
     renderEvent(<ReviewFlow booth={BOOTH} />, live);
     await screen.findByText(copy.event.form.stars);
     fireEvent.click(screen.getByRole("radio", { name: copy.visitor.stars(5) }));
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "Seru banget" } });
     fireEvent.click(screen.getByRole("button", { name: copy.event.form.submit }));
     expect((await screen.findByRole("alert")).textContent).toBe(copy.errors.own_booth);
   });
 
-  it("ganti akun: logout lalu kembali ke kotak masuk", async () => {
+  it("sudah masuk: tidak ada tombol keluar/ganti akun (anti kecurangan), hanya nama akun", async () => {
     server({ loggedIn: true });
     renderEvent(<ReviewFlow booth={BOOTH} />, live);
     await screen.findByText(copy.event.form.stars);
-    fireEvent.click(screen.getByRole("button", { name: copy.event.login.logout }));
-    expect(await screen.findByText(copy.event.login.title)).toBeTruthy();
+    expect(
+      screen.getByText(copy.event.login.as(VISITOR.displayName ?? copy.event.login.anonymousName)),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /keluar|ganti akun|logout/i })).toBeNull();
   });
 
   it("Turnstile aktif tapi token belum ada: tombol kirim tetap mati (gagal tertutup di UI)", async () => {

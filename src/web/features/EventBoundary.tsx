@@ -1,11 +1,17 @@
 import type { PublicEvent } from "@shared/api-types";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { type ReactNode, useState } from "react";
-import { ErrorState, Skeleton } from "../components/ui/states";
+import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
+import { HomeInitialSkeleton, SkeletonCrossfade } from "../components/shared/PageSkeletons";
+import { ErrorState } from "../components/ui/states";
 import { ToastProvider } from "../components/ui/Toast";
 import { EventStateProvider } from "../lib/event-state";
 import { EventDataProvider, useEventQuery } from "./event-data";
 import { RevealSessionProvider } from "./reveal/use-reveal";
+
+const GateSkeletonContext = createContext(false);
+
+/** True bila gerbang awal sempat menampilkan skeleton (jaringan > 110 ms), agar halaman beranda lanjut tanpa jeda. */
+export const useGateSkeletonShown = () => useContext(GateSkeletonContext);
 
 function Gate({
   children,
@@ -17,29 +23,47 @@ function Gate({
   wrap?: (event: PublicEvent, node: ReactNode) => ReactNode;
 }) {
   const q = useEventQuery();
-  if (q.isLoading) {
-    return (
-      <div className="mx-auto grid max-w-6xl gap-4 px-4 py-10" aria-busy="true">
-        <Skeleton className="h-8 w-40" />
-        <Skeleton className="h-40 w-full" />
-        <Skeleton className="h-24 w-2/3" />
-      </div>
-    );
+  const [gateShown, setGateShown] = useState(false);
+  useEffect(() => {
+    if (!q.isLoading) return;
+    const id = window.setTimeout(() => {
+      setGateShown(true);
+    }, 110);
+    return () => window.clearTimeout(id);
+  }, [q.isLoading]);
+
+  let content: ReactNode = null;
+  if (!q.isLoading) {
+    if (q.error || !q.data) {
+      content = <ErrorState onRetry={() => void q.refetch()} />;
+    } else if (!q.data.event) {
+      content = <>{comingSoon}</>; // A0: belum ada event aktif / disembunyikan
+    } else {
+      const event = q.data.event;
+      const inner = (
+        <ToastProvider>
+          <RevealSessionProvider>{wrap ? wrap(event, children) : children}</RevealSessionProvider>
+        </ToastProvider>
+      );
+      content = (
+        <GateSkeletonContext.Provider value={gateShown}>
+          <EventDataProvider
+            data={{ event, serverNow: q.data.serverNow }}
+            fetchedAt={q.dataUpdatedAt}
+          >
+            <EventStateProvider schedule={event.schedule} serverNow={q.data.serverNow}>
+              {inner}
+            </EventStateProvider>
+          </EventDataProvider>
+        </GateSkeletonContext.Provider>
+      );
+    }
   }
-  if (q.error || !q.data) return <ErrorState onRetry={() => void q.refetch()} />;
-  const event = q.data.event;
-  if (!event) return <>{comingSoon}</>; // A0: belum ada event aktif / disembunyikan
-  const inner = (
-    <ToastProvider>
-      <RevealSessionProvider>{wrap ? wrap(event, children) : children}</RevealSessionProvider>
-    </ToastProvider>
-  );
+
   return (
-    <EventDataProvider data={{ event, serverNow: q.data.serverNow }} fetchedAt={q.dataUpdatedAt}>
-      <EventStateProvider schedule={event.schedule} serverNow={q.data.serverNow}>
-        {inner}
-      </EventStateProvider>
-    </EventDataProvider>
+    <SkeletonCrossfade loading={q.isLoading} skeleton={<HomeInitialSkeleton />}>
+      {content}
+    </SkeletonCrossfade>
   );
 }
 

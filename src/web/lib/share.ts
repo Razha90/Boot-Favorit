@@ -14,6 +14,24 @@ export function buildShareUrl({ origin, boothId, productId }: ShareTarget): stri
   return u.toString();
 }
 
+/** Alamat untuk QR cetak/pindai: `src=qr` (bukan `share`) agar tidak dihitung lonjakan tautan sebar (A6). */
+export function buildQrUrl({ origin, boothId, productId }: ShareTarget): string {
+  const u = new URL(`/b/${encodeURIComponent(boothId)}`, origin);
+  if (productId) u.searchParams.set("p", productId);
+  u.searchParams.set("src", "qr");
+  return u.toString();
+}
+
+/** Tautan ke beranda event (`/?src=share`): dipakai tombol Bagikan di hero. */
+export function buildEventShareUrl(origin: string): string {
+  const u = new URL("/", origin);
+  u.searchParams.set("src", "share");
+  return u.toString();
+}
+
+export const buildEventShareText = (eventName: string) =>
+  `Yuk, intip booth-booth seru di ${eventName}`;
+
 export function buildShareText(args: {
   eventName: string;
   boothName: string;

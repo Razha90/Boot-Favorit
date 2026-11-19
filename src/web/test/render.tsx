@@ -10,6 +10,7 @@ import { sampleResolver } from "../dev/fixtures";
 import { EventDataProvider } from "../features/event-data";
 import { EventStateProvider } from "../lib/event-state";
 import { MediaUrlProvider } from "../lib/media-url";
+import { PinsProvider } from "../lib/pins";
 import type { SafeStorage } from "../lib/safe-storage";
 import { WishlistProvider } from "../lib/wishlist";
 
@@ -66,7 +67,9 @@ export function renderEvent(
             <EventStateProvider schedule={event.schedule} serverNow={serverNow}>
               <ToastProvider>
                 <WishlistProvider eventId={event.id} store={o.store ?? memStore()}>
-                  {ui}
+                  <PinsProvider eventId={event.id} store={o.store ?? memStore()}>
+                    {ui}
+                  </PinsProvider>
                 </WishlistProvider>
               </ToastProvider>
             </EventStateProvider>
@@ -76,3 +79,7 @@ export function renderEvent(
     </MemoryRouter>,
   );
 }
+
+/** Foto sungguhan di dalam `root`. Stiker kartun makanan (`/art/...`) dekoratif dan tidak dihitung (A16, B27). */
+export const photoImgs = (root: ParentNode): HTMLImageElement[] =>
+  [...root.querySelectorAll("img")].filter((i) => !i.getAttribute("src")?.startsWith("/art/"));

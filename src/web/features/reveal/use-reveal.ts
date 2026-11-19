@@ -52,7 +52,7 @@ export interface RevealControls {
   overlay: { mode: RevealMode; results: readonly ResultEntry[] } | null;
   /** Hasil akhir sedang dimuat untuk langsung memutar animasi pemenang saat halaman dibuka */
   pending: boolean;
-  /** Hasil sudah diumumkan (tombol "Putar ulang" boleh tampil) */
+  /** Event telah selesai dan hasil sudah diumumkan (tombol "Putar ulang" boleh tampil) */
   canReplay: boolean;
   replay: () => void;
   close: () => void;
@@ -150,7 +150,7 @@ export function useReveal(o: { area: "event" | "screen"; autoReplay: boolean }):
   return {
     overlay,
     pending,
-    canReplay: published && results !== null,
+    canReplay: state.frozen && published && results !== null,
     replay,
     close,
     optedOut,

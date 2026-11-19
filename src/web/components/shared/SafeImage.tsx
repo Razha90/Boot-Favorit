@@ -14,6 +14,7 @@ export function SafeImage({
   fallback = null,
   className,
   onFail,
+  eager = false,
 }: {
   src: string | null | undefined;
   /** Kosongkan untuk gambar dekoratif */
@@ -23,6 +24,8 @@ export function SafeImage({
   fallback?: ReactNode;
   className?: string;
   onFail?: () => void;
+  /** Muat langsung (bukan lazy): untuk poster cetak */
+  eager?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
   // biome-ignore lint/correctness/useExhaustiveDependencies: kunci/URL baru = coba lagi
@@ -34,9 +37,15 @@ export function SafeImage({
       src={src}
       alt={alt}
       decoding="async"
-      loading="lazy"
+      loading={eager ? "eager" : "lazy"}
       style={aspect ? { aspectRatio: aspect } : undefined}
-      className={cn("block h-auto max-w-full object-cover", className)}
+      // `h-auto` hanya bila pemanggil tidak menentukan tinggi: kelas h-*/size-* tidak bisa menimpanya (tanpa twMerge), dan
+      // foto sangat tinggi akan meledak ke ukuran aslinya.
+      className={cn(
+        "block max-w-full object-cover",
+        !/(^|\s)(size-|h-)/.test(className ?? "") && "h-auto",
+        className,
+      )}
       onError={() => {
         setFailed(true);
         onFail?.();

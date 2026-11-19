@@ -1,6 +1,8 @@
 import type { PublicBoothDetail, PublicProduct } from "@shared/api-types";
 import { useEffect, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router";
+import { useParams, useSearchParams } from "react-router";
+import { FoodSticker } from "../../../components/shared/FoodSticker";
+import { PinButton } from "../../../components/shared/PinButton";
 import { Present } from "../../../components/shared/Present";
 import { PriceTag } from "../../../components/shared/PriceTag";
 import { FeaturedProduct } from "../../../components/shared/ProductCard";
@@ -30,18 +32,10 @@ import { SaveButton, ShareButton } from "../components/share-wishlist";
 export function Component() {
   const { boothId = "" } = useParams();
   const q = useBoothQuery(boothId);
-  const { event } = useEventData();
-
   return (
     <div className="mx-auto grid max-w-6xl gap-6 px-4 pb-28 pt-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <BackButton>{copy.event.booth.back}</BackButton>
-        <Link
-          to="/"
-          className="rounded-chip border-(length:--border-w) border-line bg-accent px-3 py-1 text-xs font-extrabold text-accent-fg [overflow-wrap:anywhere]"
-        >
-          {event.name}
-        </Link>
       </div>
       <ReadOnlyBanner />
 
@@ -103,6 +97,8 @@ function BoothView({ booth }: { booth: PublicBoothDetail }) {
         boothName={booth.name}
         productId={p.id}
         productName={p.name}
+        previewKey={booth.coverThumbKey}
+        poster={{ boothNo: booth.boothNo, teamName: booth.teamName, tagline: booth.tagline }}
         label=""
       />
     </span>
@@ -112,7 +108,11 @@ function BoothView({ booth }: { booth: PublicBoothDetail }) {
     <>
       <section
         data-hero-layout={hasPhotos ? "photo" : "text"}
-        className={hasPhotos ? "grid gap-8 lg:grid-cols-2 lg:items-center" : "grid gap-4"}
+        className={
+          hasPhotos
+            ? "grid gap-8 lg:grid-cols-2 lg:items-center"
+            : "grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center"
+        }
       >
         {hasPhotos && <PhotoSlideshow photos={booth.photos} onEmpty={() => setSlideEmpty(true)} />}
         <div className="grid content-center gap-3">
@@ -160,9 +160,23 @@ function BoothView({ booth }: { booth: PublicBoothDetail }) {
                 {copy.event.booth.seeFeatured}
               </a>
             )}
-            <ShareButton boothId={booth.id} boothName={booth.name} size="md" />
+            <PinButton boothId={booth.id} boothName={booth.name} labeled />
+            <ShareButton
+              boothId={booth.id}
+              boothName={booth.name}
+              previewKey={booth.coverThumbKey}
+              poster={{ boothNo: booth.boothNo, teamName: booth.teamName, tagline: booth.tagline }}
+              size="md"
+            />
           </div>
         </div>
+        {!hasPhotos && (
+          // Booth tanpa foto: stiker kartun makanan menggantikan slideshow (dekoratif).
+          <FoodSticker
+            seed={booth.id}
+            className="size-28 justify-self-start rotate-3 sm:size-40 lg:size-56 lg:justify-self-center"
+          />
+        )}
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-start">
@@ -187,6 +201,12 @@ function BoothView({ booth }: { booth: PublicBoothDetail }) {
                         boothName={booth.name}
                         productId={featured.id}
                         productName={featured.name}
+                        previewKey={booth.coverThumbKey}
+                        poster={{
+                          boothNo: booth.boothNo,
+                          teamName: booth.teamName,
+                          tagline: booth.tagline,
+                        }}
                       />
                       <span className="text-xs">
                         {booth.boothNo

@@ -11,7 +11,7 @@ export function Skeleton({ className }: { className?: string }) {
   return (
     <div
       aria-hidden="true"
-      className={cn("animate-pulse rounded-card bg-surface-tint", className ?? "h-6 w-full")}
+      className={cn("skeleton-shimmer rounded-card", className ?? "h-6 w-full")}
     />
   );
 }

@@ -16,7 +16,7 @@ const CATS = [
 ];
 
 const RESULT: ReviewSubmitResult = {
-  review: { boothId: "b1", stars: 5, comment: null, categoryIds: [] },
+  review: { boothId: "b1", stars: 5, comment: null, categoryIds: [], anonymous: false },
   created: true,
   commentHeld: false,
   progress: { reviewed: 3, total: 24 },
@@ -75,7 +75,13 @@ export function ReviewGallery({
           <Cell label="Mengedit">
             <ReviewForm
               categories={CATS}
-              initial={{ boothId: "b1", stars: 4, comment: "Oke banget", categoryIds: ["c2"] }}
+              initial={{
+                boothId: "b1",
+                stars: 4,
+                comment: "Oke banget",
+                categoryIds: ["c2"],
+                anonymous: false,
+              }}
               submit={noop}
             />
           </Cell>
@@ -102,16 +108,13 @@ export function ReviewGallery({
         </div>
       </Section>
 
-      <Section title="Event · Masuk" hint="Bentuk mengikuti mode login event.">
+      <Section
+        title="Event · Masuk"
+        hint="Email terverifikasi (OTP) dan Google bila dikonfigurasi; tanpa login anonim dan tanpa keluar."
+      >
         <div className="grid gap-6 sm:grid-cols-3">
           <Cell label="Google + email (tombol Google tidak dimuat di galeri: butuh client id sungguhan)">
             <LoginPanel me={me("google_or_email")} turnstile={turnstile} onLoggedIn={() => {}} />
-          </Cell>
-          <Cell label="Kode tiket">
-            <LoginPanel me={me("ticket_code")} turnstile={turnstile} onLoggedIn={() => {}} />
-          </Cell>
-          <Cell label="Terbuka (hanya Turnstile)">
-            <LoginPanel me={me("open_turnstile")} turnstile={turnstile} onLoggedIn={() => {}} />
           </Cell>
         </div>
       </Section>

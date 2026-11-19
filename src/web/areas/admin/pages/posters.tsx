@@ -1,24 +1,39 @@
-// Halaman Poster QR cetak A4/A5 (explore.md A3 langkah 4, A4): murni di klien dari booth approved + QrCode.
+// Halaman Poster QR cetak A4/A5 (explore.md A3 langkah 4, A4, B29): murni di klien dari event + booth approved.
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams } from "react-router";
-import { Present } from "../../../components/shared/Present";
-import { QrCode } from "../../../components/shared/QrCode";
+import { PosterPrintLayer } from "../../../components/shared/PosterPrint";
+import { type PosterContent, type PosterSize, QrPoster } from "../../../components/shared/QrPoster";
 import { Button } from "../../../components/ui/Button";
-import { Badge, Card } from "../../../components/ui/Card";
-import { Field, Select } from "../../../components/ui/Form";
+import { Card } from "../../../components/ui/Card";
+import { Field, Input, Select } from "../../../components/ui/Form";
 import { InfoTip } from "../../../components/ui/InfoTip";
 import { QueryState } from "../../../components/ui/states";
-import { cn } from "../../../lib/cn";
 import { copy } from "../../../lib/copy";
 import { adminApi, adminKeys } from "../api";
 
 const P = copy.admin.posters;
 
+/** Alamat QR utama harus http(s) yang sah; selain itu kembali ke alamat situs ini. */
+function cleanUrl(input: string, fallback: string): string {
+  try {
+    const u = new URL(input.trim());
+    return u.protocol === "https:" || u.protocol === "http:" ? u.toString() : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+const hostOf = (url: string) => new URL(url).host.replace(/^www\./, "");
+
 export function Component() {
   const { id = "" } = useParams();
-  const [size, setSize] = useState<"a4" | "a5">("a4");
+  const [size, setSize] = useState<PosterSize>("a4");
+  const [includeEvent, setIncludeEvent] = useState(true);
   const [includeRegister, setIncludeRegister] = useState(true);
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const [mainUrl, setMainUrl] = useState(`${origin}/`);
+  const [printing, setPrinting] = useState(false);
 
   const event = useQuery({ queryKey: adminKeys.event(id), queryFn: () => adminApi.event(id) });
   const booths = useQuery({
@@ -26,21 +41,69 @@ export function Component() {
     queryFn: () => adminApi.booths(id, { status: "approved" }),
   });
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const approved = booths.data?.booths ?? [];
   const eventName = event.data?.event.name ?? copy.fallbackEventName;
+  const approved = booths.data?.booths;
+
+  const posters = useMemo<(PosterContent & { key: string })[]>(() => {
+    const out: (PosterContent & { key: string })[] = [];
+    const main = cleanUrl(mainUrl, `${origin}/`);
+    if (includeEvent) {
+      out.push({
+        key: "event",
+        kind: "event",
+        eventName,
+        title: P.eventTitle,
+        tagline: copy.event.hero.greeting,
+        url: main,
+        displayUrl: hostOf(main),
+        qrLabel: P.eventQrLabel,
+        seed: id || "event",
+      });
+    }
+    for (const b of approved ?? []) {
+      out.push({
+        key: b.id,
+        kind: "booth",
+        eventName,
+        title: b.name,
+        badge: b.boothNo ? P.boothNo(b.boothNo) : null,
+        teamName: b.teamName,
+        tagline: b.tagline,
+        url: `${origin}/b/${b.id}?src=qr`,
+        displayUrl: hostOf(origin),
+        qrLabel: P.qrLabel(b.name),
+        seed: b.id,
+      });
+    }
+    if (includeRegister) {
+      out.push({
+        key: "register",
+        kind: "register",
+        eventName,
+        title: P.registerTitle,
+        url: `${origin}/register`,
+        displayUrl: `${hostOf(origin)}/register`,
+        qrLabel: P.scanToRegister,
+        seed: id || "register",
+      });
+    }
+    return out;
+  }, [approved, eventName, id, includeEvent, includeRegister, mainUrl, origin]);
 
   return (
     <>
-      <style>{`@page { size: ${size} portrait; margin: 12mm; }`}</style>
-
-      <div className="grid gap-3 print:hidden">
+      <div className="grid gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="grid gap-1">
             <h1 className="font-display text-2xl font-extrabold sm:text-3xl">{P.title}</h1>
             <p className="text-sm text-muted">{P.hint}</p>
           </div>
-          <Button variant="primary" onClick={() => window.print()}>
+          <Button
+            variant="primary"
+            icon="qr"
+            disabled={posters.length === 0}
+            onClick={() => setPrinting(true)}
+          >
             {P.print}
           </Button>
         </div>
@@ -52,14 +115,37 @@ export function Component() {
                 <Select
                   id={fid}
                   value={size}
-                  onChange={(e) => setSize(e.target.value as "a4" | "a5")}
+                  onChange={(e) => setSize(e.target.value as PosterSize)}
                 >
                   <option value="a4">{P.sizes.a4}</option>
                   <option value="a5">{P.sizes.a5}</option>
                 </Select>
               )}
             </Field>
-            <div className="flex items-center gap-1.5 pb-2 text-sm">
+            <Field label={P.eventUrlLabel} hint={P.eventUrlHint} className="min-w-64 flex-1">
+              {(fid) => (
+                <Input
+                  id={fid}
+                  inputMode="url"
+                  value={mainUrl}
+                  onChange={(e) => setMainUrl(e.target.value)}
+                />
+              )}
+            </Field>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-1 text-sm">
+            <div className="flex items-center gap-1.5">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={includeEvent}
+                  onChange={(e) => setIncludeEvent(e.target.checked)}
+                />
+                {P.includeEvent}
+              </label>
+              <InfoTip text={P.includeEventInfo} title={P.includeEvent} />
+            </div>
+            <div className="flex items-center gap-1.5">
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -75,95 +161,19 @@ export function Component() {
       </div>
 
       <QueryState loading={event.isLoading || booths.isLoading} error={event.error ?? booths.error}>
-        {approved.length === 0 && !includeRegister ? (
-          <p className="text-sm text-muted">{P.empty}</p>
-        ) : (
-          <div className="grid gap-6 print:block print:gap-0">
-            {approved.length === 0 && <p className="text-sm text-muted print:hidden">{P.empty}</p>}
-            {approved.map((b) => {
-              const url = `${origin}/b/${b.id}?src=qr`;
-              return (
-                <PosterSheet
-                  key={b.id}
-                  size={size}
-                  eventName={eventName}
-                  badge={b.boothNo ? P.boothNo(b.boothNo) : null}
-                  title={b.name}
-                  subtitle={b.tagline}
-                  url={url}
-                  qrLabel={P.qrLabel(b.name)}
-                  cta={P.scanToRate}
-                />
-              );
-            })}
-            {includeRegister && (
-              <PosterSheet
-                size={size}
-                eventName={eventName}
-                badge={null}
-                title={P.registerTitle}
-                subtitle={P.registerSubtitle}
-                url={`${origin}/register`}
-                qrLabel={P.scanToRegister}
-                cta={P.registerSubtitle}
-              />
-            )}
-          </div>
-        )}
+        {(approved ?? []).length === 0 && <p className="text-sm text-muted">{P.empty}</p>}
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          {posters.map(({ key, ...p }) => (
+            <QrPoster key={key} size={size} {...p} />
+          ))}
+        </div>
       </QueryState>
+
+      <PosterPrintLayer active={printing} size={size} onDone={() => setPrinting(false)}>
+        {posters.map(({ key, ...p }) => (
+          <QrPoster key={key} size={size} eager {...p} />
+        ))}
+      </PosterPrintLayer>
     </>
-  );
-}
-
-function PosterSheet({
-  size,
-  eventName,
-  badge,
-  title,
-  subtitle,
-  url,
-  qrLabel,
-  cta,
-}: {
-  size: "a4" | "a5";
-  eventName: string;
-  badge: string | null;
-  title: string;
-  subtitle: string | null;
-  url: string;
-  qrLabel: string;
-  cta: string;
-}) {
-  return (
-    <article
-      className={cn(
-        "mx-auto flex flex-col items-center justify-between rounded-card border-(length:--border-w) border-line bg-surface-raised p-8 text-center shadow-card print:m-0 print:w-full print:break-after-page print:last:break-after-auto print:border-0 print:shadow-none",
-        size === "a4" ? "aspect-[210/297] w-full max-w-xl" : "aspect-[148/210] w-full max-w-md",
-      )}
-    >
-      <div className="grid justify-items-center gap-2">
-        <p className="text-xs font-bold tracking-wide text-muted uppercase">{eventName}</p>
-        <Present when={badge}>
-          <Badge tone="primary">{badge}</Badge>
-        </Present>
-        <h2 className="font-display text-3xl font-extrabold [overflow-wrap:anywhere]">{title}</h2>
-        <Present when={subtitle}>
-          <p className="max-w-md text-sm text-muted">{subtitle}</p>
-        </Present>
-      </div>
-
-      <div className={cn("w-full", size === "a4" ? "max-w-72" : "max-w-52")}>
-        <QrCode
-          value={url}
-          label={qrLabel}
-          className="border-(length:--border-w) border-line p-3"
-        />
-      </div>
-
-      <div className="grid gap-1">
-        <p className="text-base font-bold">{cta}</p>
-        <p className="font-mono text-xs text-muted [overflow-wrap:anywhere]">{url}</p>
-      </div>
-    </article>
   );
 }

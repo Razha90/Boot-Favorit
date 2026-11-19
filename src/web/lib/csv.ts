@@ -73,6 +73,24 @@ const HEADER_ALIASES = {
   email: ["email", "e-mail", "surel"],
   tagline: ["tagline", "slogan"],
   description: ["deskripsi", "description", "keterangan"],
+  // Asal booth: institusi, fakultas, atau prodi. Disimpan sebagai `teamName`.
+  teamName: [
+    "institusi",
+    "fakultas",
+    "prodi",
+    "program studi",
+    "program_studi",
+    "unit",
+    "asal",
+    "asal institusi",
+    "asal_institusi",
+    "lembaga",
+    "instansi",
+    "tim",
+    "team",
+    "team_name",
+    "teamname",
+  ],
 } as const;
 type Field = keyof typeof HEADER_ALIASES;
 
@@ -93,6 +111,7 @@ export interface DraftRow {
   email: string;
   tagline: string;
   description: string;
+  teamName: string;
 }
 
 export interface ParsedBooths {
@@ -122,6 +141,7 @@ export function tableToDrafts(table: string[][]): ParsedBooths {
         email: "",
         tagline: "",
         description: "",
+        teamName: "",
       })),
       columns: ["name"],
       missingNameColumn: false,
@@ -142,6 +162,7 @@ export function tableToDrafts(table: string[][]): ParsedBooths {
       email: pick("email"),
       tagline: pick("tagline"),
       description: pick("description"),
+      teamName: pick("teamName"),
     };
   });
   return {
@@ -184,6 +205,7 @@ export function classifyRows(
       email: draft.email,
       tagline: draft.tagline,
       description: draft.description,
+      teamName: draft.teamName,
     });
 
     if (!parsed.success) {
@@ -213,4 +235,4 @@ export function classifyRows(
 
 /** Templat CSV untuk diunduh admin. */
 export const CSV_TEMPLATE =
-  "nama,nomor_booth,email,tagline,deskripsi\nKopi Rempah,A12,,Hangat di lidah,\n";
+  "nama,institusi,nomor_booth,email,tagline,deskripsi\nKopi Rempah,Fakultas Teknik,A12,,Hangat di lidah,\n";

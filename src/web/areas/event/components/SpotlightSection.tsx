@@ -39,22 +39,8 @@ export function SpotlightSection({
   const current = order[index];
   if (!current) return null;
   return (
-    <div className="grid gap-2">
-      <div key={current.id} className="reveal-pop">
-        <BoothCard booth={current} variant="spotlight" ratingsHidden={ratingsHidden} />
-      </div>
-      {booths.length > 1 && (
-        <div
-          aria-hidden="true"
-          className="h-1.5 overflow-hidden rounded-full bg-surface-tint in-data-[vibe=pro]:h-0.5"
-        >
-          <div
-            key={`${current.id}-${round}-${index}`}
-            className="animate-slide-fill h-full origin-left bg-text"
-            style={{ animation: `slide-fill ${interval}ms linear both` }}
-          />
-        </div>
-      )}
+    <div key={current.id} className="reveal-pop">
+      <BoothCard booth={current} variant="spotlight" ratingsHidden={ratingsHidden} />
     </div>
   );
 }

@@ -1,6 +1,31 @@
 import { describe, expect, it, vi } from "vitest";
 import { boothMail } from "./booth-mail";
-import { resendSender } from "./email";
+import { cloudflareEmailSender, parseSenderAddress, resendSender } from "./email";
+
+describe("cloudflareEmailSender", () => {
+  it("tanpa binding EMAIL atau EMAIL_FROM: tidak aktif (undefined)", () => {
+    const fakeBinding = { send: vi.fn() } as unknown as SendEmail;
+    expect(cloudflareEmailSender({})).toBeUndefined();
+    expect(cloudflareEmailSender({ EMAIL: fakeBinding })).toBeUndefined();
+    expect(cloudflareEmailSender({ EMAIL_FROM: "noreply@mail.eventunimed.id" })).toBeUndefined();
+  });
+
+  it("mengurai pengirim dan mengirim melalui binding SendEmail", async () => {
+    const sendMock = vi.fn(async () => ({ messageId: "msg-1" }));
+    const send = cloudflareEmailSender({
+      EMAIL: { send: sendMock } as unknown as SendEmail,
+      EMAIL_FROM: "LPPM Expo <noreply@mail.eventunimed.id>",
+    });
+    await send?.({ to: "v@contoh.id", subject: "Kode", text: "123456" });
+    expect(sendMock).toHaveBeenCalledWith({
+      from: { name: "LPPM Expo", email: "noreply@mail.eventunimed.id" },
+      to: "v@contoh.id",
+      subject: "Kode",
+      text: "123456",
+    });
+    expect(parseSenderAddress("noreply@mail.eventunimed.id")).toBe("noreply@mail.eventunimed.id");
+  });
+});
 
 describe("resendSender", () => {
   it("tanpa kunci atau pengirim: tidak aktif (undefined), bukan pengirim palsu", () => {

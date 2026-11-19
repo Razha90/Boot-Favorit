@@ -36,6 +36,7 @@ export const toMyReview = (r: ReviewRow): MyReview => ({
   stars: r.stars,
   comment: r.comment,
   categoryIds: parseIds(r.categoryIdsJson),
+  anonymous: r.anonymous === 1,
 });
 
 export async function getApprovedBoothRow(db: Db, eventId: string, id: string): Promise<BoothRow> {
@@ -152,6 +153,7 @@ export async function submitReview(db: Db, d: Deps, x: SubmitContext): Promise<R
     stars: input.stars,
     comment,
     categoryIdsJson: JSON.stringify(input.categoryIds),
+    anonymous: input.anonymous ? 1 : 0,
     status,
     commentStatus,
     commentMasked,

@@ -76,6 +76,36 @@ describe("tableToDrafts: tajuk dan alias", () => {
     expect(r.columns).toEqual(["email", "name", "boothNo"]);
   });
 
+  it("kolom institusi/fakultas/prodi dikenali (nama kolom apa pun dari daftar alias) dan masuk teamName", () => {
+    for (const header of ["institusi", "Fakultas", "PRODI", "Program Studi", "asal_institusi"]) {
+      const out = tableToDrafts([
+        ["Nama", header],
+        ["Kopi Rempah", "Fakultas Teknik"],
+      ]);
+      expect(out.columns).toEqual(["name", "teamName"]);
+      expect(out.rows[0]?.teamName).toBe("Fakultas Teknik");
+    }
+  });
+
+  it("institusi terlalu panjang ditandai galat pratinjau", () => {
+    const [r] = classifyRows(
+      [
+        {
+          line: 2,
+          name: "A",
+          boothNo: "",
+          email: "",
+          tagline: "",
+          description: "",
+          teamName: "x".repeat(200),
+        },
+      ],
+      [],
+    );
+    expect(r?.status).toBe("error");
+    expect(r?.issues).toEqual(["field_too_long"]);
+  });
+
   it("tanpa kolom nama: ditandai", () => {
     expect(tableToDrafts(parseCsv("email,tagline\nx@y.id,t")).missingNameColumn).toBe(true);
   });
@@ -104,6 +134,7 @@ describe("classifyRows: pratinjau sebelum impor", () => {
     email: "",
     tagline: "",
     description: "",
+    teamName: "",
     ...over,
   });
 

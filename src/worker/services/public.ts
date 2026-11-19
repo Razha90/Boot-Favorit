@@ -67,6 +67,7 @@ function toPublicBooth(
     boothNo: orNull(b.boothNo),
     tagline: orNull(b.tagline),
     description: orNull(b.description),
+    teamName: orNull(b.teamName),
     coverThumbKey: cover?.keyThumb ?? null,
     coverKey: cover?.keyFull ?? null,
     ratingAverage: showRatings && stat && count > 0 ? stat.starSum / count : null,

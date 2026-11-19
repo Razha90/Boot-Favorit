@@ -85,7 +85,7 @@ describe("notifikasi ke LiveHub", () => {
     const r = await v.call(
       "POST",
       `/api/booths/${s.lengkap.id}/review`,
-      { stars: 5 },
+      { stars: 5, comment: "Seru" },
       { env: withHub(hub.ns) },
     );
     expect(r.status).toBe(201);
@@ -129,7 +129,7 @@ describe("notifikasi ke LiveHub", () => {
     const r = await v.call(
       "POST",
       `/api/booths/${s.lengkap.id}/review`,
-      { stars: 4 },
+      { stars: 4, comment: "Oke" },
       { env: withHub(bad as unknown as DurableObjectNamespace) },
     );
     expect(r.status).toBe(201);

@@ -17,6 +17,7 @@ export function AdminReviewSummary({ review: r }: { review: AdminReview }) {
         <strong className="[overflow-wrap:anywhere]">{r.boothName}</strong>
         <RatingStars mode="display" value={r.stars} size="sm" />
         <span className="text-muted">{r.displayName ?? copy.event.reviews.anonymous}</span>
+        {r.anonymous && <Badge tone="muted">{M.anonymousToPublic}</Badge>}
       </div>
       <div className="flex flex-wrap gap-1.5">
         <Badge tone={r.status === "visible" ? "primary" : "danger"}>

@@ -227,52 +227,37 @@ describe("Turnstile", () => {
   });
 });
 
-describe("mode login per event", () => {
-  const setMode = (
-    h: Awaited<ReturnType<typeof liveHarness>>["h"],
-    eventId: string,
-    mode: string,
-  ) => h.call("PUT", `/api/admin/events/${eventId}`, { settings: { reviewerAuthMode: mode } });
-
-  it("ticket_code: OTP dan Google ditolak; kode tiket yang sah bisa masuk, yang salah tidak", async () => {
-    const { h, s } = await liveHarness({}, { GOOGLE_CLIENT_ID: "cid" });
-    await setMode(h, s.event.id, "ticket_code");
-    const v = visitorClient(h);
-    expect((await v.call("POST", "/api/visitor/otp/request", { email: "a@b.id" })).json.code).toBe(
-      "forbidden",
-    );
-    expect(
-      (await v.call("POST", "/api/visitor/google", { credential: "x".repeat(30) })).json.code,
-    ).toBe("forbidden");
-
-    expect((await v.call("POST", "/api/visitor/ticket", { code: "KODE-1234" })).json.code).toBe(
-      "login_failed",
-    );
-    const { ticketIdentity } = await import("../lib/identity");
-    const secret = "dev-only-session-secret-not-for-production";
-    await h.t.d1
-      .prepare("INSERT INTO ticket_codes (event_id, code_hash) VALUES (?, ?)")
-      .bind(s.event.id, await ticketIdentity(secret, "KODE-1234"))
-      .run();
-    const ok = await v.call("POST", "/api/visitor/ticket", {
-      code: "kode-1234",
-      displayName: "Tamu",
-    });
-    expect(ok.status).toBe(200);
-    expect(ok.json.visitor.provider).toBe("ticket");
+describe("verifikasi email wajib (anti kecurangan)", () => {
+  it("tidak ada login anonim, kode tiket, maupun logout pengunjung (rute tidak ada)", async () => {
+    const { h } = await liveHarness();
+    const v = await loginWithOtp(h, "a@b.id");
+    for (const path of ["/api/visitor/anonymous", "/api/visitor/ticket", "/api/visitor/logout"]) {
+      const r = await v.call("POST", path, { displayName: "x", code: "KODE-1234" }, { key: false });
+      expect(r.status, path).toBe(404);
+    }
+    // sesi tetap utuh setelah percobaan keluar
+    expect((await v.call("GET", "/api/visitor/me")).json.visitor).not.toBeNull();
   });
 
-  it("open_turnstile: login anonim hanya di mode ini", async () => {
+  it("mode lama di pengaturan event ('open_turnstile'/'ticket_code') diabaikan: tetap email terverifikasi", async () => {
     const { h, s } = await liveHarness();
-    const v = visitorClient(h);
-    expect((await v.call("POST", "/api/visitor/anonymous", {})).json.code).toBe("forbidden");
-    await setMode(h, s.event.id, "open_turnstile");
-    const ok = await v.call("POST", "/api/visitor/anonymous", { displayName: "Anon" });
-    expect(ok.status).toBe(200);
-    expect(ok.json.visitor.provider).toBe("anon");
-    // dan OTP tidak tersedia di mode ini
-    expect((await v.call("POST", "/api/visitor/otp/request", { email: "a@b.id" })).json.code).toBe(
-      "forbidden",
+    for (const mode of ["open_turnstile", "ticket_code"]) {
+      await h.call("PUT", `/api/admin/events/${s.event.id}`, {
+        settings: { reviewerAuthMode: mode },
+      });
+      const v = visitorClient(h);
+      expect((await v.call("GET", "/api/visitor/me")).json.authMode).toBe("google_or_email");
+      const r = await v.call("POST", "/api/visitor/otp/request", { email: `${mode}@b.id` });
+      expect(r.status).toBe(200);
+    }
+  });
+
+  it("identitas = email terverifikasi: masuk lagi dengan email yang sama = pengunjung yang sama", async () => {
+    const { h } = await liveHarness();
+    const first = await loginWithOtp(h, "sama@b.id");
+    const again = await loginWithOtp(h, "sama@b.id");
+    expect((await first.call("GET", "/api/visitor/me")).json.visitor.id).toBe(
+      (await again.call("GET", "/api/visitor/me")).json.visitor.id,
     );
   });
 });
@@ -352,14 +337,6 @@ describe("login Google", () => {
 });
 
 describe("sesi", () => {
-  it("logout menghapus cookie; sesi event lain tidak berlaku", async () => {
-    const { h } = await liveHarness();
-    const v = await loginWithOtp(h, "a@b.id");
-    expect((await v.call("GET", "/api/visitor/me")).json.visitor).not.toBeNull();
-    await v.call("POST", "/api/visitor/logout", undefined, { key: false });
-    expect((await v.call("GET", "/api/visitor/me")).json.visitor).toBeNull();
-  });
-
   it("cookie dirusak/dipalsukan: dianggap belum masuk (bukan galat)", async () => {
     const { h } = await liveHarness();
     const v = visitorClient(h);

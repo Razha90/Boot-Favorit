@@ -434,17 +434,79 @@ describe("Halaman Log & Poster QR", () => {
     await waitFor(() => expect(calls.some((c) => c.path.includes("category=admin"))).toBe(true));
   });
 
-  it("halaman Poster QR merender booth tayang + poster daftar, serta mengganti ukuran A4/A5", async () => {
+  it("halaman Poster QR: poster QR utama event + booth tayang + pendaftaran, semua dengan QR berlabel", async () => {
     mockServer({
-      approvedBooths: [{ id: "b1", name: "Kopi Rempah", boothNo: "A1", tagline: "Hangat" }],
+      approvedBooths: [
+        {
+          id: "b1",
+          name: "Kopi Rempah",
+          boothNo: "A1",
+          tagline: "Hangat",
+          teamName: "Fakultas Teknik",
+        },
+      ],
     });
     const { container } = mountRoute("/admin/e/ev1/posters");
     expect(await screen.findByText("Kopi Rempah")).toBeTruthy();
+    expect(screen.getByLabelText(P.eventQrLabel)).toBeTruthy();
     expect(screen.getByLabelText(P.qrLabel("Kopi Rempah"))).toBeTruthy();
     expect(screen.getByLabelText(P.scanToRegister)).toBeTruthy();
-    expect(container.textContent).toContain("/b/b1?src=qr");
+    expect(
+      [...container.querySelectorAll("article[data-poster]")].map((a) =>
+        a.getAttribute("data-poster"),
+      ),
+    ).toEqual(["event", "booth", "register"]); // QR utama event paling depan
+    expect(container.textContent).toContain("Fakultas Teknik");
+    expect(container.textContent).toContain("Booth A1");
+  });
 
+  it("QR utama event memakai alamat situs; alamat diganti dipakai, yang tidak sah kembali ke alamat situs", async () => {
+    mockServer({ approvedBooths: [] });
+    const { container } = mountRoute("/admin/e/ev1/posters");
+    await screen.findByLabelText(P.eventQrLabel);
+    const qr = () => screen.getByLabelText(P.eventQrLabel).querySelector("path")?.getAttribute("d");
+    const initial = qr();
+    fireEvent.change(screen.getByLabelText(P.eventUrlLabel), {
+      target: { value: "https://eventunimed.id/" },
+    });
+    expect(qr()).not.toBe(initial);
+    expect(container.textContent).toContain("eventunimed.id");
+    fireEvent.change(screen.getByLabelText(P.eventUrlLabel), { target: { value: "bukan url" } });
+    expect(qr()).toBe(initial); // kembali ke alamat situs
+    fireEvent.change(screen.getByLabelText(P.eventUrlLabel), {
+      target: { value: "javascript:alert(1)" },
+    });
+    expect(qr()).toBe(initial);
+  });
+
+  it("opsi poster event/pendaftaran dapat dimatikan; ukuran A5 mengubah bentuk poster", async () => {
+    mockServer({ approvedBooths: [{ id: "b1", name: "Kopi", boothNo: null }] });
+    const { container } = mountRoute("/admin/e/ev1/posters");
+    await screen.findByLabelText(P.qrLabel("Kopi"));
+    fireEvent.click(screen.getByLabelText(P.includeEvent));
+    fireEvent.click(screen.getByLabelText(P.includeRegister));
+    expect(container.querySelectorAll("article[data-poster]")).toHaveLength(1);
     fireEvent.change(screen.getByLabelText(P.sizeLabel), { target: { value: "a5" } });
-    expect(container.querySelector("style")?.textContent).toContain("size: a5 portrait");
+    expect(container.querySelector("article[data-poster]")?.className).toContain(
+      "aspect-[148/210]",
+    );
+  });
+
+  it("Cetak membuka lapisan cetak berukuran kertas terpilih dan memanggil window.print; hanya poster yang tercetak", async () => {
+    const print = vi.fn();
+    window.print = print;
+    mockServer({ approvedBooths: [{ id: "b1", name: "Kopi", boothNo: "A1" }] });
+    mountRoute("/admin/e/ev1/posters");
+    await screen.findByLabelText(P.qrLabel("Kopi"));
+    fireEvent.change(screen.getByLabelText(P.sizeLabel), { target: { value: "a5" } });
+    fireEvent.click(screen.getByRole("button", { name: P.print }));
+    await waitFor(() => expect(print).toHaveBeenCalledTimes(1));
+    const layer = document.body.querySelector(".poster-print-root");
+    expect(layer?.querySelector("style")?.textContent).toContain("size: a5 portrait");
+    expect(layer?.querySelectorAll("article[data-poster]")).toHaveLength(3);
+    expect(document.body.classList.contains("poster-printing")).toBe(true);
+    window.dispatchEvent(new Event("afterprint"));
+    await waitFor(() => expect(document.body.querySelector(".poster-print-root")).toBeNull());
+    expect(document.body.classList.contains("poster-printing")).toBe(false);
   });
 });

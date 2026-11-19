@@ -240,6 +240,8 @@ export const reviews = sqliteTable(
     filterVersion: integer("filter_version"),
     commentLocked: flag("comment_locked"),
     pinned: flag("pinned"),
+    /** 1 = reviewer memilih tampil anonim: nama TIDAK tampil ke publik/booth (admin tetap melihat akun untuk moderasi) */
+    anonymous: flag("anonymous"),
     riskScore: integer("risk_score"),
     flagsJson: text("flags_json"),
     ipHash: text("ip_hash"),

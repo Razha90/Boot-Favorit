@@ -4,7 +4,7 @@
 
 import type { LatestReview, PublicReview, PublicReviews, TopCategory } from "@shared/api-types";
 import { ApiError } from "@shared/errors";
-import { and, desc, eq, inArray, isNotNull, lt, or } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, isNull, lt, or } from "drizzle-orm";
 import { booths, type EventRow, reviewCategories, reviews, visitors } from "../db/schema";
 import type { Db } from "../lib/db";
 import { parseIds } from "./reviews";
@@ -54,6 +54,7 @@ export async function listPublicReviews(
       categoryIdsJson: reviews.categoryIdsJson,
       createdAt: reviews.createdAt,
       displayName: visitors.displayName,
+      anonymous: reviews.anonymous,
     })
     .from(reviews)
     .innerJoin(visitors, eq(visitors.id, reviews.visitorId))
@@ -61,8 +62,9 @@ export async function listPublicReviews(
       and(
         eq(reviews.boothId, boothId),
         eq(reviews.status, "visible"),
-        isNotNull(reviews.comment),
-        inArray(reviews.commentStatus, ["visible", "masked"]),
+        // Tanpa komentar → tampil (hanya bintang). Berkomentar → hanya bila komentarnya lolos; yang ditahan/disembunyikan
+        // tidak muncul sama sekali (jangan tampilkan nama di samping komentar yang dipermasalahkan, B25).
+        or(isNull(reviews.comment), inArray(reviews.commentStatus, ["visible", "masked"])),
         cur
           ? or(
               lt(reviews.createdAt, cur.at),
@@ -77,14 +79,16 @@ export async function listPublicReviews(
   const labels = await categoryLabels(db, event.id);
   const page = rows.slice(0, REVIEWS_PAGE_SIZE);
   const out: PublicReview[] = page.flatMap((r) => {
-    const text = r.commentStatus === "masked" ? r.commentMasked : r.comment;
-    if (!text || text.trim() === "") return [];
+    // Review yang hanya berbintang ikut tampil (tanpa teks). Komentar yang ditahan/disembunyikan sudah difilter di query.
+    const raw = r.commentStatus === "masked" ? r.commentMasked : r.comment;
+    const text = raw && raw.trim() !== "" ? raw : null;
+    if (text === null && !showStars) return []; // tak ada yang bisa ditampilkan
     return [
       {
         id: r.id,
         stars: showStars ? r.stars : null,
         text,
-        displayName: publicName({ displayName: r.displayName }),
+        displayName: publicName({ displayName: r.displayName, anonymous: r.anonymous }),
         categories: parseIds(r.categoryIdsJson).flatMap((id) => {
           const label = labels.get(id);
           return label ? [{ id, label }] : [];
@@ -125,6 +129,7 @@ export async function latestReviews(
       commentStatus: reviews.commentStatus,
       createdAt: reviews.createdAt,
       displayName: visitors.displayName,
+      anonymous: reviews.anonymous,
     })
     .from(reviews)
     .innerJoin(booths, eq(booths.id, reviews.boothId))
@@ -151,7 +156,7 @@ export async function latestReviews(
         boothName: r.boothName,
         stars: showStars ? r.stars : null,
         text: clip(text),
-        displayName: publicName({ displayName: r.displayName }),
+        displayName: publicName({ displayName: r.displayName, anonymous: r.anonymous }),
         createdAt: r.createdAt,
       },
     ];

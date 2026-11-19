@@ -9,6 +9,7 @@ import { baseContext, handleError, notFoundJson } from "./middleware/base";
 import { eventWriteGate, loadActiveEvent } from "./middleware/event-gate";
 import { csrfOriginGuard, securityHeaders } from "./middleware/security";
 import { createAdminRoutes } from "./routes/admin";
+import { createAdminPageRoutes } from "./routes/admin-page";
 import { createBoothAuthRoutes } from "./routes/booth/auth";
 import { boothPortalRoutes } from "./routes/booth/portal";
 import { eventRoutes } from "./routes/event";
@@ -49,6 +50,7 @@ export function createApp(deps: AppDeps = {}) {
   app.route("/", mediaRoutes);
   app.route("/", goRoutes);
   app.route("/", pageRoutes);
+  app.route("/", createAdminPageRoutes({ getJwks: deps.getJwks }));
   app.route("/", eventRoutes);
   app.route("/", publicRoutes);
   app.route("/", liveRoutes);

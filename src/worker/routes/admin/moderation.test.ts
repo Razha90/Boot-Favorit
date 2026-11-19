@@ -248,16 +248,6 @@ describe("status komentar, sunting, pulihkan, hapus", () => {
     });
     expect(back.json.review).toMatchObject({ commentStatus: "visible", commentLocked: true });
     expect(await publicList(fx, fx.s.lengkap.id)).toHaveLength(1);
-
-    const star = await make(fx, fx.s.hanyaNama.id, { stars: 4 });
-    expect(
-      (
-        await fx.h.call("PATCH", `${E(fx)}/reviews/${star.id}/comment`, {
-          commentStatus: "hidden",
-          reason: REASON,
-        })
-      ).json.code,
-    ).toBe("validation_error");
   });
 
   it("menyunting bintang/komentar: nilai ASLI tersimpan sekali dan tidak pernah ditimpa; statistik mengikuti", async () => {

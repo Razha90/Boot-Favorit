@@ -15,6 +15,7 @@ export interface ReviewValues {
   stars: number;
   comment: string | null;
   categoryIds: string[];
+  anonymous: boolean;
 }
 
 /**
@@ -36,6 +37,7 @@ export function ReviewForm({
   const [stars, setStars] = useState(initial?.stars ?? 0);
   const [ids, setIds] = useState<string[]>(initial?.categoryIds ?? []);
   const [comment, setComment] = useState(initial?.comment ?? "");
+  const [anonymous, setAnonymous] = useState(initial?.anonymous ?? false);
   const max = CONFIG.review.maxCommentLength;
 
   const toggle = (id: string) =>
@@ -113,16 +115,36 @@ export function ReviewForm({
         )}
       </Field>
 
+      <div className="flex items-center gap-1.5">
+        <label className="flex cursor-pointer items-center gap-2 text-sm font-bold">
+          <input
+            type="checkbox"
+            checked={anonymous}
+            onChange={(e) => {
+              setAnonymous(e.target.checked);
+              triggerSfx("toggle", e.target.checked);
+            }}
+          />
+          {copy.event.form.anonymous}
+        </label>
+        <InfoTip text={copy.event.form.anonymousInfo} title={copy.event.form.anonymous} />
+      </div>
+
       <ActionButton
         type="submit"
         variant="primary"
         disabled={stars === 0 || disabled}
-        resetOn={`${stars}|${ids.join(",")}|${comment}`}
+        resetOn={`${stars}|${ids.join(",")}|${comment}|${anonymous}`}
         action={async (ctx) => {
           triggerSfx("tick");
           try {
             await submit(
-              { stars, comment: comment.trim() === "" ? null : comment.trim(), categoryIds: ids },
+              {
+                stars,
+                comment: comment.trim() === "" ? null : comment.trim(),
+                categoryIds: ids,
+                anonymous,
+              },
               ctx,
             );
             triggerSfx("ok");

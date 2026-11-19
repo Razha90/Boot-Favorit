@@ -36,6 +36,9 @@ export function EventStateProvider({
   return <EventStateContext.Provider value={state}>{children}</EventStateContext.Provider>;
 }
 
+/** null di luar EventStateProvider (galeri/tes komponen). */
+export const useEventStateOptional = (): EventState | null => useContext(EventStateContext);
+
 export function useEventState(): EventState {
   const s = useContext(EventStateContext);
   if (!s) throw new Error("useEventState harus dipakai di dalam EventStateProvider");

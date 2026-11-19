@@ -1,0 +1,1 @@
+ALTER TABLE `reviews` ADD `anonymous` integer DEFAULT 0 NOT NULL;

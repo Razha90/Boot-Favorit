@@ -1,20 +1,22 @@
 // @vitest-environment jsdom
 import { getEventState } from "@shared/event-state";
-import { act, cleanup, fireEvent, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BOOTHS, PRODUCTS } from "../../dev/fixtures";
 import { failAllImages } from "../../test/assertions";
-import { isEmpty, makeEvent, memStore, renderEvent, SCHEDULE } from "../../test/render";
+import { isEmpty, makeEvent, memStore, photoImgs, renderEvent, SCHEDULE } from "../../test/render";
+import { BackToTop } from "./components/BackToTop";
 import {
   AboutText,
   RatePanel,
   RatingBreakdown,
   WhatsAppOrderButton,
 } from "./components/booth-parts";
-import { ComingSoonScreen, MarqueeBanner, SiteFooter } from "./components/chrome";
+import { ComingSoonScreen, SiteFooter } from "./components/chrome";
 import { Hero } from "./components/Hero";
 import { PhotoSlideshow } from "./components/PhotoSlideshow";
 import { Showcase } from "./components/Showcase";
+import { SideDecor } from "./components/SideDecor";
 import { SpotlightSection } from "./components/SpotlightSection";
 import { SaveButton, ShareButton, WishlistFab } from "./components/share-wishlist";
 
@@ -33,6 +35,40 @@ const animationEnd = (el: Element) => {
     fireEvent(el, new Event(type, { bubbles: true }));
   }
 };
+
+describe("BackToTop", () => {
+  it("tersembunyi di atas halaman; muncul setelah digulir; klik menggulir ke atas", () => {
+    const scrollTo = vi.fn();
+    window.scrollTo = scrollTo as unknown as typeof window.scrollTo;
+    Object.defineProperty(window, "scrollY", { configurable: true, value: 0 });
+    renderEvent(<BackToTop />);
+    expect(screen.queryByRole("button", { name: "Balik ke atas" })).toBeNull();
+    Object.defineProperty(window, "scrollY", { configurable: true, value: 900 });
+    act(() => {
+      window.dispatchEvent(new Event("scroll"));
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Balik ke atas" }));
+    expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ top: 0 }));
+    Object.defineProperty(window, "scrollY", { configurable: true, value: 0 });
+  });
+});
+
+describe("SideDecor: latar acak statis", () => {
+  it("dekoratif (aria-hidden), 16 stiker, tanpa animasi, tata letak stabil per event", () => {
+    const a = renderEvent(<SideDecor seed="ev1" />);
+    const root = a.container.querySelector("[data-side-decor]") as HTMLElement;
+    expect(root.getAttribute("aria-hidden")).toBe("true");
+    expect(root.querySelectorAll("img")).toHaveLength(16);
+    expect(root.querySelector("[class*='animate'], [class*='float']")).toBeNull();
+    const html = root.innerHTML;
+    a.unmount();
+    const b = renderEvent(<SideDecor seed="ev1" />);
+    expect(b.container.querySelector("[data-side-decor]")?.innerHTML).toBe(html);
+    b.unmount();
+    const c = renderEvent(<SideDecor seed="ev2" />);
+    expect(c.container.querySelector("[data-side-decor]")?.innerHTML).not.toBe(html);
+  });
+});
 
 describe("Hero", () => {
   const renderHero = (serverNow: number, event = makeEvent(), boothCount = 8) => {
@@ -92,7 +128,36 @@ describe("Hero", () => {
     const { container } = renderHero(NOW.live);
     expect(container.querySelector("header")?.getAttribute("data-hero-layout")).toBe("text");
     expect(container.querySelector("[data-collage]")).toBeNull();
-    expect(container.querySelector("img")).toBeNull();
+    expect(photoImgs(container)).toHaveLength(0);
+    // sisi kanan diisi papan stiker (satu besar + empat pengiring) kartun makanan (dekoratif, tersembunyi dari pembaca layar)
+    const art = container.querySelector("[data-hero-art]");
+    expect(art?.getAttribute("aria-hidden")).toBe("true");
+    expect(art?.querySelectorAll("img[src^='/art/food/']")).toHaveLength(5);
+  });
+
+  it("ada foto suasana: kolase foto menggantikan kolase stiker", () => {
+    const { container } = renderHero(
+      NOW.live,
+      makeEvent({ media: { logoKey: null, ogImageKey: null, heroKeys: ["ok:1"] } }),
+    );
+    expect(container.querySelector("[data-collage]")).not.toBeNull();
+    expect(container.querySelector("[data-hero-art]")).toBeNull();
+  });
+
+  it("tombol Bagikan di hero membagikan beranda event (bukan booth)", () => {
+    HTMLDialogElement.prototype.showModal = function showModal(this: HTMLDialogElement) {
+      this.setAttribute("open", "");
+    };
+    const { container } = renderHero(NOW.live);
+    expect(container.querySelector("dialog")).toBeNull(); // dialog baru dipasang saat dibuka
+    fireEvent.click(screen.getByRole("button", { name: "Bagikan" }));
+    const input = screen.getByRole("textbox") as HTMLInputElement;
+    expect(new URL(input.value).pathname).toBe("/");
+    expect(input.value).toContain("src=share");
+    const wa = screen.getByRole("link", { name: "WhatsApp" }) as HTMLAnchorElement;
+    expect(decodeURIComponent(wa.href)).not.toMatch(/bintang|ulasan/i);
+    // pratinjau kartu tautan memakai kartu bawaan bila event belum punya gambar OG
+    expect(document.querySelector("dialog img")?.getAttribute("src")).toBe("/og/default.png");
   });
 
   it("kolase mengikuti jumlah foto (1–3) dan beralih ke teks bila semua gagal dimuat", async () => {
@@ -136,12 +201,22 @@ describe("Hero", () => {
 });
 
 describe("SiteFooter dan ComingSoonScreen", () => {
-  it("kaki halaman: nama acara, penyelenggara, balik ke atas; tanpa logo = tidak ada gambar", () => {
+  it("kaki halaman: nama acara, penyelenggara, tautan situs LPPM; tanpa unggahan = logo resmi bawaan", () => {
     const { container } = renderEvent(<SiteFooter event={makeEvent()} />);
     expect(container.textContent).toContain("Penilaian Booth Terfavorit LPPM Expo Tahun 2026");
-    expect(container.textContent).toContain("Diselenggarakan oleh LPPM UNIMED");
-    expect(container.querySelector("a[href='#top']")).not.toBeNull();
-    expect(container.querySelector("img")).toBeNull();
+    expect(container.textContent).toContain("Diselenggarakan oleh");
+    expect(container.textContent).toContain("Universitas Negeri Medan");
+    expect(container.textContent).toContain(
+      `© ${new Date(SCHEDULE.eventStartAt).getFullYear()} LPPM UNIMED`,
+    );
+    expect(container.querySelector("a[href='https://lppm.unimed.ac.id']")).not.toBeNull();
+    // tombol masuk pengelola: admin = navigasi penuh (href biasa), pemilik booth = rute /booth
+    const nav = within(container.querySelector("nav[aria-label='Untuk pengelola']") as HTMLElement);
+    expect(nav.getByRole("link", { name: "Masuk Admin" }).getAttribute("href")).toBe("/admin");
+    expect(nav.getByRole("link", { name: "Masuk Pemilik Booth" }).getAttribute("href")).toBe(
+      "/booth",
+    );
+    expect(container.querySelector("img")?.getAttribute("src")).toBe("/brand/lppm-logo.png");
   });
 
   it("dengan logo tampil; logo gagal dimuat hilang tanpa bekas", async () => {
@@ -152,22 +227,15 @@ describe("SiteFooter dan ComingSoonScreen", () => {
         })}
       />,
     );
-    expect(container.querySelectorAll("img")).toHaveLength(1);
+    expect(photoImgs(container)).toHaveLength(1);
     await act(async () => void failAllImages(container));
-    expect(container.querySelector("img")).toBeNull();
+    expect(photoImgs(container)).toHaveLength(0);
   });
 
   it("Segera hadir: hanya nama penyelenggara dan pesan; tanpa data event", () => {
     const { container } = renderEvent(<ComingSoonScreen />);
     expect(container.querySelector("h1")?.textContent).toBe("Segera hadir");
     expect(container.textContent).toContain("LPPM UNIMED");
-  });
-
-  it("MarqueeBanner menampilkan ringkasan dan punya tombol jeda WCAG", () => {
-    renderEvent(<MarqueeBanner reviewCount={12} boothCount={4} frozen={false} />);
-    expect(document.body.textContent).toContain("12 ulasan udah masuk");
-    fireEvent.click(screen.getByRole("button", { name: "Jeda pita berjalan" }));
-    expect(screen.getByRole("button", { name: "Putar pita berjalan" })).toBeTruthy();
   });
 });
 
@@ -186,7 +254,7 @@ describe("PhotoSlideshow", () => {
 
   it("satu foto: tanpa panah, penghitung, segmen, thumbnail, dan pewaktu", () => {
     const { container } = renderEvent(<PhotoSlideshow photos={photos(1)} />);
-    expect(container.querySelectorAll("img")).toHaveLength(1);
+    expect(photoImgs(container)).toHaveLength(1);
     expect(screen.queryByLabelText("Foto berikutnya")).toBeNull();
     expect(progress(container)).toBeNull();
     expect(container.querySelector("ol")).toBeNull();
@@ -325,7 +393,7 @@ describe("AboutText", () => {
   it("selalu di-escape: tanpa HTML", () => {
     sizes(60, 60);
     const { container } = renderEvent(<AboutText text={"<img src=x onerror=alert(1)>"} />);
-    expect(container.querySelector("img")).toBeNull();
+    expect(photoImgs(container)).toHaveLength(0);
     expect(container.textContent).toContain("<img src=x");
   });
 });
@@ -434,7 +502,7 @@ describe("Showcase", () => {
     const mixed = renderEvent(<Showcase products={[PRODUCTS.lengkap, PRODUCTS.tanpaFoto]} />);
     expect(mixed.container.querySelector("ul")?.getAttribute("data-visual-mode")).toBe("photo");
     expect(mixed.container.querySelectorAll("[data-photo-frame]")).toHaveLength(0);
-    expect(mixed.container.querySelectorAll("img")).toHaveLength(1);
+    expect(photoImgs(mixed.container)).toHaveLength(1);
   });
 });
 
@@ -458,6 +526,47 @@ describe("Bagikan dan Incaran", () => {
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Salin tautan" })));
     expect(writeText).toHaveBeenCalledWith(input.value);
     expect(screen.getByText("Tautan disalin")).toBeTruthy();
+  });
+
+  it("ShareButton: panel Kode QR menampilkan poster yang sama dengan admin, QR bersinyal src=qr, dan tombol cetak", async () => {
+    HTMLDialogElement.prototype.showModal = function showModal(this: HTMLDialogElement) {
+      this.setAttribute("open", "");
+    };
+    renderEvent(
+      <ShareButton
+        boothId="b1"
+        boothName="Kopi"
+        poster={{ boothNo: "A12", teamName: "Fakultas Teknik", tagline: "Hangat" }}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Bagikan" }));
+    expect(document.querySelector("article[data-poster]")).toBeNull(); // belum dibuka
+    fireEvent.click(screen.getByRole("button", { name: "Kode QR" }));
+    const poster = await waitFor(() => {
+      const el = document.querySelector("article[data-poster='booth']");
+      expect(el).not.toBeNull();
+      return el as HTMLElement;
+    });
+    expect(poster.textContent).toContain("Kopi");
+    expect(poster.textContent).toContain("Booth A12");
+    expect(poster.textContent).toContain("Fakultas Teknik");
+    expect(screen.getByRole("button", { name: "Cetak poster QR" })).toBeTruthy();
+    expect(screen.getByRole("img", { name: "Kode QR tautan bagikan" })).toBeTruthy();
+  });
+
+  it("ShareButton beranda event: poster QR utama menuju domain utama", async () => {
+    HTMLDialogElement.prototype.showModal = function showModal(this: HTMLDialogElement) {
+      this.setAttribute("open", "");
+    };
+    renderEvent(<ShareButton />);
+    fireEvent.click(screen.getByRole("button", { name: "Bagikan" }));
+    fireEvent.click(screen.getByRole("button", { name: "Kode QR" }));
+    await waitFor(() =>
+      expect(document.querySelector("article[data-poster='event']")).not.toBeNull(),
+    );
+    expect(document.querySelector("article[data-poster='event']")?.textContent).toContain(
+      "Jelajahi Semua Booth",
+    );
   });
 
   it("SaveButton: simpan/buang (aria-pressed), batas penuh memberi toast, hilang setelah event selesai", () => {

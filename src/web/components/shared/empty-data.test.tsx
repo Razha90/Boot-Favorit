@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { BOOTH_NAMES, BOOTHS, PRODUCTS, sampleResolver } from "../../dev/fixtures";
 import { MediaUrlProvider } from "../../lib/media-url";
 import { assertNoBrokenUI, failAllImages } from "../../test/assertions";
+import { photoImgs } from "../../test/render";
 import { BoothCard, type BoothCardVariant } from "./BoothCard";
 import { BoothGrid } from "./BoothGrid";
 import { FeaturedProduct, ProductCard, ProductGrid } from "./ProductCard";
@@ -57,11 +58,11 @@ describe("foto kosong = foto gagal = bersih hanya-teks yang SAMA", () => {
         visualMode="photo"
       />,
     );
-    expect(failed.container.querySelectorAll("img")).toHaveLength(1);
+    expect(photoImgs(failed.container)).toHaveLength(1);
     await act(async () => {
       failAllImages(failed.container);
     });
-    expect(failed.container.querySelectorAll("img")).toHaveLength(0);
+    expect(photoImgs(failed.container)).toHaveLength(0);
     expect(failed.container.querySelectorAll("[data-photo-frame]")).toHaveLength(0);
     const failedHtml = failed.container.innerHTML;
     failed.unmount();
@@ -85,7 +86,7 @@ describe("foto kosong = foto gagal = bersih hanya-teks yang SAMA", () => {
   it("sorotan tanpa foto = hanya-teks; sorotan yang fotonya gagal beralih ke hanya-teks", async () => {
     const none = mount(<BoothCard booth={BOOTHS.hanyaNama} variant="spotlight" />);
     expect(none.container.querySelector("article")?.getAttribute("data-layout")).toBe("text");
-    expect(none.container.querySelector("img")).toBeNull();
+    expect(photoImgs(none.container)).toHaveLength(0);
     none.unmount();
 
     const failed = mount(<BoothCard booth={BOOTHS.fotoGagal404} variant="spotlight" />);
@@ -141,7 +142,7 @@ describe("bagian teks yang kosong hilang (tidak dirender)", () => {
       featuredProduct: { id: "p", name: "Kopi", priceIdr: 18000, thumbKey: null },
     };
     const { container } = mount(<BoothCard booth={withoutPhoto} variant="spotlight" />);
-    expect(container.querySelector("img")).toBeNull();
+    expect(photoImgs(container)).toHaveLength(0);
     expect(container.textContent).toContain("Kopi");
     expect(container.textContent).toContain("Rp 18.000");
   });
@@ -156,20 +157,24 @@ describe("keadilan: ukuran kartu seragam", () => {
     BOOTHS.namaPanjang,
   ];
 
-  it("dalam grid campuran, kartu berfoto memakai rasio 4/3 seragam dan saat gagal/tanpa foto semuanya seragam tanpa kotak inisial", async () => {
+  it("dalam grid campuran SEMUA kartu punya slot visual 4/3 yang sama (foto atau ubin ilustrasi); foto gagal = ubin", async () => {
     const { container } = mount(<BoothGrid booths={mixed} />);
-    const visualsBefore = [...container.querySelectorAll("[data-card-visual]")];
-    expect(visualsBefore).toHaveLength(2); // lengkap + fotoGagal404 sebelum gambar 404 gagal
-    expect(new Set(visualsBefore.map((v) => v.getAttribute("style"))).size).toBe(1);
-    expect(visualsBefore[0]?.getAttribute("style")).toMatch(/4\s*\/\s*3/);
+    const visuals = () => [...container.querySelectorAll("[data-card-visual]")];
+    expect(visuals()).toHaveLength(mixed.length); // satu slot per kartu: tinggi seragam
+    expect(new Set(visuals().map((v) => v.getAttribute("style"))).size).toBe(1);
+    expect(visuals()[0]?.getAttribute("style")).toMatch(/4\s*\/\s*3/);
+    expect(photoImgs(container)).toHaveLength(2); // lengkap + fotoGagal404 (belum 404)
+    expect(container.querySelectorAll("[data-card-art]")).toHaveLength(mixed.length - 2);
 
     await act(async () => {
       failAllImages(container);
     });
     const cards = [...container.querySelectorAll("li > a")];
     expect(cards).toHaveLength(mixed.length);
-    expect(container.querySelectorAll("[data-photo-frame]")).toHaveLength(0);
-    expect(container.querySelectorAll("img")).toHaveLength(0);
+    expect(visuals()).toHaveLength(mixed.length); // tetap satu slot per kartu setelah foto gagal
+    expect(container.querySelectorAll("[data-card-art]")).toHaveLength(mixed.length);
+    expect(container.querySelectorAll("[data-photo-frame]")).toHaveLength(0); // tanpa kotak inisial
+    expect(photoImgs(container)).toHaveLength(0);
     expect(new Set(cards.map((c) => c.className)).size).toBe(1);
   });
 
@@ -180,7 +185,7 @@ describe("keadilan: ukuran kartu seragam", () => {
     expect(container.querySelector("ul")?.getAttribute("data-visual-mode")).toBe("text");
     expect(container.querySelector("[data-card-visual]")).toBeNull();
     expect(container.querySelector("[data-photo-frame]")).toBeNull();
-    expect(container.querySelector("img")).toBeNull();
+    expect(photoImgs(container)).toHaveLength(0);
     assertNoBrokenUI(container);
   });
 
@@ -188,7 +193,7 @@ describe("keadilan: ukuran kartu seragam", () => {
     const { container } = mount(<BoothGrid booths={[BOOTHS.hanyaNama, BOOTHS.gratis]} />);
     expect(container.querySelector("ul")?.getAttribute("data-visual-mode")).toBe("photo");
     expect(container.querySelectorAll("[data-photo-frame]")).toHaveLength(0);
-    expect(container.querySelectorAll("img")).toHaveLength(1);
+    expect(photoImgs(container)).toHaveLength(1);
   });
 
   it("urutan tidak bergantung pada kelengkapan data (komponen tidak mengacak)", () => {
@@ -217,7 +222,7 @@ describe("produk: bersih tanpa kotak inisial, hanya-teks, atau hilang", () => {
     const mixed = mount(<ProductGrid products={[PRODUCTS.lengkap, PRODUCTS.tanpaFoto]} />);
     expect(mixed.container.querySelector("ul")?.getAttribute("data-visual-mode")).toBe("photo");
     expect(mixed.container.querySelectorAll("[data-photo-frame]")).toHaveLength(0);
-    expect(mixed.container.querySelectorAll("img")).toHaveLength(1);
+    expect(photoImgs(mixed.container)).toHaveLength(1);
   });
 
   it("tanpa produk: tidak dirender sama sekali (tidak ada judul kosong)", () => {
@@ -228,14 +233,14 @@ describe("produk: bersih tanpa kotak inisial, hanya-teks, atau hilang", () => {
   it("andalan tanpa foto = hanya teks; foto gagal → hanya teks", async () => {
     const none = mount(<FeaturedProduct product={PRODUCTS.tanpaFoto} />);
     expect(none.container.querySelector("section")?.getAttribute("data-layout")).toBe("text");
-    expect(none.container.querySelector("img")).toBeNull();
+    expect(photoImgs(none.container)).toHaveLength(0);
     none.unmount();
 
     const failed = mount(<FeaturedProduct product={PRODUCTS.fotoGagal404} />);
     await act(async () => {
       failAllImages(failed.container);
     });
-    expect(failed.container.querySelector("img")).toBeNull();
+    expect(photoImgs(failed.container)).toHaveLength(0);
     assertNoBrokenUI(failed.container);
   });
 

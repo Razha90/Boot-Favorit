@@ -167,6 +167,17 @@ describe("ulasan masuk dan laporan (A4, A15)", () => {
     return { ...ctx, v, rid: list.reviews[0].id as string };
   }
 
+  it('ulasan anonim: pemilik booth juga hanya melihat "Anonim", bukan nama reviewer', async () => {
+    const ctx = await owned();
+    const v = await directVisitor(ctx.h, ctx.s.event.id, { name: "Sari Rahasia" });
+    await review(v, ctx.s.lengkap.id, { stars: 5, comment: "Mantap", anonymous: true });
+    const list = (await ctx.b.call("GET", "/api/booth/reviews")).json;
+    expect(list.reviews.some((r: { displayName: string }) => r.displayName === "Anonim")).toBe(
+      true,
+    );
+    expect(JSON.stringify(list)).not.toContain("Sari");
+  });
+
   it("daftar ulasan hanya yang tampil publik: ditahan/disembunyikan tidak muncul", async () => {
     const { h, s, b, rid } = await withComment();
     expect((await b.call("GET", "/api/booth/reviews")).json.reviews).toHaveLength(1);

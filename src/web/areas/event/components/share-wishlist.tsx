@@ -1,11 +1,14 @@
 import type { PublicBooth, PublicProduct, PublicProducts } from "@shared/api-types";
+import { DEFAULT_OG_PATH, foodArtFor, foodOgPath } from "@shared/food-art";
 import { useQueries } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useId, useMemo, useState } from "react";
 import { PriceTag } from "../../../components/shared/PriceTag";
+import type { PosterContent } from "../../../components/shared/QrPoster";
 import { SafeImage } from "../../../components/shared/SafeImage";
 import { Button } from "../../../components/ui/Button";
 import { Icon } from "../../../components/ui/Icon";
 import { Modal } from "../../../components/ui/Modal";
+import { Spinner } from "../../../components/ui/Spinner";
 import { useToast } from "../../../components/ui/Toast";
 import { eventKeys, useEventData } from "../../../features/event-data";
 import { burstStars } from "../../../features/fx/ClickFx";
@@ -17,6 +20,9 @@ import { formatRupiah } from "../../../lib/format";
 import { useMediaUrl } from "../../../lib/media-url";
 import { triggerSfx } from "../../../lib/sfx-bridge";
 import {
+  buildEventShareText,
+  buildEventShareUrl,
+  buildQrUrl,
   buildShareText,
   buildShareUrl,
   canNativeShare,
@@ -32,31 +38,181 @@ import { compareBoothNo, useWishlist } from "../../../lib/wishlist";
 
 // ---------- Bagikan ----------
 
-/** Panel bagikan: salin tautan, WhatsApp (tanpa nomor), dan Web Share API bila ada. Esc menutup. */
+const LazySharePoster = lazy(() => import("./SharePoster"));
+
+type ChannelId = "wa" | "tg" | "th" | "x" | "fb" | "ln" | "em";
+
+function ChannelIcon({ channel }: { channel: ChannelId }) {
+  switch (channel) {
+    case "wa":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4.5 fill-none stroke-current">
+          <path
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M4.5 19.5 6 15.2a8 8 0 1 1 3.3 3.2z"
+          />
+          <path
+            strokeWidth={1.9}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M9.6 9.3c.2-.5.5-.5.8-.5h.5c.2 0 .4.1.5.4l.7 1.6c.1.2.1.4-.1.6l-.5.6c.6 1 1.4 1.8 2.4 2.4l.6-.5c.2-.2.4-.2.6-.1l1.6.7c.3.1.4.3.4.5v.5c0 .3 0 .6-.5.8-.6.3-1.8.2-3.4-.6a8.8 8.8 0 0 1-3.8-3.8c-.8-1.6-.9-2.8-.6-3.4Z"
+          />
+        </svg>
+      );
+    case "tg":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4.5 fill-none stroke-current">
+          <path
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M21 4.5 3.8 11.3c-.9.4-.9 1.6.1 1.9l4.2 1.3 1.7 5c.3.8 1.3.9 1.8.3l2.4-2.8 4.2 3.1c.7.5 1.7.1 1.9-.7L22 5.7c.2-.9-.2-1.5-1-1.2Z"
+          />
+          <path strokeWidth={1.8} strokeLinecap="round" d="m8.2 14.5 9.8-6.4" />
+        </svg>
+      );
+    case "th":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4.5 fill-none stroke-current">
+          <path
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M18.6 9.2A7 7 0 0 0 5.4 12a7 7 0 0 0 12.1 4.8M14.7 12.1c.1-1.7-.9-2.9-2.6-2.9-1.4 0-2.5.8-2.7 1.9m5.3 1c-.1 1.9-1.3 3.1-3.1 3.1-1.3 0-2.3-.7-2.3-1.8 0-1.2 1.1-1.9 2.9-1.9 1.6 0 3 .7 3.7 2 .5-2.6-.1-5.1-2-6.2"
+          />
+        </svg>
+      );
+    case "x":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4.5 fill-none stroke-current">
+          <path
+            strokeWidth={2.1}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M4.5 4.5 10.7 13l-6.2 6.5h2.2l5-5.2 4 5.2h3.8L13 10.6l5.8-6.1h-2.2l-4.7 4.9-3.6-4.9z"
+          />
+        </svg>
+      );
+    case "fb":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4.5 fill-none stroke-current">
+          <path
+            strokeWidth={2.1}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M14.5 20.5v-7h2.4l.5-3h-2.9V8.6c0-.9.4-1.6 1.7-1.6h1.3V4.3c-.6-.1-1.4-.2-2.1-.2-2.3 0-3.9 1.4-3.9 4v2.4H9v3h2.5v7z"
+          />
+        </svg>
+      );
+    case "ln":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4.5 fill-none stroke-current">
+          <path
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M20 11.2c0-3.7-3.6-6.7-8-6.7s-8 3-8 6.7c0 3.3 2.9 6.1 6.8 6.6.3.1.6.3.6.7l-.1 1.7c0 .4.4.7.8.5 3.9-2.2 7.9-5.7 7.9-9.5Z"
+          />
+          <path strokeWidth={1.8} strokeLinecap="round" d="M8.5 11.2h7M12 9.4v3.6" />
+        </svg>
+      );
+    case "em":
+      return <Icon name="mail" className="size-4.5" />;
+  }
+}
+
+/**
+ * Panel bagikan: pratinjau kartu tautan (gambar + judul + teks), bilah salin cepat, kisi 4x2 platform + kode QR,
+ * dan Web Share API. Esc menutup. Tanpa `boothId` yang dibagikan adalah beranda event.
+ * `previewKey` = foto sampul booth (kartu pratinjau memakai ilustrasi bila kosong, sama seperti hasil di WhatsApp).
+ */
 export function ShareButton({
   boothId,
   boothName,
   productId,
   productName,
+  previewKey,
+  poster,
   label,
   size = "sm",
 }: {
-  boothId: string;
-  boothName: string;
+  boothId?: string;
+  boothName?: string;
   productId?: string;
   productName?: string;
+  previewKey?: string | null;
+  /** Data poster QR booth (nomor, institusi, tagline); kosong = hanya nama */
+  poster?: { boothNo: string | null; teamName: string | null; tagline: string | null };
   label?: string;
   size?: "sm" | "md";
 }) {
   const { event } = useEventData();
+  const resolve = useMediaUrl();
   const toast = useToast();
+  const linkInputId = useId();
   const [open, setOpen] = useState(false);
-  const url = buildShareUrl({ origin: window.location.origin, boothId, productId });
-  const text = buildShareText({ eventName: event.name, boothName, productName });
+  const [showQr, setShowQr] = useState(false);
+  const S0 = copy.event.share;
+  const [copiedKey, setCopiedKey] = useState<"url" | "caption" | null>(null);
+  const url = boothId
+    ? buildShareUrl({ origin: window.location.origin, boothId, productId })
+    : buildEventShareUrl(window.location.origin);
+  const origin = window.location.origin;
+  const posterContent: PosterContent = boothId
+    ? {
+        kind: "booth",
+        eventName: event.name,
+        title: productName ?? boothName ?? "",
+        badge: poster?.boothNo ? copy.admin.posters.boothNo(poster.boothNo) : null,
+        teamName: poster?.teamName ?? null,
+        tagline: productName ? boothName : (poster?.tagline ?? null),
+        url: buildQrUrl({ origin, boothId, productId }),
+        displayUrl: hostOf(origin),
+        qrLabel: S0.qrLabel,
+        seed: boothId,
+      }
+    : {
+        kind: "event",
+        eventName: event.name,
+        title: copy.admin.posters.eventTitle,
+        tagline: copy.event.hero.greeting,
+        url: `${origin}/`,
+        displayUrl: hostOf(origin),
+        qrLabel: S0.qrLabel,
+        seed: event.id,
+      };
+  const text = boothName
+    ? buildShareText({ eventName: event.name, boothName, productName })
+    : buildEventShareText(event.name);
+  const previewSrc = boothId
+    ? (resolve(previewKey ?? null) ?? foodOgPath(foodArtFor(boothId)))
+    : (resolve(event.media.ogImageKey) ?? DEFAULT_OG_PATH);
 
-  async function copyValue(value: string, successText: string) {
+  useEffect(() => {
+    if (!copiedKey) return;
+    const timer = window.setTimeout(() => setCopiedKey(null), 1800);
+    return () => window.clearTimeout(timer);
+  }, [copiedKey]);
+
+  function closeModal() {
+    setOpen(false);
+    setShowQr(false);
+    setCopiedKey(null);
+  }
+
+  async function copyValue(
+    key: "url" | "caption",
+    value: string,
+    successText: string,
+    anchor?: HTMLElement | null,
+  ) {
     try {
       await navigator.clipboard.writeText(value);
+      setCopiedKey(key);
+      triggerSfx("pop");
+      if (anchor) burstStars(anchor);
       toast.push(successText, "success");
     } catch {
       toast.push(copy.event.share.copyFailed, "danger");
@@ -64,55 +220,58 @@ export function ShareButton({
   }
 
   const S = copy.event.share;
-  const channels = [
+  const targetTitle = boothName
+    ? productName
+      ? `${productName} · ${boothName}`
+      : boothName
+    : event.name;
+  const channels: ReadonlyArray<{
+    key: ChannelId;
+    label: string;
+    href: string;
+    badgeTone: string;
+  }> = [
     {
       key: "wa",
       label: S.whatsapp,
       href: whatsappShareLink(text, url),
-      tone: "bg-sticker-4 text-primary-fg",
-      icon: "send" as const,
+      badgeTone: "bg-sticker-4 text-primary-fg",
     },
     {
       key: "tg",
       label: S.telegram,
       href: telegramShareLink(text, url),
-      tone: "bg-sticker-3 text-primary-fg",
-      icon: "send" as const,
+      badgeTone: "bg-sticker-3 text-primary-fg",
     },
     {
       key: "th",
       label: S.threads,
       href: threadsShareLink(text, url),
-      tone: "bg-surface text-text",
-      icon: "share" as const,
+      badgeTone: "bg-surface-raised text-text",
     },
     {
       key: "x",
       label: S.x,
       href: xShareLink(text, url),
-      tone: "bg-surface text-text",
-      icon: "external" as const,
+      badgeTone: "bg-surface-raised text-text",
     },
     {
       key: "fb",
       label: S.facebook,
       href: facebookShareLink(url),
-      tone: "bg-surface text-text",
-      icon: "external" as const,
+      badgeTone: "bg-sticker-3 text-primary-fg",
     },
     {
       key: "ln",
       label: S.line,
       href: lineShareLink(text, url),
-      tone: "bg-sticker-5 text-primary-fg",
-      icon: "send" as const,
+      badgeTone: "bg-sticker-5 text-primary-fg",
     },
     {
       key: "em",
       label: S.email,
-      href: emailShareLink(boothName, text, url),
-      tone: "bg-surface text-text",
-      icon: "mail" as const,
+      href: emailShareLink(boothName ?? event.name, text, url),
+      badgeTone: "bg-sticker-1 text-text",
     },
   ];
 
@@ -126,58 +285,138 @@ export function ShareButton({
       >
         {label ?? S.button}
       </Button>
-      <Modal open={open} onClose={() => setOpen(false)} title={S.title}>
-        <label className="grid gap-1 text-sm font-bold">
-          {S.link}
-          <input
-            readOnly
-            value={url}
-            onFocus={(e) => e.currentTarget.select()}
-            className="w-full rounded-card border-(length:--border-w) border-line bg-surface-raised px-3 py-2 text-xs font-normal"
-          />
-        </label>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="primary" icon="copy" onClick={() => copyValue(url, S.copied)}>
-            {S.copy}
-          </Button>
-          <Button icon="copy" onClick={() => copyValue(`${text}\n${url}`, S.copiedCaption)}>
-            {S.copyCaption}
-          </Button>
-          {canNativeShare() && (
-            <Button
-              icon="share"
-              onClick={() => {
-                void navigator.share({ title: event.name, text, url }).catch(() => {});
-              }}
+      {open && (
+        <Modal open={open} onClose={closeModal} title={S.title}>
+          <div className="grid overflow-hidden rounded-card border-(length:--border-w) border-line bg-surface-tint">
+            <SafeImage
+              src={previewSrc}
+              aspect="1200/630"
+              className="w-full border-b-(length:--border-w) border-line"
+              fallback={null}
+            />
+            <div className="grid gap-1 px-3.5 py-2.5">
+              <p className="truncate text-sm font-extrabold text-text">{targetTitle}</p>
+              <p className="line-clamp-2 text-xs leading-relaxed text-muted">{text}</p>
+            </div>
+          </div>
+
+          <div className="grid gap-1.5">
+            <label
+              htmlFor={linkInputId}
+              className="text-xs font-extrabold uppercase tracking-wide text-muted"
             >
-              {S.native}
+              {S.link}
+            </label>
+            <div className="flex items-center gap-1.5 rounded-card border-(length:--border-w) border-line bg-surface-raised p-1.5 pl-3">
+              <input
+                id={linkInputId}
+                readOnly
+                value={url}
+                onFocus={(e) => e.currentTarget.select()}
+                className="min-w-0 flex-1 bg-transparent text-xs font-medium text-text outline-none"
+              />
+              <Button
+                size="sm"
+                variant="primary"
+                icon={copiedKey === "url" ? "check" : "copy"}
+                aria-label={S.copy}
+                onClick={(e) => copyValue("url", url, S.copied, e.currentTarget)}
+              >
+                {S.copy}
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              icon={copiedKey === "caption" ? "check" : "copy"}
+              onClick={(e) =>
+                copyValue("caption", `${text}\n${url}`, S.copiedCaption, e.currentTarget)
+              }
+            >
+              {S.copyCaption}
             </Button>
-          )}
-        </div>
-        <div className="grid gap-2">
-          <p className="text-xs font-bold text-muted">{S.channelsLabel}</p>
-          <div className="flex flex-wrap gap-2">
-            {channels.map((ch) => (
-              <a
-                key={ch.key}
-                href={ch.href}
-                target={ch.key === "em" ? undefined : "_blank"}
-                rel={ch.key === "em" ? undefined : "noopener noreferrer"}
+            {canNativeShare() && (
+              <Button
+                size="sm"
+                icon="share"
+                onClick={() => {
+                  void navigator.share({ title: event.name, text, url }).catch(() => {});
+                }}
+              >
+                {S.native}
+              </Button>
+            )}
+          </div>
+
+          <div className="grid gap-2">
+            <p className="text-xs font-extrabold uppercase tracking-wide text-muted">
+              {S.channelsLabel}
+            </p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {channels.map((ch) => (
+                <a
+                  key={ch.key}
+                  href={ch.href}
+                  target={ch.key === "em" ? undefined : "_blank"}
+                  rel={ch.key === "em" ? undefined : "noopener noreferrer"}
+                  className="group flex flex-col items-center justify-center gap-1.5 rounded-card border-(length:--border-w) border-line bg-surface px-2 py-2.5 text-center text-xs font-bold text-text transition-colors hover:bg-surface-tint"
+                >
+                  <span
+                    className={cn(
+                      "grid size-9 place-items-center rounded-chip border-(length:--border-w) border-line transition-transform group-hover:-translate-y-0.5",
+                      ch.badgeTone,
+                    )}
+                  >
+                    <ChannelIcon channel={ch.key} />
+                  </span>
+                  <span className="truncate">{ch.label}</span>
+                </a>
+              ))}
+              <button
+                type="button"
+                aria-pressed={showQr}
+                onClick={() => setShowQr((v) => !v)}
                 className={cn(
-                  "group inline-flex items-center gap-1.5 rounded-chip border-(length:--border-w) border-line px-3.5 py-1.5 text-sm font-bold shadow-card transition-transform hover:-translate-y-0.5 active:translate-y-px",
-                  ch.tone,
+                  "group flex flex-col items-center justify-center gap-1.5 rounded-card border-(length:--border-w) border-line px-2 py-2.5 text-center text-xs font-bold transition-colors",
+                  showQr
+                    ? "bg-surface-tint text-text"
+                    : "bg-surface text-text hover:bg-surface-tint",
                 )}
               >
-                <Icon name={ch.icon} className="size-4" />
-                <span>{ch.label}</span>
-              </a>
-            ))}
+                <span
+                  className={cn(
+                    "grid size-9 place-items-center rounded-chip border-(length:--border-w) border-line transition-transform group-hover:-translate-y-0.5",
+                    showQr ? "bg-primary text-primary-fg" : "bg-surface-tint text-text",
+                  )}
+                >
+                  <Icon name="qr" className="size-4.5" />
+                </span>
+                <span className="truncate">{S.qrToggle}</span>
+              </button>
+            </div>
           </div>
-        </div>
-        <div className="flex justify-end">
-          <Button onClick={() => setOpen(false)}>{S.close}</Button>
-        </div>
-      </Modal>
+
+          {showQr && (
+            <Suspense
+              fallback={
+                <div className="grid h-40 place-items-center">
+                  <Spinner />
+                </div>
+              }
+            >
+              <LazySharePoster content={posterContent} />
+            </Suspense>
+          )}
+
+          <div className="flex justify-end border-t border-line pt-2">
+            <Button size="sm" onClick={closeModal}>
+              {S.close}
+            </Button>
+          </div>
+        </Modal>
+      )}
     </>
   );
 }
@@ -361,3 +600,5 @@ function WishlistPanel({
     </Modal>
   );
 }
+
+const hostOf = (origin: string) => new URL(origin).host.replace(/^www\./, "");

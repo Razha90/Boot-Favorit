@@ -33,8 +33,8 @@ Buat terpisah untuk `staging` dan `production`:
 | `TURNSTILE_SECRET` | secret | **Wajib** | Secret key Cloudflare Turnstile (domain `eventunimed.id` terdaftar) |
 | `TURNSTILE_SITE_KEY` | secret/var | **Wajib** | Site key publik Cloudflare Turnstile |
 | `GOOGLE_CLIENT_ID` | var | Opsional* | Client ID Google Identity (*wajib bila mode `google_or_email` memakai tombol Google) |
-| `RESEND_API_KEY` | secret | Opsional* | API key Resend (*wajib agar OTP email dan undangan booth terkirim di produksi) |
-| `EMAIL_FROM` | var/secret | Opsional* | Alamat pengirim terverifikasi SPF/DKIM pada domain `eventunimed.id` |
+| `EMAIL_FROM` | var/secret | Opsional* | Alamat pengirim terverifikasi SPF/DKIM/DMARC di Cloudflare Email Sending, mis. `LPPM Expo UNIMED <noreply@mail.eventunimed.id>` (*wajib untuk OTP & undangan di produksi) |
+| `RESEND_API_KEY` | secret | Opsional | Cadangan bila memilih penyedia Resend; tidak dibutuhkan jika memakai binding `send_email` (`EMAIL`) bawaan Cloudflare |
 | `CF_ACCOUNT_ID` | secret | Opsional | ID akun Cloudflare untuk membaca Analytics Engine di halaman `/admin/e/:id/logs` |
 | `CF_API_TOKEN` | secret | Opsional | Token API **read-only** (`Account Analytics: Read`) untuk AE SQL API |
 

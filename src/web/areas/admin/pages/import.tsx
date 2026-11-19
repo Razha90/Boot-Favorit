@@ -81,11 +81,19 @@ export function Component() {
       if (row && res.status !== "created") problems.push({ row, reasons: [res.reason] });
     });
     const label = (x: string) => (copy.admin.import.issues as Record<string, string>)[x] ?? x;
-    const lines = ["nama,nomor_booth,email,tagline,deskripsi,alasan"];
+    const lines = ["nama,institusi,nomor_booth,email,tagline,deskripsi,alasan"];
     for (const { row, reasons } of problems) {
       const d = row.draft;
       lines.push(
-        [d.name, d.boothNo, d.email, d.tagline, d.description, reasons.map(label).join("; ")]
+        [
+          d.name,
+          d.teamName,
+          d.boothNo,
+          d.email,
+          d.tagline,
+          d.description,
+          reasons.map(label).join("; "),
+        ]
           .map(csvCell)
           .join(","),
       );
@@ -216,6 +224,7 @@ export function Component() {
                   email: r.draft.email,
                   tagline: r.draft.tagline,
                   description: r.draft.description,
+                  teamName: r.draft.teamName,
                 }));
                 setSummary(await adminApi.importBooths(eventId, rows, onDup, ctx));
                 await qc.invalidateQueries({ queryKey: adminKeys.booths(eventId) });

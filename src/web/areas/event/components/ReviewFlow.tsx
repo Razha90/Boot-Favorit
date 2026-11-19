@@ -1,7 +1,6 @@
 import type { PublicBoothDetail, ReviewSubmitResult } from "@shared/api-types";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ActionButton } from "../../../components/ui/ActionButton";
 import { ErrorState, Skeleton } from "../../../components/ui/states";
 import { useEventData } from "../../../features/event-data";
 import { copy } from "../../../lib/copy";
@@ -48,18 +47,6 @@ export function ReviewFlow({ booth }: { booth: PublicBoothDetail }) {
             <span className="font-bold">
               {copy.event.login.as(me.visitor.displayName ?? copy.event.login.anonymousName)}
             </span>
-            <ActionButton
-              size="sm"
-              variant="ghost"
-              icon="refresh"
-              action={async () => {
-                await visitorApi.logout();
-                setResult(null);
-                await invalidateAfterSession(qc);
-              }}
-            >
-              {copy.event.login.logout}
-            </ActionButton>
           </div>
 
           {result ? (

@@ -2,13 +2,32 @@
   "name": "booth-favorit",
   "main": "src/worker/index.ts",
   "compatibility_date": "2026-11-01",
+  // Domain utama produksi di Cloudflare Workers Custom Domains (explore.md A0).
+  "routes": [{ "pattern": "eventunimed.id", "custom_domain": true }],
   "assets": {
     // Binding agar Worker bisa mengambil index.html dan menyisipkan meta tag pratinjau tautan (B20).
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
     // Worker berjalan lebih dulu untuk API, WebSocket, gambar cadangan, pengalihan WhatsApp, serta halaman
-    // yang sering dibagikan (/ dan /b/*) agar pratinjau tautan berisi nama event/booth.
-    "run_worker_first": ["/api/*", "/ws", "/ws/*", "/media/*", "/go/*", "/", "/b/*"]
+    // yang sering dibagikan/dicari (/, /b/*, /results, /register), robots.txt, sitemap.xml, dan manifest agar
+    // pratinjau tautan dan SEO berisi nama event/booth (B20, B27). /admin dan /admin/* juga lewat Worker agar cangkang
+    // halaman admin hanya disajikan kepada admin terverifikasi (B31).
+    "run_worker_first": [
+      "/api/*",
+      "/ws",
+      "/ws/*",
+      "/media/*",
+      "/go/*",
+      "/",
+      "/b/*",
+      "/results",
+      "/admin",
+      "/admin/*",
+      "/register",
+      "/robots.txt",
+      "/sitemap.xml",
+      "/manifest.webmanifest"
+    ]
   },
   // LiveHub (B8): satu DO per event untuk siaran WebSocket berbatch. Hanya klien yang butuh live yang menyambung.
   "durable_objects": { "bindings": [{ "name": "LIVE_HUB", "class_name": "LiveHub" }] },
@@ -24,6 +43,8 @@
   "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "booth-media" }],
   // Log aktivitas yang tampil di admin (B13): tanpa tabel D1.
   "analytics_engine_datasets": [{ "binding": "LOG", "dataset": "booth_favorit_logs" }],
+  // Pengiriman email native via Cloudflare Email Sending (tab Workers). Alamat pengirim memakai EMAIL_FROM.
+  "send_email": [{ "name": "EMAIL" }],
   "observability": { "enabled": true, "head_sampling_rate": 1 }
   // Durable Object LIVE_HUB ditambahkan di Tahap 7 (B8); cron dan rahasia (kunci Turnstile, email, HMAC)
   // lewat `wrangler secret`, tidak di berkas ini.

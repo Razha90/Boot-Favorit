@@ -61,18 +61,9 @@ export const visitorApi = {
     api<{ visitor: NonNullable<VisitorMe["visitor"]> }>("POST", "/api/visitor/otp/verify", {
       body: { email, code, displayName: displayName || null },
     }),
-  ticket: (code: string, displayName: string) =>
-    api<{ visitor: NonNullable<VisitorMe["visitor"]> }>("POST", "/api/visitor/ticket", {
-      body: { code, displayName: displayName || null },
-    }),
-  anonymous: (displayName: string, turnstileToken: string | undefined) =>
-    api<{ visitor: NonNullable<VisitorMe["visitor"]> }>("POST", "/api/visitor/anonymous", {
-      body: { displayName: displayName || null, turnstileToken },
-    }),
-  logout: () => api<{ ok: true }>("POST", "/api/visitor/logout"),
   submitReview: (
     boothId: string,
-    body: { stars: number; comment: string | null; categoryIds: string[] },
+    body: { stars: number; comment: string | null; categoryIds: string[]; anonymous: boolean },
     turnstileToken: string | undefined,
     ctx: Ctx,
   ) =>

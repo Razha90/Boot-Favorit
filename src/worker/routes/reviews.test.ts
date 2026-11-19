@@ -170,11 +170,30 @@ describe("validasi masukan", () => {
     expect(d.topCategories[0]).toMatchObject({ count: 1 });
   });
 
-  it("komentar spasi saja = tanpa komentar", async () => {
+  it("komentar opsional: kosong, spasi saja, null, atau tidak ada tetap berhasil (201) dan tersimpan sebagai null", async () => {
+    const { h, s } = await liveHarness();
+    const bodies: Record<string, unknown>[] = [
+      { stars: 4 },
+      { stars: 4, comment: "" },
+      { stars: 4, comment: "    " },
+      { stars: 4, comment: null },
+    ];
+    for (const body of bodies) {
+      const who = await directVisitor(h, s.event.id);
+      const r = await who.call("POST", `/api/booths/${s.lengkap.id}/review`, body, {});
+      expect(r.status, JSON.stringify(body)).toBe(201);
+      expect(r.json.review.comment).toBeNull();
+    }
+    expect((await stats(h, s.lengkap.id)).review_count).toBe(bodies.length); // semua dihitung
+  });
+
+  it("edit: komentar bisa dikosongkan lagi tanpa menolak review", async () => {
     const { h, s } = await liveHarness();
     const v = await loginWithOtp(h, "a@b.id");
-    const r = await review(v, s.lengkap.id, { stars: 4, comment: "    " });
-    expect(r.json.review.comment).toBeNull();
+    await review(v, s.lengkap.id, { stars: 5, comment: "Mantap" });
+    const r = await review(v, s.lengkap.id, { stars: 4, comment: "" });
+    expect(r.status).toBe(200);
+    expect(r.json.review).toMatchObject({ stars: 4, comment: null });
   });
 });
 
@@ -325,7 +344,7 @@ describe("skor risiko menahan review diam-diam (B9)", () => {
       const r = await v.call(
         "POST",
         `/api/booths/${s.lengkap.id}/review`,
-        { stars: 5 },
+        { stars: 5, comment: "Seru" },
         { headers: ip },
       );
       lastStatus = r.status;
@@ -353,7 +372,12 @@ describe("skor risiko menahan review diam-diam (B9)", () => {
     let held: Awaited<ReturnType<typeof directVisitor>> | undefined;
     for (let i = 0; i < CONFIG.spam.burstThresholdPerBoothPerMin + 6 && !held; i++) {
       const v = await directVisitor(h, s.event.id);
-      await v.call("POST", `/api/booths/${s.lengkap.id}/review`, { stars: 5 }, { headers: ip });
+      await v.call(
+        "POST",
+        `/api/booths/${s.lengkap.id}/review`,
+        { stars: 5, comment: "Seru" },
+        { headers: ip },
+      );
       const row = (await h.t.d1
         .prepare("SELECT status FROM reviews WHERE visitor_id = ?")
         .bind(v.visitor.id)
@@ -363,7 +387,12 @@ describe("skor risiko menahan review diam-diam (B9)", () => {
     expect(held).toBeDefined();
     if (!held) return;
     h.clk.t += 120_000; // sinyal reda
-    await held.call("POST", `/api/booths/${s.lengkap.id}/review`, { stars: 4 }, {});
+    await held.call(
+      "POST",
+      `/api/booths/${s.lengkap.id}/review`,
+      { stars: 4, comment: "Seru" },
+      {},
+    );
     const row = (await h.t.d1
       .prepare("SELECT status, stars FROM reviews WHERE visitor_id = ?")
       .bind(held.visitor.id)
@@ -428,12 +457,36 @@ describe("GET /api/booths/:id/reviews (publik)", () => {
     expect(JSON.stringify(list)).not.toMatch(/visitor|@|identity/i);
   });
 
-  it("review tanpa komentar tidak masuk daftar ulasan (tetap dihitung di rating)", async () => {
+  it("review tanpa komentar ikut tampil di daftar ulasan booth (bintang + nama, tanpa teks)", async () => {
+    const { h, s } = await liveHarness();
+    const v = await directVisitor(h, s.event.id, { name: "Budi" });
+    await review(v, s.lengkap.id, { stars: 5 });
+    const list = (await publicReviews(h, s.lengkap.id)).reviews;
+    expect(list).toHaveLength(1);
+    expect(list[0]).toMatchObject({ stars: 5, text: null, displayName: "Budi" });
+    expect((await stats(h, s.lengkap.id)).review_count).toBe(1);
+  });
+
+  it("umpan ulasan terbaru lintas booth tetap hanya yang berkomentar; komentar ditahan tampil tanpa teksnya di daftar booth", async () => {
+    const { h, s } = await liveHarness();
+    const a = await directVisitor(h, s.event.id, { name: "Ani" });
+    const b = await directVisitor(h, s.event.id, { name: "Bimo" });
+    await review(a, s.lengkap.id, { stars: 5 }); // tanpa komentar
+    await review(b, s.lengkap.id, { stars: 4, comment: "Enak sekali" });
+    const feed = (await visitorClient(h).call("GET", "/api/snapshot")).json.feed as {
+      text: string;
+    }[];
+    expect(feed.map((f) => f.text)).toEqual(["Enak sekali"]);
+    const list = (await publicReviews(h, s.lengkap.id)).reviews as { text: string | null }[];
+    expect(list.map((r) => r.text).sort()).toEqual([null, "Enak sekali"].sort());
+  });
+
+  it("rating disembunyikan: review tanpa komentar tidak ditampilkan sama sekali (tidak ada yang bisa ditampilkan)", async () => {
     const { h, s } = await liveHarness();
     const v = await directVisitor(h, s.event.id);
     await review(v, s.lengkap.id, { stars: 5 });
+    await s.setEvent({ ratingsMode: "hidden" });
     expect((await publicReviews(h, s.lengkap.id)).reviews).toEqual([]);
-    expect((await stats(h, s.lengkap.id)).review_count).toBe(1);
   });
 
   it("rating disembunyikan admin: bintang per ulasan tidak dikirim", async () => {
@@ -462,6 +515,56 @@ describe("GET /api/booths/:id/reviews (publik)", () => {
   });
 });
 
+describe("reviewer tampil anonim", () => {
+  it("anonim: nama tidak tampil di daftar booth maupun umpan terbaru; tanpa nama asli di JSON publik", async () => {
+    const { h, s } = await liveHarness();
+    const v = await loginWithOtp(h, "ani@b.id", "Ani Wijaya");
+    const r = await review(v, s.lengkap.id, { stars: 5, comment: "Enak sekali", anonymous: true });
+    expect(r.status).toBe(201);
+    expect(r.json.review.anonymous).toBe(true);
+    const list = await publicReviews(h, s.lengkap.id);
+    expect(list.reviews[0].displayName).toBe("Anonim");
+    const snap = JSON.stringify((await visitorClient(h).call("GET", "/api/snapshot")).json);
+    expect(snap).toContain("Anonim");
+    expect(snap).not.toContain("Ani Wijaya");
+    expect(JSON.stringify(list)).not.toContain("Ani");
+  });
+
+  it("bawaan tidak anonim; kirim ulang dapat mengubah ke anonim dan kembali (kirim ulang = edit)", async () => {
+    const { h, s } = await liveHarness();
+    const v = await loginWithOtp(h, "budi@b.id", "Budi");
+    await review(v, s.lengkap.id, { stars: 4, comment: "Lumayan" });
+    expect((await publicReviews(h, s.lengkap.id)).reviews[0].displayName).toBe("Budi");
+
+    const toAnon = await review(v, s.lengkap.id, { stars: 4, comment: "Lumayan", anonymous: true });
+    expect(toAnon.status).toBe(200);
+    expect((await publicReviews(h, s.lengkap.id)).reviews[0].displayName).toBe("Anonim");
+    expect((await v.call("GET", "/api/me/reviews")).json.reviews[0].anonymous).toBe(true);
+
+    await review(v, s.lengkap.id, { stars: 4, comment: "Lumayan", anonymous: false });
+    expect((await publicReviews(h, s.lengkap.id)).reviews[0].displayName).toBe("Budi");
+    expect((await stats(h, s.lengkap.id)).review_count).toBe(1); // tetap satu review
+  });
+
+  it("anonim tidak memengaruhi bintang/statistik; nilai bukan boolean ditolak", async () => {
+    const { h, s } = await liveHarness();
+    const v = await loginWithOtp(h, "c@b.id", "Cici");
+    await review(v, s.lengkap.id, { stars: 3, anonymous: true });
+    expect(await stats(h, s.lengkap.id)).toMatchObject({ review_count: 1, star_sum: 3, s3: 1 });
+    const bad = await review(v, s.lengkap.id, { stars: 3, anonymous: "ya" });
+    expect(bad.status).toBe(400);
+  });
+
+  it("admin tetap melihat nama asli dan penanda anonim untuk moderasi", async () => {
+    const { h, s } = await liveHarness();
+    const v = await loginWithOtp(h, "d@b.id", "Dewi");
+    await review(v, s.lengkap.id, { stars: 1, comment: "Kurang", anonymous: true });
+    const list = (await h.call("GET", `/api/admin/e/${s.event.id}/data/reviews`)).json;
+    const text = JSON.stringify(list);
+    expect(text).toContain("Dewi");
+  });
+});
+
 describe("GET /api/me/reviews dan /api/visitor/me", () => {
   it("daftar milikku; hanya milikku", async () => {
     const { h, s } = await liveHarness();
@@ -470,7 +573,9 @@ describe("GET /api/me/reviews dan /api/visitor/me", () => {
     await review(a, s.lengkap.id, { stars: 4, comment: "oke" });
     await review(b, s.hanyaNama.id, { stars: 2 });
     const mine = (await a.call("GET", "/api/me/reviews")).json.reviews;
-    expect(mine).toEqual([{ boothId: s.lengkap.id, stars: 4, comment: "oke", categoryIds: [] }]);
+    expect(mine).toEqual([
+      { boothId: s.lengkap.id, stars: 4, comment: "oke", categoryIds: [], anonymous: false },
+    ]);
     const me = (await a.call("GET", "/api/visitor/me")).json;
     expect(me.reviewed).toEqual([{ boothId: s.lengkap.id, stars: 4 }]);
     expect((await visitorClient(h).call("GET", "/api/me/reviews")).status).toBe(401);
