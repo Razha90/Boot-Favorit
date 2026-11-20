@@ -132,10 +132,13 @@ export function Hero({ event, state, boothCount, serverNow, registrationVisible 
           )}
         </span>
 
-        <h1 className="font-display text-5xl font-extrabold leading-[0.95] tracking-tight [overflow-wrap:anywhere] sm:text-6xl xl:text-7xl">
+        <h1 className="font-display text-5xl font-extrabold leading-[1.25] tracking-tight [overflow-wrap:anywhere] sm:text-6xl xl:text-7xl">
           {parts.map((p) =>
             p.hl ? (
-              <mark key={p.text} className="rounded-card bg-primary px-2 text-primary-fg">
+              <mark
+                key={p.text}
+                className="box-decoration-clone rounded-card bg-primary px-2 text-primary-fg"
+              >
                 {p.text}
               </mark>
             ) : (

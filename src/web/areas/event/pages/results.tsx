@@ -24,7 +24,7 @@ export function Component() {
   }
 
   return (
-    <div className="mx-auto grid max-w-5xl gap-6 px-4 pb-16 pt-6">
+    <div className="mx-auto grid max-w-5xl gap-6 px-4 pb-16 pt-20">
       <BackButton>{copy.event.booth.back}</BackButton>
       <h1 className="font-display text-4xl font-extrabold [overflow-wrap:anywhere] sm:text-5xl">
         {event.name}

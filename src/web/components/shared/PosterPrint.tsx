@@ -37,7 +37,11 @@ export function PosterPrintLayer({
           i.complete || typeof i.decode !== "function" ? null : i.decode().catch(() => null),
         ),
       );
-      await Promise.race([loaded, new Promise((r) => setTimeout(r, 2000))]);
+      const fontsReady = document.fonts?.ready?.catch(() => null) ?? Promise.resolve();
+      await Promise.race([
+        Promise.all([loaded, fontsReady]),
+        new Promise((r) => setTimeout(r, 2000)),
+      ]);
       if (!cancelled) window.print();
     })();
     return () => {

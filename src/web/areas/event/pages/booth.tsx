@@ -33,10 +33,8 @@ export function Component() {
   const { boothId = "" } = useParams();
   const q = useBoothQuery(boothId);
   return (
-    <div className="mx-auto grid max-w-6xl gap-6 px-4 pb-28 pt-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <BackButton>{copy.event.booth.back}</BackButton>
-      </div>
+    <div className="mx-auto grid max-w-6xl gap-6 px-4 pb-28 pt-20">
+      <BackButton>{copy.event.booth.back}</BackButton>
       <ReadOnlyBanner />
 
       {q.isLoading && (

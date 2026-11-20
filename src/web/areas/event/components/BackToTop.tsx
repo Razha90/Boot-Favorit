@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router";
 import { Icon } from "../../../components/ui/Icon";
+import { cn } from "../../../lib/cn";
 import { copy } from "../../../lib/copy";
 
 /** Jarak gulir (px) sebelum tombol muncul: kira-kira satu layar. */
@@ -11,10 +13,12 @@ const prefersReducedMotion = () =>
 
 /**
  * Tombol terbang bulat "kembali ke atas" di kanan bawah. Muncul setelah halaman digulir satu layar; gulir mulus
- * kecuali gerak minimal diminta. Pasangan simetris tombol suara di kiri bawah.
+ * kecuali gerak minimal diminta. Di halaman booth HP terangkat di atas bilah bawah `Yuk, kasih bintang!`.
  */
 export function BackToTop() {
   const [visible, setVisible] = useState(false);
+  const { pathname } = useLocation();
+  const isBoothPage = pathname.startsWith("/b/");
   useEffect(() => {
     const onScroll = () => setVisible(window.scrollY > SHOW_AFTER);
     onScroll();
@@ -30,8 +34,10 @@ export function BackToTop() {
       }
       aria-label={copy.event.footer.top}
       title={copy.event.footer.top}
-      style={{ bottom: "max(1rem, env(safe-area-inset-bottom))" }}
-      className="group fixed right-4 z-40 grid size-11 place-items-center rounded-full border-(length:--border-w) border-line bg-accent text-accent-fg shadow-card transition-transform duration-(--motion-fast) hover:-translate-y-0.5 active:translate-y-px active:shadow-press"
+      className={cn(
+        "group fixed right-4 z-40 grid size-11 place-items-center rounded-full border-(length:--border-w) border-line bg-accent text-accent-fg shadow-card transition-transform duration-(--motion-fast) hover:-translate-y-0.5 active:translate-y-px active:shadow-press",
+        isBoothPage ? "bottom-20 md:bottom-4" : "bottom-4",
+      )}
     >
       <Icon name="arrow-up" className="size-5" />
     </button>

@@ -2,6 +2,7 @@ import type { PublicBooth, PublicProduct, PublicProducts } from "@shared/api-typ
 import { DEFAULT_OG_PATH, foodArtFor, foodOgPath } from "@shared/food-art";
 import { useQueries } from "@tanstack/react-query";
 import { lazy, Suspense, useEffect, useId, useMemo, useState } from "react";
+import { useLocation } from "react-router";
 import { PriceTag } from "../../../components/shared/PriceTag";
 import type { PosterContent } from "../../../components/shared/QrPoster";
 import { SafeImage } from "../../../components/shared/SafeImage";
@@ -471,16 +472,20 @@ interface Line {
 export function WishlistFab({ booths }: { booths: readonly PublicBooth[] }) {
   const wl = useWishlist();
   const state = useEventState();
+  const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
 
   if (state.frozen || wl.count === 0) return null;
+  const isBoothPage = pathname.startsWith("/b/");
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen(true)}
-        style={{ bottom: "calc(env(safe-area-inset-bottom) + 4.5rem)" }}
-        className="group fixed right-4 z-40 inline-flex items-center gap-2 rounded-chip border-(length:--border-w) border-line bg-accent px-4 py-2 text-sm font-bold text-accent-fg shadow-card transition-transform hover:-translate-y-0.5 active:translate-y-px active:shadow-press"
+        className={cn(
+          "group fixed right-4 z-40 inline-flex items-center gap-2 rounded-chip border-(length:--border-w) border-line bg-accent px-4 py-2 text-sm font-bold text-accent-fg shadow-card transition-transform hover:-translate-y-0.5 active:translate-y-px active:shadow-press",
+          isBoothPage ? "bottom-34 md:bottom-18" : "bottom-18",
+        )}
       >
         <Icon name="bookmark-check" className="size-4" />
         {copy.event.wishlist.floating(wl.count)}

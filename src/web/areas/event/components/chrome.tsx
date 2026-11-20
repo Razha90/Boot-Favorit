@@ -40,12 +40,13 @@ export function SectionHeading({
   );
 }
 
-/** Tombol kembali berbentuk pil tebal. Selalu menuju `/` (QR membuka halaman booth langsung, tanpa riwayat). */
+/** Tombol kembali mengambang di kiri atas (`fixed`), sejajar simetris dengan tombol Sematan di kanan atas. */
 export function BackButton({ children }: { children: ReactNode }) {
   return (
     <Link
       to="/"
-      className="group inline-flex w-fit items-center gap-2 rounded-chip border-(length:--border-w) border-line bg-surface-raised px-4 py-2 text-sm font-bold shadow-card transition-transform active:translate-y-px active:shadow-press"
+      style={{ top: "max(1rem, env(safe-area-inset-top))" }}
+      className="group fixed left-4 z-40 inline-flex h-11 w-fit items-center gap-2 rounded-chip border-(length:--border-w) border-line bg-surface-raised px-3.5 text-sm font-bold shadow-card transition-transform hover:-translate-y-0.5 active:translate-y-px active:shadow-press"
     >
       <span
         aria-hidden="true"

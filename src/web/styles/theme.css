@@ -900,10 +900,24 @@
 }
 
 /* ---- Lapisan cetak poster QR (B29): hanya poster yang tercetak, bukan seluruh halaman ---- */
+/* Di layar memakai 1cqw agar proporsional di modal & pratinjau; saat cetak memakai mm tetap agar Firefox/PDF tidak memotong teks pada container-type. */
+.poster-container {
+  --u: 1cqw;
+  container-type: inline-size;
+}
 .poster-print-root {
   display: none;
 }
 @media print {
+  .poster-container {
+    container-type: normal !important;
+  }
+  .poster-container[data-size="a4"] {
+    --u: 2.08mm;
+  }
+  .poster-container[data-size="a5"] {
+    --u: 1.46mm;
+  }
   body.poster-printing > #root {
     display: none !important;
   }
